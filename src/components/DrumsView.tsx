@@ -1,0 +1,110 @@
+import { useDrumStore } from '../store/instrumentStore'
+import { Knob } from './Knob'
+import { useBassStore, useHarmonyStore } from '../store/instrumentStore'
+import { generateBassPattern } from '../logic/StingGenerator'
+import { Dices } from 'lucide-react'
+import { useAudioStore, AudioState } from '../store/audioStore'
+import { bjorklund } from '../logic/bjorklund'
+
+export function DrumsView() {
+    const { kick, snare, hihat, kit, setParams, setKit } = useDrumStore()
+    const { drumMachine } = useAudioStore()
+
+    const updateDrum = (drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap', params: any) => {
+        setParams(drum, params)
+        if (drumMachine) {
+            const d = useDrumStore.getState()[drum]
+            const finalParams = { ...d, ...params }
+            drumMachine.setDrumParams(drum, finalParams.pitch, finalParams.decay)
+        }
+    }
+
+    const handleKitChange = (newKit: '808' | '909') => {
+        setKit(newKit)
+        if (drumMachine) drumMachine.setKit(newKit)
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <section className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3>Драм-машина</h3>
+                    <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.05)', padding: '4px', borderRadius: '8px' }}>
+                        {(['808', '909'] as const).map(k => (
+                            <button
+                                key={k}
+                                onClick={() => handleKitChange(k)}
+                                style={{
+                                    padding: '4px 12px',
+                                    fontSize: '11px',
+                                    borderRadius: '6px',
+                                    background: kit === k ? 'var(--tg-theme-button-color)' : 'transparent',
+                                    color: kit === k ? 'white' : 'inherit',
+                                    border: 'none'
+                                }}
+                            >{k}</button>
+                        ))}
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '24px' }}>
+                    {[
+                        { id: 'kick' as const, label: 'KICK' },
+                        { id: 'snare' as const, label: 'SNARE' },
+                        { id: 'hihat' as const, label: 'HI-HAT' },
+                        { id: 'hihatOpen' as const, label: 'OPEN HAT' },
+                        { id: 'clap' as const, label: 'CLAP' }
+                    ].map(d => (
+                        <div key={d.id} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', background: 'rgba(0,0,0,0.02)', padding: '12px', borderRadius: '12px' }}>
+                            <div style={{ width: '60px', fontWeight: 'bold', fontSize: '10px' }}>{d.label}</div>
+                            <Knob
+                                label="Пульс"
+                                value={useDrumStore.getState()[d.id].pulses}
+                                min={0} max={16} step={1}
+                                onChange={(v) => updateDrum(d.id, { pulses: v })}
+                                size={40}
+                            />
+                            <Knob
+                                label="Tone"
+                                value={useDrumStore.getState()[d.id].pitch}
+                                min={0} max={1} step={0.01}
+                                onChange={(v) => updateDrum(d.id, { pitch: v })}
+                                size={40}
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Pattern Visualizer */}
+                <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {[
+                        { name: 'KICK', data: kick },
+                        { name: 'SNARE', data: snare },
+                        { name: 'HIHAT', data: hihat },
+                        { name: 'OPEN', data: useDrumStore.getState().hihatOpen },
+                        { name: 'CLAP', data: useDrumStore.getState().clap }
+                    ].map((d, idx) => {
+                        const pattern = bjorklund(d.data.steps, d.data.pulses)
+                        return (
+                            <div key={idx}>
+                                <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '4px', opacity: 0.5 }}>{d.name}</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(16, 1fr)', gap: '4px' }}>
+                                    {pattern.map((active, i) => (
+                                        <div key={i} style={{
+                                            height: '6px',
+                                            borderRadius: '3px',
+                                            background: active ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)',
+                                            opacity: active ? 1 : 0.2,
+                                            border: (useAudioStore((s: AudioState) => s.currentStep) === i) ? '1px solid white' : ((i % 4 === 0) ? '1px solid var(--tg-theme-button-color)' : 'none'),
+                                            boxShadow: (useAudioStore((s: AudioState) => s.currentStep) === i) ? '0 0 8px var(--tg-theme-button-color)' : 'none'
+                                        }} />
+                                    ))}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </section>
+        </div>
+    )
+}
