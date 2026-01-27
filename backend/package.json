@@ -14,6 +14,7 @@
         "tsx": "^4.6.2"
     },
     "scripts": {
-        "dev": "tsx server.ts"
+        "dev": "tsx server.ts",
+        "start": "tsx server.ts"
     }
 }
