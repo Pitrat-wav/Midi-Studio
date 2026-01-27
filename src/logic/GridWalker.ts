@@ -13,6 +13,24 @@ export class GridWalker {
         this.pattern = pattern
     }
 
+    static getPatternPath(pattern: SnakePattern | 'cartesian'): number[] {
+        if (pattern === 'cartesian') {
+            // Standard grid order for cartesian mode mapping
+            return Array.from({ length: 16 }, (_, i) => i)
+        }
+
+        const path: number[] = []
+        let current = 0
+        path.push(current)
+
+        // Generate 15 more steps
+        for (let i = 0; i < 15; i++) {
+            current = this.getNextIndex(current, pattern as SnakePattern)
+            path.push(current)
+        }
+        return path
+    }
+
     static getNextIndex(currentIndex: number, pattern: SnakePattern): number {
         let x = currentIndex % 4
         let y = Math.floor(currentIndex / 4)
@@ -113,7 +131,15 @@ export class GridWalker {
         this.y = Math.floor(Math.random() * 4)
     }
 
-    setPattern(pattern: SnakePattern) {
-        this.pattern = pattern
+    static getNextCartesian(x: number, y: number, mode: 'x' | 'y' | 'both'): { x: number, y: number } {
+        let nx = x
+        let ny = y
+        if (mode === 'x' || mode === 'both') nx = (x + 1) % 4
+        if (mode === 'y' || mode === 'both') ny = (y + 1) % 4
+        return { x: nx, y: ny }
+    }
+
+    setPattern(pattern: SnakePattern | 'cartesian') {
+        this.pattern = pattern as any
     }
 }

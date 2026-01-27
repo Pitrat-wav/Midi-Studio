@@ -1,61 +1,123 @@
 import * as Tone from 'tone'
 
 export class DrumMachine {
-    kick: Tone.Player
-    snare: Tone.Player
-    hihat: Tone.Player
-    hihatOpen: Tone.Player
-    clap: Tone.Player
+    kick: Tone.MembraneSynth
+    snare: Tone.NoiseSynth
+    hihat: Tone.NoiseSynth
+    hihatOpen: Tone.NoiseSynth
+    clap: Tone.NoiseSynth
+    ride: Tone.MetalSynth
     comp: Tone.Compressor
-    currentKit: '808' | '909' = '808'
-
-    private kits = {
-        '808': {
-            kick: "https://raw.githubusercontent.com/ryohey/signal/master/public/audio/808/kick.wav",
-            snare: "https://raw.githubusercontent.com/ryohey/signal/master/public/audio/808/snare.wav",
-            hihat: "https://raw.githubusercontent.com/ryohey/signal/master/public/audio/808/hihat.wav",
-            hihatOpen: "https://raw.githubusercontent.com/ryohey/signal/master/public/audio/808/openhat.wav",
-            clap: "https://raw.githubusercontent.com/ryohey/signal/master/public/audio/808/clap.wav"
-        },
-        '909': {
-            kick: "https://raw.githubusercontent.com/ryohey/signal/master/public/audio/909/kick.wav",
-            snare: "https://raw.githubusercontent.com/ryohey/signal/master/public/audio/909/snare.wav",
-            hihat: "https://raw.githubusercontent.com/ryohey/signal/master/public/audio/909/hihat.wav",
-            hihatOpen: "https://raw.githubusercontent.com/ryohey/signal/master/public/audio/909/openhat.wav",
-            clap: "https://raw.githubusercontent.com/ryohey/signal/master/public/audio/909/clap.wav"
-        }
-    }
+    output: Tone.Volume
 
     constructor() {
-        this.comp = new Tone.Compressor(-24, 4).toDestination()
+        this.output = new Tone.Volume(0).toDestination()
+        this.comp = new Tone.Compressor(-24, 4).connect(this.output)
 
-        this.kick = new Tone.Player(this.kits['808'].kick).connect(this.comp)
-        this.snare = new Tone.Player(this.kits['808'].snare).connect(this.comp)
-        this.hihat = new Tone.Player(this.kits['808'].hihat).connect(this.comp)
-        this.hihatOpen = new Tone.Player(this.kits['808'].hihatOpen).connect(this.comp)
-        this.clap = new Tone.Player(this.kits['808'].clap).connect(this.comp)
+        this.kick = new Tone.MembraneSynth({
+            pitchDecay: 0.05,
+            octaves: 10,
+            oscillator: { type: 'sine' },
+            envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4 }
+        }).connect(this.comp)
+
+        this.snare = new Tone.NoiseSynth({
+            noise: { type: 'white' },
+            envelope: { attack: 0.005, decay: 0.2, sustain: 0.02 }
+        }).connect(this.comp)
+
+        this.hihat = new Tone.NoiseSynth({
+            noise: { type: 'white' },
+            envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 },
+            volume: -10
+        }).connect(this.comp)
+
+        this.hihatOpen = new Tone.NoiseSynth({
+            noise: { type: 'white' },
+            envelope: { attack: 0.001, decay: 0.3, sustain: 0.1, release: 0.3 },
+            volume: -10
+        }).connect(this.comp)
+
+        this.clap = new Tone.NoiseSynth({
+            noise: { type: 'pink' },
+            envelope: { attack: 0.005, decay: 0.3, sustain: 0 }
+        }).connect(this.comp)
+
+        this.ride = new Tone.MetalSynth({
+            frequency: 300,
+            envelope: { attack: 0.001, decay: 1.0, release: 0.2 },
+            harmonicity: 5.1,
+            modulationIndex: 32,
+            resonance: 4000,
+            octaves: 1.5,
+            volume: -12
+        }).connect(this.comp)
+    }
+
+    setVolume(db: number) {
+        this.output.volume.value = db
     }
 
     setKit(kit: '808' | '909') {
-        this.currentKit = kit
-        this.kick.load(this.kits[kit].kick)
-        this.snare.load(this.kits[kit].snare)
-        this.hihat.load(this.kits[kit].hihat)
-        this.hihatOpen.load(this.kits[kit].hihatOpen)
-        this.clap.load(this.kits[kit].clap)
+        if (kit === '808') {
+            this.kick.set({
+                pitchDecay: 0.05,
+                octaves: 10,
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4 }
+            })
+            this.snare.set({
+                noise: { type: 'white' },
+                envelope: { attack: 0.005, decay: 0.2, sustain: 0.02 }
+            })
+            this.hihat.set({ noise: { type: 'white' }, envelope: { decay: 0.05 } })
+            this.hihatOpen.set({ noise: { type: 'white' }, envelope: { decay: 0.3 } })
+            this.ride.set({ envelope: { decay: 1.0 }, harmonicity: 5.1 })
+        } else {
+            // 909 Settings
+            this.kick.set({
+                pitchDecay: 0.02,
+                octaves: 4,
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 1 }
+            })
+            this.snare.set({
+                noise: { type: 'pink' }, // Pink noise for 909 snare body
+                envelope: { attack: 0.001, decay: 0.15, sustain: 0 }
+            })
+            // 909 Hats are metallic/cymbal-like, but we use NoiseSynth. Use Pink for darker/thicker or modify envelope
+            this.hihat.set({ noise: { type: 'pink' }, envelope: { decay: 0.03 } })
+            this.hihatOpen.set({ noise: { type: 'pink' }, envelope: { decay: 0.2 } })
+            this.ride.set({ envelope: { decay: 2.0 }, harmonicity: 5.1 })
+        }
     }
 
-    setDrumParams(drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap', pitch: number, decay: number) {
-        const player = this[drum]
-        // Pitch: 0.5 -> 1.0 (normal), 0 -> 0.5, 1 -> 2.0
-        player.playbackRate = pitch * 2
-        // Decay (using gain envelope simulation or just shortening the sample)
-        // Simplified: we'll just use playbackRate for duration for now, 
-        // or we could add a GrainPlayer/Envelope if needed.
-        // For standard drum hits, pitch handles most of the feel.
+    setDrumParams(drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride', pitch: number, decay: number) {
+        // Simplified mapping for synth params
+        if (drum === 'kick') {
+            this.kick.envelope.decay = decay
+            // pitch mapping if needed
+        }
+        if (drum === 'hihat' || drum === 'hihatOpen') {
+            this[drum].envelope.decay = decay * 0.5
+        }
+        if (drum === 'ride') {
+            this.ride.envelope.decay = decay * 2
+        }
     }
 
-    triggerDrum(drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap', time: number, velocity: number = 0.8) {
-        this[drum].start(time)
+    setDrumVolume(drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride', volume: number) {
+        if (this[drum]) {
+            this[drum].volume.value = volume
+        }
+    }
+
+    triggerDrum(drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride', time: number, velocity: number = 0.8) {
+        if (drum === 'kick') this.kick.triggerAttackRelease('C1', '8n', time, velocity)
+        else if (drum === 'snare') this.snare.triggerAttackRelease('8n', time, velocity)
+        else if (drum === 'hihat') this.hihat.triggerAttackRelease('32n', time, velocity)
+        else if (drum === 'hihatOpen') this.hihatOpen.triggerAttackRelease('16n', time, velocity)
+        else if (drum === 'clap') this.clap.triggerAttackRelease('8n', time, velocity)
+        else if (drum === 'ride') this.ride.triggerAttackRelease('16n', time, velocity)
     }
 }

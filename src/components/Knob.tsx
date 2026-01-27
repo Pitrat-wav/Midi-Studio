@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 
 interface KnobProps {
-    label: string
+    label?: string
     value: number
     min?: number
     max?: number
@@ -9,40 +9,50 @@ interface KnobProps {
     defaultValue?: number
     onChange: (value: number) => void
     size?: number
+    showLabel?: boolean
+    color?: string
 }
 
-export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue, onChange, size = 64 }: KnobProps) {
+export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue, onChange, size = 64, showLabel = true, color }: KnobProps) {
+    const activeColor = color || 'var(--tg-theme-button-color)'
     const [isDragging, setIsDragging] = useState(false)
     const startY = useRef(0)
     const startValue = useRef(0)
 
     const handlePointerDown = (e: React.PointerEvent) => {
-        setIsDragging(true)
-        startY.current = e.clientY
-        startValue.current = value
-        e.currentTarget.setPointerCapture(e.pointerId)
+        try {
+            setIsDragging(true)
+            startY.current = e.clientY
+            startValue.current = value
+            e.currentTarget.setPointerCapture(e.pointerId)
 
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+            }
+        } catch (e) {
+            console.error('Knob pointer down failed', e)
         }
     }
 
     const handlePointerMove = (e: React.PointerEvent) => {
         if (!isDragging) return
+        try {
+            const deltaY = startY.current - e.clientY
+            const range = max - min
+            const sensitivity = 240 // More precise
+            const newValue = Math.min(max, Math.max(min, startValue.current + (deltaY / sensitivity) * range))
 
-        const deltaY = startY.current - e.clientY
-        const range = max - min
-        const sensitivity = 240 // More precise
-        const newValue = Math.min(max, Math.max(min, startValue.current + (deltaY / sensitivity) * range))
+            const steppedValue = Math.round(newValue / step) * step
+            const finalValue = Number(steppedValue.toFixed(2))
 
-        const steppedValue = Math.round(newValue / step) * step
-        const finalValue = Number(steppedValue.toFixed(2))
-
-        if (finalValue !== value) {
-            onChange(finalValue)
-            if (window.Telegram?.WebApp?.HapticFeedback) {
-                window.Telegram.WebApp.HapticFeedback.selectionChanged()
+            if (finalValue !== value) {
+                onChange(finalValue)
+                if (window.Telegram?.WebApp?.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.selectionChanged()
+                }
             }
+        } catch (e) {
+            console.error('Knob pointer move failed', e)
         }
     }
 
@@ -52,10 +62,14 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
     }
 
     const handleDoubleClick = () => {
-        const resetValue = defaultValue !== undefined ? defaultValue : (max + min) / 2
-        onChange(resetValue)
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success')
+        try {
+            const resetValue = defaultValue !== undefined ? defaultValue : (max + min) / 2
+            onChange(resetValue)
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success')
+            }
+        } catch (e) {
+            console.error('Knob double click failed', e)
         }
     }
 
@@ -120,7 +134,7 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
                         cy="32"
                         r={radius}
                         fill="none"
-                        stroke="var(--tg-theme-button-color)"
+                        stroke={activeColor}
                         strokeWidth="4"
                         strokeDasharray={`${circumference * 0.75} ${circumference}`}
                         strokeDashoffset={offset}
@@ -129,7 +143,7 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
                             transform: 'rotate(135deg)',
                             transformOrigin: '32px 32px',
                             transition: isDragging ? 'none' : 'stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            filter: 'drop-shadow(0 0 4px var(--tg-theme-button-color))'
+                            filter: `drop-shadow(0 0 4px ${activeColor})`
                         }}
                     />
                 </svg>
@@ -151,7 +165,7 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
                         position: 'absolute',
                         width: '3px',
                         height: '8px',
-                        background: 'var(--tg-theme-button-color)',
+                        background: activeColor,
                         top: '4px',
                         borderRadius: '2px',
                         transform: `rotate(${angle}deg)`,
@@ -162,12 +176,12 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
             </div>
 
             <div style={{ textAlign: 'center' }}>
-                <div className="knob-label">{label}</div>
+                {showLabel && <div className="knob-label">{label}</div>}
                 <div style={{
                     fontSize: '13px',
                     fontWeight: '600',
                     fontFamily: 'monospace',
-                    color: isDragging ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-text-color)',
+                    color: isDragging ? activeColor : 'var(--tg-theme-text-color)',
                     transition: 'color 0.2s ease'
                 }}>
                     {step >= 1 ? Math.round(value) : value.toFixed(2)}

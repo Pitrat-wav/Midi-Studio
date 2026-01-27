@@ -20,7 +20,9 @@ export function generateBassPattern(
     root: string = 'C',
     scale: ScaleType = 'minor',
     octave: number = 2,
-    seed?: number
+    seedA: number = 0,
+    seedB: number = 1,
+    morph: number = 0
 ): BassStep[] {
     const steps: BassStep[] = []
 
@@ -29,43 +31,47 @@ export function generateBassPattern(
     const fullScale = Scale.get(`${root} ${scale}`).notes
 
     if (type < 0.3) {
-        // Strict Tonal: Root, 3rd, 5th
         scaleNotes = fullScale.filter((_, i) => [0, 2, 4].includes(i))
     } else if (type < 0.7) {
-        // Diatonic: Full Scale
         scaleNotes = fullScale
     } else {
-        // Acid/Atonal: Chromatic jumps (including notes outside scale)
         scaleNotes = Scale.get(`${root} chromatic`).notes
     }
 
-    if (scaleNotes.length === 0) scaleNotes = [root]
+    if (scaleNotes.length === 0) scaleNotes = [root || 'C']
 
-    // 2. Generate 16 steps with stable seed/weights
-    // Simple LCG-like pseudo-random based on seed
-    const getWeight = (i: number, seed: number) => {
-        const x = Math.sin(seed + i * 13.37) * 10000
+    // Pseudo-random weight based on seed
+    const getWeight = (i: number, s: number) => {
+        const x = Math.sin(s + i * 13.37) * 10000
         return x - Math.floor(x)
     }
 
     for (let i = 0; i < 16; i++) {
-        const weight = getWeight(i, seed || Math.random())
+        // Morph weights between seedA and seedB
+        const weightA = getWeight(i, seedA)
+        const weightB = getWeight(i, seedB)
+        const weight = weightA * (1 - morph) + weightB * morph
+
         const active = weight < density
 
         // Choose note
-        let noteName = root
-        if (active) {
-            // Note choice can also be somewhat stable if we use weight
-            const noteIdx = Math.floor(getWeight(i + 16, seed || Math.random()) * scaleNotes.length)
-            noteName = scaleNotes[noteIdx]
+        let noteName = root || 'C'
+        if (active && scaleNotes.length > 0) {
+            const nwA = getWeight(i + 16, seedA)
+            const nwB = getWeight(i + 16, seedB)
+            const noteWeight = nwA * (1 - morph) + nwB * morph
+            const noteIdx = Math.floor(noteWeight * scaleNotes.length)
+            noteName = scaleNotes[noteIdx] || root || 'C'
         }
 
-        // Slide probability (higher if type is high)
-        const slideWeight = getWeight(i + 32, seed || Math.random())
+        const swA = getWeight(i + 32, seedA)
+        const swB = getWeight(i + 32, seedB)
+        const slideWeight = swA * (1 - morph) + swB * morph
         const slide = active && slideWeight < (type * 0.5)
 
-        // Вероятность акцента (выше на слабых долях)
-        const accentWeight = getWeight(i + 48, seed || Math.random())
+        const awA = getWeight(i + 48, seedA)
+        const awB = getWeight(i + 48, seedB)
+        const accentWeight = awA * (1 - morph) + awB * morph
         const offBeatBias = (i % 2 === 1) ? 0.2 : 0
         const accent = active && accentWeight < (0.3 + offBeatBias)
 

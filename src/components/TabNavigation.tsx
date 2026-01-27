@@ -1,6 +1,6 @@
-import { Drum, Music, Grid, Share2, Layers, Disc } from 'lucide-react'
+import { Drum, Music, Grid, Share2, Layers, Disc, HelpCircle } from 'lucide-react'
 
-export type TabId = 'drums' | 'bass' | 'sequencer' | 'pads' | 'harmony' | 'export'
+export type TabId = 'drums' | 'bass' | 'sequencer' | 'pads' | 'harmony' | 'export' | 'help'
 
 interface TabNavigationProps {
     activeTab: TabId
@@ -14,7 +14,7 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
         { id: 'sequencer', label: 'Lead', icon: Grid },
         { id: 'pads', label: 'Pads', icon: Layers },
         { id: 'harmony', label: 'Harm', icon: Disc },
-        { id: 'export', label: 'Export', icon: Share2 }
+        { id: 'help', label: 'Help', icon: HelpCircle }
     ]
 
     return (
@@ -22,14 +22,16 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
             style={{
                 display: 'flex',
                 justifyContent: 'space-around',
-                background: 'var(--tg-theme-secondary-bg-color)',
-                padding: '8px 0',
-                paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
-                borderTop: '1px solid rgba(0,0,0,0.1)',
+                background: 'var(--glass-bg)',
+                backdropFilter: 'var(--glass-blur)',
+                WebkitBackdropFilter: 'var(--glass-blur)',
+                padding: 'var(--space-s) 0',
+                paddingBottom: 'calc(var(--space-s) + env(safe-area-inset-bottom))',
+                borderTop: '1px solid var(--glass-border)',
                 position: 'fixed',
                 bottom: 0,
                 width: '100%',
-                zIndex: 100
+                zIndex: 1000
             }}
         >
             {tabs.map(tab => (
@@ -40,17 +42,33 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         background: 'none',
                         color: activeTab === tab.id ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-hint-color)',
-                        padding: '4px 8px',
-                        gap: '4px',
+                        padding: 'var(--space-xs) var(--space-s)',
+                        gap: '2px',
                         fontSize: '10px',
-                        transition: 'color 0.2s ease',
-                        flex: 1
+                        fontWeight: activeTab === tab.id ? '700' : '500',
+                        transition: 'all 0.2s ease',
+                        flex: 1,
+                        minHeight: '48px',
+                        border: 'none',
+                        borderRadius: 0
                     }}
                 >
-                    <tab.icon size={24} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
-                    <span>{tab.label}</span>
+                    <div style={{
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transform: activeTab === tab.id ? 'scale(1.1)' : 'scale(1)'
+                    }}>
+                        <tab.icon size={22} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
+                    </div>
+                    <span style={{
+                        opacity: activeTab === tab.id ? 1 : 0.8,
+                        letterSpacing: '0.02em'
+                    }}>{tab.label}</span>
                 </button>
             ))}
         </nav>
