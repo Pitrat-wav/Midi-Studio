@@ -8,14 +8,15 @@ export const PRESETS = [
     { name: 'CYBER SPACE', color: '#000205', stars: 2000, haze: 0.01, light1: '#00ffaa', light2: '#ff00ff' },
     { name: 'EVENT HORIZON', color: '#000000', stars: 500, haze: 0.002, light1: '#333333', light2: '#000000' },
     { name: 'GOLDEN CLUSTER', color: '#050300', stars: 5000, haze: 0.01, light1: '#ffcc00', light2: '#ff8800' },
-    { name: 'WHISK: COSMIC', color: '#050010', stars: 4000, haze: 0.02, light1: '#ff00ff', light2: '#00ffff', texture: '/assets/visuals/whisk_preset_1.png' },
-    { name: 'WHISK: CYBER', color: '#001005', stars: 3000, haze: 0.015, light1: '#00ff88', light2: '#ffcc00', texture: '/assets/visuals/whisk_preset_2.png' },
-    { name: 'WHISK: PIXEL', color: '#332255', stars: 1000, haze: 0.005, light1: '#ff00ff', light2: '#ffff00', texture: '/assets/visuals/whisk_preset_3.png' }
+    { name: 'WHISK: COSMIC', color: '#1a0030', stars: 4000, haze: 0.02, light1: '#ff00ff', light2: '#00ffff', texture: '/assets/visuals/whisk_preset_1.png' },
+    { name: 'WHISK: CYBER', color: '#001a1a', stars: 3000, haze: 0.015, light1: '#00ff88', light2: '#ffcc00', texture: '/assets/visuals/whisk_preset_2.png' },
+    { name: 'WHISK: PIXEL', color: '#332255', stars: 1000, haze: 0.005, light1: '#ff00ff', light2: '#ffff00', texture: '/assets/visuals/whisk_preset_3.png' },
+    { name: 'SOUTH PARK ROCK', color: '#1a1a2e', stars: 2500, haze: 0.01, light1: '#ff4444', light2: '#4444ff', texture: '/assets/visuals/south_park_rock.png' }
 ]
 
 export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'
 export type PerformanceMode = 'low' | 'medium' | 'high' | 'ultra'
-export type AestheticTheme = 'none' | 'cosmic' | 'cyber' | 'pixel'
+export type AestheticTheme = 'none' | 'cosmic' | 'cyber' | 'pixel' | 'southpark'
 
 export interface EnvironmentConditions {
     temperature: number // Celsius

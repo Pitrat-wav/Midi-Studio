@@ -150,104 +150,177 @@ function WhiskUI() {
     const whisk1Index = PRESETS?.findIndex(p => p.name === 'WHISK: COSMIC') ?? -1
     const whisk2Index = PRESETS?.findIndex(p => p.name === 'WHISK: CYBER') ?? -1
     const whisk3Index = PRESETS?.findIndex(p => p.name === 'WHISK: PIXEL') ?? -1
+    const southParkIndex = PRESETS?.findIndex(p => p.name === 'SOUTH PARK ROCK') ?? -1
+
+    const isDefaultActive = backgroundPreset < 8
+    const isCosmicActive = backgroundPreset === whisk1Index
+    const isCyberActive = backgroundPreset === whisk2Index
+    const isPixelActive = backgroundPreset === whisk3Index
+    const isSouthParkActive = backgroundPreset === southParkIndex
 
     return (
         <div style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px',
-            background: 'rgba(51, 144, 236, 0.1)',
-            padding: '12px',
-            borderRadius: '15px',
-            border: '1px solid rgba(51, 144, 236, 0.3)',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+            gap: '10px',
+            background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.9), rgba(20, 40, 60, 0.9))',
+            padding: '15px',
+            borderRadius: '20px',
+            border: '2px solid rgba(51, 200, 236, 0.4)',
+            backdropFilter: 'blur(15px)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.8), inset 0 0 30px rgba(51, 200, 236, 0.1)',
+            transition: 'all 0.3s ease',
+            cursor: 'grab',
+            minWidth: '280px'
         }}>
             <div style={{
-                fontSize: '10px',
+                fontSize: '11px',
                 color: '#00ffff',
                 fontFamily: 'monospace',
-                letterSpacing: '1px',
-                marginBottom: '4px',
+                letterSpacing: '2px',
+                marginBottom: '6px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px'
+                gap: '8px',
+                fontWeight: 'bold',
+                textShadow: '0 0 10px rgba(0, 255, 255, 0.5)'
             }}>
-                <span style={{ animation: 'pulse 1.5s infinite' }}>🧪</span> GOOGLE WHISK LABS
+                <span style={{ animation: 'pulse 1.5s infinite', fontSize: '14px' }}>🎨</span>
+                VISUAL THEMES
             </div>
 
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '8px'
+            }}>
                 <button
                     onClick={() => {
                         setAestheticTheme('none')
                         setBackgroundPreset(0)
                     }}
                     style={{
-                        background: backgroundPreset < 6 ? '#ffcc33' : 'rgba(0,0,0,0.6)',
-                        color: backgroundPreset < 6 ? '#000000' : '#ffcc33',
-                        border: '1px solid #ffcc33',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
+                        background: isDefaultActive ? 'linear-gradient(135deg, #ffcc33, #ff9933)' : 'rgba(0,0,0,0.5)',
+                        color: isDefaultActive ? '#000000' : '#ffcc33',
+                        border: `2px solid ${isDefaultActive ? '#ffcc33' : 'rgba(255, 204, 51, 0.3)'}`,
+                        padding: '10px 14px',
+                        borderRadius: '12px',
                         cursor: 'pointer',
-                        fontSize: '11px',
+                        fontSize: '12px',
                         fontFamily: 'monospace',
                         transition: 'all 0.2s ease',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        boxShadow: isDefaultActive ? '0 0 20px rgba(255, 204, 51, 0.5)' : 'none',
+                        transform: isDefaultActive ? 'scale(1.05)' : 'scale(1)'
                     }}
                 >
                     DEFAULT
                 </button>
                 <button
-                    onClick={() => whisk1Index >= 0 && setBackgroundPreset(whisk1Index)}
+                    onClick={() => {
+                        setAestheticTheme('cosmic')
+                        if (whisk1Index >= 0) setBackgroundPreset(whisk1Index)
+                    }}
                     style={{
-                        background: backgroundPreset === whisk1Index ? '#00ffff' : 'rgba(0,0,0,0.6)',
-                        color: backgroundPreset === whisk1Index ? '#000000' : '#00ffff',
-                        border: '1px solid #00ffff',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
+                        background: isCosmicActive ? 'linear-gradient(135deg, #ff00ff, #00ffff)' : 'rgba(0,0,0,0.5)',
+                        color: isCosmicActive ? '#000000' : '#ff00ff',
+                        border: `2px solid ${isCosmicActive ? '#ff00ff' : 'rgba(255, 0, 255, 0.3)'}`,
+                        padding: '10px 14px',
+                        borderRadius: '12px',
                         cursor: 'pointer',
-                        fontSize: '11px',
+                        fontSize: '12px',
                         fontFamily: 'monospace',
                         transition: 'all 0.2s ease',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        boxShadow: isCosmicActive ? '0 0 20px rgba(255, 0, 255, 0.5)' : 'none',
+                        transform: isCosmicActive ? 'scale(1.05)' : 'scale(1)'
                     }}
                 >
                     COSMIC
                 </button>
                 <button
-                    onClick={() => whisk2Index >= 0 && setBackgroundPreset(whisk2Index)}
+                    onClick={() => {
+                        setAestheticTheme('cyber')
+                        if (whisk2Index >= 0) setBackgroundPreset(whisk2Index)
+                    }}
                     style={{
-                        background: backgroundPreset === whisk2Index ? '#00ffff' : 'rgba(0,0,0,0.6)',
-                        color: backgroundPreset === whisk2Index ? '#000000' : '#00ffff',
-                        border: '1px solid #00ffff',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
+                        background: isCyberActive ? 'linear-gradient(135deg, #00ffaa, #ffcc00)' : 'rgba(0,0,0,0.5)',
+                        color: isCyberActive ? '#000000' : '#00ffaa',
+                        border: `2px solid ${isCyberActive ? '#00ffaa' : 'rgba(0, 255, 170, 0.3)'}`,
+                        padding: '10px 14px',
+                        borderRadius: '12px',
                         cursor: 'pointer',
-                        fontSize: '11px',
+                        fontSize: '12px',
                         fontFamily: 'monospace',
                         transition: 'all 0.2s ease',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        boxShadow: isCyberActive ? '0 0 20px rgba(0, 255, 170, 0.5)' : 'none',
+                        transform: isCyberActive ? 'scale(1.05)' : 'scale(1)'
                     }}
                 >
                     CYBER
                 </button>
                 <button
-                    onClick={() => whisk3Index >= 0 && setBackgroundPreset(whisk3Index)}
+                    onClick={() => {
+                        setAestheticTheme('pixel')
+                        if (whisk3Index >= 0) setBackgroundPreset(whisk3Index)
+                    }}
                     style={{
-                        background: backgroundPreset === whisk3Index ? '#ffff00' : 'rgba(0,0,0,0.6)',
-                        color: backgroundPreset === whisk3Index ? '#000000' : '#ffff00',
-                        border: '1px solid #ffff00',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
+                        background: isPixelActive ? 'linear-gradient(135deg, #ff00ff, #ffff00)' : 'rgba(0,0,0,0.5)',
+                        color: isPixelActive ? '#000000' : '#ff00ff',
+                        border: `2px solid ${isPixelActive ? '#ff00ff' : 'rgba(255, 0, 255, 0.3)'}`,
+                        padding: '10px 14px',
+                        borderRadius: '12px',
                         cursor: 'pointer',
-                        fontSize: '11px',
+                        fontSize: '12px',
                         fontFamily: 'monospace',
                         transition: 'all 0.2s ease',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        boxShadow: isPixelActive ? '0 0 20px rgba(255, 0, 255, 0.5)' : 'none',
+                        transform: isPixelActive ? 'scale(1.05)' : 'scale(1)'
                     }}
                 >
                     PIXEL
                 </button>
+            </div>
+
+            {/* South Park Rock - Full Width Special Button */}
+            <button
+                onClick={() => {
+                    setAestheticTheme('southpark')
+                    if (southParkIndex >= 0) setBackgroundPreset(southParkIndex)
+                }}
+                style={{
+                    background: isSouthParkActive
+                        ? 'linear-gradient(135deg, #ff4444 0%, #4444ff 50%, #ff4444 100%)'
+                        : 'rgba(0,0,0,0.5)',
+                    color: isSouthParkActive ? '#ffffff' : '#ff4444',
+                    border: `2px solid ${isSouthParkActive ? '#ff4444' : 'rgba(255, 68, 68, 0.3)'}`,
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontFamily: 'monospace',
+                    transition: 'all 0.2s ease',
+                    fontWeight: 'bold',
+                    boxShadow: isSouthParkActive ? '0 0 25px rgba(255, 68, 68, 0.6)' : 'none',
+                    transform: isSouthParkActive ? 'scale(1.05)' : 'scale(1)',
+                    textShadow: isSouthParkActive ? '0 0 10px rgba(255, 255, 255, 0.8)' : 'none',
+                    letterSpacing: '1px'
+                }}
+            >
+                🎸 SOUTH PARK ROCK 🎸
+            </button>
+
+            <div style={{
+                fontSize: '9px',
+                color: '#888',
+                fontFamily: 'monospace',
+                textAlign: 'center',
+                marginTop: '4px',
+                fontStyle: 'italic'
+            }}>
+                Click theme to apply • Drag panel to move
             </div>
 
             <style>{`
