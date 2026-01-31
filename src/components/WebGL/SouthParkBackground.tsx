@@ -6,6 +6,7 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { useVisualStore } from '../../store/visualStore'
+import { SouthParkStage } from './SouthParkStage'
 
 // Simple pine tree component
 function PineTree({ position }: { position: [number, number, number] }) {
@@ -73,6 +74,9 @@ export function SouthParkBackground() {
                     toneMapped={false}
                 />
             </mesh>
+
+            {/* The Band - Character Cutouts */}
+            <SouthParkStage />
 
             {/* 3D Pine Trees scattered around */}
             <PineTree position={[-15, -8, -20]} />
