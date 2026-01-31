@@ -17,7 +17,10 @@ Work is broken into granular `task_boundary` steps. We maintain a `task.md` chec
 We don't just "hope" it works. We use browser subagents to record sessions, take truth-of-state screenshots, and verify UI behaviors. All evidence is documented in the `walkthrough.md`.
 
 ### 5. Delivery & Sync
-The final step is the "Safe Guard". We perform a final Git Push, verify the remote state, and ensure all documentation (like this file) is updated to reflect the new reality of the project.
+The final step is the "Safe Guard". We perform a final Git Push, verify the remote state, and ensure all documentation is updated.
+
+### 6. Documentation Maintenance (Always)
+Starting from 2026-01-31, we formalized a 6th step: every major core improvement (like the Sampler Granulator) is documented in the `/Documentation` directory with technical specs and audit dates.
 
 ---
 

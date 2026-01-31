@@ -10,10 +10,12 @@ Architecture maps, state management, and the Pyodide bridge.
 - [Architecture System](./1_Technical_Core/ARCH_SYSTEM.md)
 - [Knowledge Base](./1_Technical_Core/KNOWLEDGE_BASE.md)
 - [Store Reference](./1_Technical_Core/STORE_REFERENCE.md)
+- [Agent Info](./agent_info.md)
+- [Project Manifest](./project_manifest.md)
 
 ### 2. [Instruments & 3D](./2_Instruments_3D/HARDWARE_REPLICAS.md)
 The heart of the studio: Legendary hardware and WebGL rendering.
-- [Hardware Replicas (808/909)](./2_Instruments_3D/HARDWARE_REPLICAS.md)
+- [Hardware Replicas (808/909, Sampler Granulator)](./2_Instruments_3D/HARDWARE_REPLICAS.md)
 - [WebGL Engine Deep Dive](./2_Instruments_3D/GL_ENGINE_DEEP_DIVE.md)
 
 ### 3. [Workflow & I/O](./3_Workflow_IO/MIDI_PROTOCOL.md)

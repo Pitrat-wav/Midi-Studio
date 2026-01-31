@@ -22,38 +22,31 @@ export function WaveformScope3D() {
 
     const geometry = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points])
 
+    const material = useMemo(() => new THREE.LineBasicMaterial({ color: "#ff3b30", linewidth: 2, transparent: true, opacity: 0.7 }), [])
+    const line = useMemo(() => {
+        const l = new THREE.Line(geometry, material)
+        l.position.set(0, 2, -5)
+        return l
+    }, [geometry, material])
+
     useFrame(() => {
-        if (!lineRef.current) return
+        if (!line) return
 
         const uniforms = bridge.getUniforms()
-        // Ideally we need actual waveform data. 
-        // Since we are simulating visualizers based on uniforms for now to avoid callback overhead in this iteration:
-        // We will generate a "fake" waveform composed of sine waves modulated by low/mid/high uniforms.
-
-        const positions = lineRef.current.geometry.attributes.position.array as Float32Array
+        const positions = (line.geometry.attributes.position.array as Float32Array)
 
         for (let i = 0; i < 256; i++) {
             const x = (i / 256) * 10 - 5
-
-            // Synthesis of waveform visual
-            const baseFreq = Math.sin(x * 2 + uniforms.uTime * 5) * uniforms.uLowFreq // Bass wave
-            const midFreq = Math.sin(x * 10 - uniforms.uTime * 3) * uniforms.uMidFreq * 0.5 // Mid ripple
-            const highFreq = Math.sin(x * 30 + uniforms.uTime * 10) * uniforms.uHighFreq * 0.3 // High jitter
-
+            const baseFreq = Math.sin(x * 2 + uniforms.uTime * 5) * uniforms.uLowFreq
+            const midFreq = Math.sin(x * 10 - uniforms.uTime * 3) * uniforms.uMidFreq * 0.5
+            const highFreq = Math.sin(x * 30 + uniforms.uTime * 10) * uniforms.uHighFreq * 0.3
             const noise = (Math.random() - 0.5) * uniforms.uHighFreq * 0.2
-
             const y = (baseFreq + midFreq + highFreq + noise) * 3
-
-            // Update Y
             positions[i * 3 + 1] = y
         }
 
-        lineRef.current.geometry.attributes.position.needsUpdate = true
+        line.geometry.attributes.position.needsUpdate = true
     })
 
-    return (
-        <line ref={lineRef} geometry={geometry} position={[0, 2, -5]}>
-            <lineBasicMaterial color="#ff3b30" linewidth={2} transparent opacity={0.7} />
-        </line>
-    )
+    return <primitive object={line} />
 }

@@ -88,6 +88,41 @@ export function SamplerScreen() {
                                     />
                                 </div>
 
+                                <div className="panel-title">// GRANULAR_ENGINE</div>
+
+                                {/* Grain Size */}
+                                <div className="control-row">
+                                    <label>GRAIN_SIZE [{(useSamplerStore.getState().grainSize * 1000).toFixed(0)} ms]</label>
+                                    <input
+                                        type="range"
+                                        min="0.01" max="0.5" step="0.01"
+                                        value={useSamplerStore(s => s.grainSize)}
+                                        onChange={(e) => setParam({ grainSize: parseFloat(e.target.value) })}
+                                    />
+                                </div>
+
+                                {/* Overlap */}
+                                <div className="control-row">
+                                    <label>OVERLAP [{(useSamplerStore.getState().overlap * 100).toFixed(0)}%]</label>
+                                    <input
+                                        type="range"
+                                        min="0.01" max="1.0" step="0.01"
+                                        value={useSamplerStore(s => s.overlap)}
+                                        onChange={(e) => setParam({ overlap: parseFloat(e.target.value) })}
+                                    />
+                                </div>
+
+                                {/* Detune */}
+                                <div className="control-row">
+                                    <label>DETUNE [{(useSamplerStore.getState().detune).toFixed(0)} cents]</label>
+                                    <input
+                                        type="range"
+                                        min="-1200" max="1200" step="10"
+                                        value={useSamplerStore(s => s.detune)}
+                                        onChange={(e) => setParam({ detune: parseFloat(e.target.value) })}
+                                    />
+                                </div>
+
                                 <div className="visualizer-mock">
                                     {/* Mock Waveform */}
                                     {Array.from({ length: 32 }).map((_, i) => (

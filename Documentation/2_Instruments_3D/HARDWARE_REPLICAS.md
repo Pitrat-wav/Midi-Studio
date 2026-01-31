@@ -22,10 +22,17 @@ The 909 implementation features the industrial grey/orange color palette and dig
 - **Display**: 3-digit LED display (simulated) showing BPM and current pattern.
 - **Faders/Knobs**: High-fidelity 3D assets mapped to `bass_drum`, `snare`, `toms`, etc.
 
----
+## Sampler Instrument (Granular Engine)
+The Sampler (Instrument #9) was upgraded to a full Granular Synthesis engine on **2026-01-31**.
 
-## Interactive Info System (?)
-Pressing the `?` key while focused on these instruments triggers a 2D overlay containing:
-1.  **Historical Context**: Release dates and cultural impact.
-2.  **Control Map**: Precise mapping of mouse/keyboard actions to hardware knobs.
-3.  **Quick Tips**: Best practices for sequencing.
+### Components
+- **Granular Controls**: Grain Size (10ms-500ms), Overlap (Density), and Detune (Pitch Spray).
+- **CRT HUD**: Integrated into the "Chrono Splitter" interface for real-time manipulation.
+- **Engine**: Powered by `Tone.GrainPlayer` for advanced time-stretching and textural synthesis.
+
+### Implementation Logic
+- **Store Sync**: `useSamplerStore` manages the grain parameters.
+- **Engine**: The `SamplerInstrument` class handles the conversion of audio buffers into grain clouds.
+
+---
+*Last modified: 2026-01-31*

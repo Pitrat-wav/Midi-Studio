@@ -1,22 +1,27 @@
 import * as Tone from 'tone'
 
 export class SamplerInstrument {
-    player: Tone.Player
+    player: Tone.GrainPlayer
     volume: Tone.Volume
     loaded: boolean = false
     bufferDuration: number = 0
 
     constructor() {
-        this.player = new Tone.Player()
+        this.player = new Tone.GrainPlayer()
         this.volume = new Tone.Volume(0)
         this.player.connect(this.volume)
+
+        // Default granular settings
+        this.player.grainSize = 0.1
+        this.player.overlap = 0.1
     }
 
     async load(url: string) {
         this.loaded = false
-        await this.player.load(url)
+        const buffer = await new Tone.ToneAudioBuffer().load(url)
+        this.player.buffer = buffer
         this.loaded = true
-        this.bufferDuration = this.player.buffer.duration
+        this.bufferDuration = buffer.duration
         console.log(`[Sampler] Loaded ${url}, duration: ${this.bufferDuration}s`)
     }
 
@@ -24,14 +29,10 @@ export class SamplerInstrument {
         if (!this.loaded) return
 
         const sliceDuration = this.bufferDuration / totalSlices
-        const startTime = sliceIndex * sliceDuration
+        const offset = sliceIndex * sliceDuration
 
-        // Restart if retriggered
-        if (this.player.state === 'started') {
-            this.player.stop(time)
-        }
-
-        this.player.start(time, startTime, sliceDuration)
+        // GrainPlayer start(time, offset, duration)
+        this.player.start(time, offset, sliceDuration)
     }
 
     setVolume(db: number) {
@@ -40,6 +41,12 @@ export class SamplerInstrument {
 
     setPlaybackRate(rate: number) {
         this.player.playbackRate = rate
+    }
+
+    setGranularParams(params: { grainSize?: number, overlap?: number, detune?: number }) {
+        if (params.grainSize !== undefined) this.player.grainSize = params.grainSize
+        if (params.overlap !== undefined) this.player.overlap = params.overlap
+        if (params.detune !== undefined) this.player.detune = params.detune
     }
 
     dispose() {

@@ -37,9 +37,16 @@ function Slice({ index, total, isActive, color, onClick }: { index: number, tota
         const pulse = isActive ? 0.2 : 0
         meshRef.current.scale.setScalar(1 + pulse)
         if (isActive) {
-            meshRef.current.material.emissiveIntensity = 2
+            if (meshRef.current && (meshRef.current.material as any).emissiveIntensity !== undefined) {
+                (meshRef.current.material as any).emissiveIntensity = 2
+                setTimeout(() => {
+                    if (meshRef.current) (meshRef.current.material as any).emissiveIntensity = hovered ? 0.5 : 0.1
+                }, 100)
+            }
         } else {
-            meshRef.current.material.emissiveIntensity = hovered ? 0.5 : 0.1
+            if (meshRef.current && (meshRef.current.material as any).emissiveIntensity !== undefined) {
+                (meshRef.current.material as any).emissiveIntensity = hovered ? 0.5 : 0.1
+            }
         }
     })
 

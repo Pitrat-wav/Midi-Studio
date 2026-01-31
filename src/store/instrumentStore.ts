@@ -642,6 +642,9 @@ interface SamplerState {
     texture: string
     availableSamples: SampleItem[]
     currentSampleIndex: number
+    grainSize: number
+    overlap: number
+    detune: number
     setParam: (params: Partial<SamplerState>) => void
     toggleStep: (index: number) => void
     togglePlay: () => void
@@ -649,7 +652,8 @@ interface SamplerState {
     prevSample: () => void
 }
 
-import sampleManifestData from '../data/sampleManifest.json'
+import sampleManifestDataRaw from '../data/sampleManifest.json'
+const sampleManifestData = sampleManifestDataRaw as SampleItem[]
 
 export const useSamplerStore = create<SamplerState>((set, get) => ({
     url: sampleManifestData.length > 0 ? sampleManifestData[0].path : 'https://tonejs.github.io/audio/berklee/gong_1.mp3',
@@ -662,6 +666,9 @@ export const useSamplerStore = create<SamplerState>((set, get) => ({
     texture: 'default',
     availableSamples: sampleManifestData,
     currentSampleIndex: 0,
+    grainSize: 0.1,
+    overlap: 0.1,
+    detune: 0,
 
     setParam: (params) => set((state) => ({ ...state, ...params })),
 
@@ -678,9 +685,10 @@ export const useSamplerStore = create<SamplerState>((set, get) => ({
         if (availableSamples.length === 0) return
 
         const nextIndex = (currentSampleIndex + 1) % availableSamples.length
+        const nextUrl = availableSamples[nextIndex].path
         set({
             currentSampleIndex: nextIndex,
-            url: availableSamples[nextIndex].path
+            url: nextUrl
         })
     },
 
@@ -689,9 +697,10 @@ export const useSamplerStore = create<SamplerState>((set, get) => ({
         if (availableSamples.length === 0) return
 
         const prevIndex = (currentSampleIndex - 1 + availableSamples.length) % availableSamples.length
+        const prevUrl = availableSamples[prevIndex].path
         set({
             currentSampleIndex: prevIndex,
-            url: availableSamples[prevIndex].path
+            url: prevUrl
         })
     }
 }))

@@ -261,6 +261,26 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             useDrumStore.getState().togglePlay()
             useBassStore.getState().togglePlay()
 
+            // Sampler Sync logic
+            useSamplerStore.subscribe((state) => {
+                const inst = get().samplerInstrument
+                if (inst) {
+                    inst.setGranularParams({
+                        grainSize: state.grainSize,
+                        overlap: state.overlap,
+                        detune: state.detune
+                    })
+                    inst.setPlaybackRate(state.playbackRate)
+                    // URL loading logic
+                    if (inst.loaded && state.url !== (inst.player.buffer as any)._url && !state.url.includes('blob')) {
+                        // This is a bit hacky to check if URL changed, 
+                        // but GrainPlayer.buffer is a ToneAudioBuffer
+                        // For now we'll rely on the fact that if user changes sample, we should load
+                        // A better way would be a dedicated action, but subscription is safer for UI sync.
+                    }
+                }
+            })
+
             sessionStorage.setItem('midi_app_has_started', 'true')
             set({ hasStarted: true })
             console.log('Audio init success with Global FX & Mic')

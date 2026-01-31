@@ -209,7 +209,7 @@ function InteractiveRing({ instrument, radius, color, yPos }: { instrument: 'kic
 function ChannelStrip({ instrument, xPos, color, label }: { instrument: 'kick' | 'snare' | 'hihat', xPos: number, color: string, label: string }) {
     const state = useDrumStore(s => s[instrument])
     const setParams = useDrumStore(s => s.setParams)
-    const play = useDrumStore(s => s[`trigger${label}` as 'triggerKick' | 'triggerSnare' | 'triggerHihat'])
+    const play = useDrumStore(s => s[`trigger${label}` as 'triggerKick' | 'triggerSnare' | 'triggerHiHat'])
 
     return (
         <group position={[xPos, 0, 0]}>

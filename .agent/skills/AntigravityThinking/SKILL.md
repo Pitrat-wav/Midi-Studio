@@ -37,6 +37,12 @@ Ensure the final state matches the user's expectations and is securely stored.
 - **Git Sync**: Perform `git add`, `git commit`, and `git push` to synchronize remote state.
 - **Remote Verification**: Verify that the remote repository reflects the local changes.
 - **Documentation Polish**: Finalize the `CHANGELOG.md` and project metadata.
+
+## Step 6: Documentation Maintenance (Ongoing)
+Ensure that every major update is reflected in the technical documentation.
+- **Technical Sync**: Update files in `/Documentation` (e.g., `HARDWARE_REPLICAS.md`) whenever an engine or UI component is modified.
+- **Dating**: Always mark documentation updates with the current ISO date to maintain a clear trail of improvements.
+- **Index Update**: Keep `Documentation/README.md` updated with links to new functionality.
 - **Final Notification**: Concise summary of delivered features and location of artifacts.
 
 ---
