@@ -51,6 +51,25 @@ export function HarmonyView() {
             harmSynth.setChorus(harmStore.chorusFreq, harmStore.chorusDelay, harmStore.chorusDepth, harmStore.chorusWet)
             harmSynth.setDelay(harmStore.delayTime, harmStore.delayFeedback, harmStore.delayWet)
             harmSynth.setReverb(harmStore.reverbDecay, harmStore.reverbWet)
+
+            // Complex Params
+            harmSynth.setComplexParams({
+                complexMode: harmStore.complexMode,
+                fmIndex: harmStore.complexFmIndex,
+                amIndex: harmStore.complexAmIndex,
+                timbre: harmStore.complexTimbre,
+                order: harmStore.complexOrder,
+                harmonics: harmStore.complexHarmonics,
+                pitchMod: harmStore.complexPitchMod,
+                ampMod: harmStore.complexAmpMod,
+                timbreMod: harmStore.complexTimbreMod,
+                modOscRange: harmStore.complexModOscRange,
+                modPitch: harmStore.complexModPitch,
+                principalPitch: harmStore.complexPrincipalPitch,
+                vcaBypass: harmStore.complexVcaBypass,
+                phaseLock: harmStore.complexPhaseLock,
+                modOscShape: harmStore.complexModOscShape
+            })
         } catch (e) {
             console.error('Failed to sync Harmony parameters', e)
         }
@@ -259,6 +278,159 @@ export function HarmonyView() {
                         </div>
                     </div>
                 )}
+
+                {/* Buchla 259 Complex Engine Panel */}
+                {activeTab === 'synth' && (
+                    <div style={{
+                        marginTop: '20px', padding: '16px',
+                        background: 'linear-gradient(180deg, rgba(30, 30, 40, 0.9), rgba(20, 20, 30, 0.95))',
+                        borderRadius: '20px', border: harmStore.complexMode ? '2px solid #3390ec' : '1px solid var(--glass-border)',
+                        color: 'white', position: 'relative', overflow: 'hidden'
+                    }}>
+                        {/* 259 Inspired Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <button
+                                    onClick={() => harmStore.setParam({ complexMode: !harmStore.complexMode })}
+                                    style={{
+                                        width: '32px', height: '32px', borderRadius: '8px',
+                                        background: harmStore.complexMode ? '#3390ec' : 'rgba(255,255,255,0.1)',
+                                        border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s'
+                                    }}
+                                >
+                                    <Power size={18} color="white" />
+                                </button>
+                                <div>
+                                    <h4 style={{ margin: 0, fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', color: '#3390ec' }}>Programmable Waveform Generator 259</h4>
+                                    <p style={{ margin: 0, fontSize: '9px', opacity: 0.6 }}>Complex Engine — Dual Osc Modulation & Folding</p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                    <span style={{ fontSize: '8px', opacity: 0.5 }}>DRONE</span>
+                                    <button
+                                        onClick={() => harmStore.setParam({ complexVcaBypass: !harmStore.complexVcaBypass })}
+                                        style={{
+                                            padding: '4px 8px', borderRadius: '4px', border: 'none', fontSize: '8px',
+                                            background: harmStore.complexVcaBypass ? '#ff4d4d' : 'rgba(255,255,255,0.1)',
+                                            color: 'white', fontWeight: 'bold'
+                                        }}
+                                    >
+                                        VCA BYPASS
+                                    </button>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                    <span style={{ fontSize: '8px', opacity: 0.5 }}>SYNC</span>
+                                    <button
+                                        onClick={() => harmStore.setParam({ complexPhaseLock: !harmStore.complexPhaseLock })}
+                                        style={{
+                                            padding: '4px 8px', borderRadius: '4px', border: 'none', fontSize: '8px',
+                                            background: harmStore.complexPhaseLock ? '#3390ec' : 'rgba(255,255,255,0.1)',
+                                            color: 'white', fontWeight: 'bold'
+                                        }}
+                                    >
+                                        PHASE LOCK
+                                    </button>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                    <span style={{ fontSize: '8px', opacity: 0.5 }}>RANGE</span>
+                                    <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', padding: '2px' }}>
+                                        {(['low', 'high'] as const).map(r => (
+                                            <button
+                                                key={r}
+                                                onClick={() => harmStore.setParam({ complexModOscRange: r })}
+                                                style={{
+                                                    fontSize: '8px', padding: '4px 8px', borderRadius: '4px', border: 'none',
+                                                    background: harmStore.complexModOscRange === r ? '#3390ec' : 'transparent',
+                                                    color: 'white', textTransform: 'uppercase'
+                                                }}
+                                            >
+                                                {r}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) 1.5fr minmax(100px, 1fr)', gap: '16px' }}>
+                            {/* MODULATION OSC FREQUENCY (Left) */}
+                            <div style={{ paddingRight: '12px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                                <div style={{ fontSize: '8px', fontWeight: 'bold', opacity: 0.5, letterSpacing: '1px' }}>MOD FREQ</div>
+                                <Knob label="Hz / OCT" value={harmStore.complexModPitch} min={-24} max={24} step={1} onChange={(v) => harmStore.setParam({ complexModPitch: v })} size={64} color="#3390ec" />
+
+                                <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                                    {([['triangle', 'TRI'], ['square', 'SQ'], ['sawtooth', 'SAW']] as const).map(([type, label]) => (
+                                        <button
+                                            key={type}
+                                            onClick={() => harmStore.setParam({ complexModOscShape: type as any })}
+                                            style={{
+                                                fontSize: '7px', padding: '4px', borderRadius: '2px', border: 'none',
+                                                background: harmStore.complexModOscShape === type ? '#3390ec' : 'rgba(255,255,255,0.05)',
+                                                color: 'white'
+                                            }}
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
+                                    {[
+                                        { id: 'complexPitchMod', label: 'PITCH' },
+                                        { id: 'complexAmpMod', label: 'AMPLITUDE' },
+                                        { id: 'complexTimbreMod', label: 'TIMBRE' }
+                                    ].map(sw => (
+                                        <button
+                                            key={sw.id}
+                                            onClick={() => harmStore.setParam({ [sw.id]: !(harmStore as any)[sw.id] } as any)}
+                                            style={{
+                                                fontSize: '7px', padding: '5px', borderRadius: '4px', border: 'none',
+                                                background: (harmStore as any)[sw.id] ? '#3390ec' : 'rgba(255,255,255,0.05)',
+                                                color: 'white', fontWeight: 'bold'
+                                            }}
+                                        >
+                                            {sw.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* CENTER SECTION: FOLDING & SHAPING */}
+                            <div style={{
+                                display: 'flex', flexDirection: 'column', gap: '12px', padding: '0 12px',
+                                borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)'
+                            }}>
+                                <div style={{ fontSize: '9px', fontWeight: 'bold', opacity: 0.7, textAlign: 'center' }}>SHAPING & INDEX</div>
+                                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                                    <Knob label="MOD INDEX" value={harmStore.complexFmIndex} min={0} max={1} step={0.01} onChange={(v) => harmStore.setParam({ complexFmIndex: v })} size={54} color="#3390ec" />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <Knob label="TIMBRE" value={harmStore.complexTimbre} min={0} max={1} step={0.01} onChange={(v) => harmStore.setParam({ complexTimbre: v })} size={80} color="#3390ec" />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '4px' }}>
+                                    <Knob label="ORDER" value={harmStore.complexOrder} min={0} max={1} step={0.01} onChange={(v) => harmStore.setParam({ complexOrder: v })} size={40} color="#3390ec" />
+                                    <Knob label="HARMONICS" value={harmStore.complexHarmonics} min={0} max={1} step={0.01} onChange={(v) => harmStore.setParam({ complexHarmonics: v })} size={40} color="#3390ec" />
+                                </div>
+                            </div>
+
+                            {/* PRINCIPAL OSC PITCH (Right) */}
+                            <div style={{ paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                                <div style={{ fontSize: '8px', fontWeight: 'bold', opacity: 0.5, letterSpacing: '1px' }}>PRINCIPAL PITCH</div>
+                                <Knob label="Hz / OCT" value={harmStore.complexPrincipalPitch} min={-24} max={24} step={1} onChange={(v) => harmStore.setParam({ complexPrincipalPitch: v })} size={64} color="#3390ec" />
+                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div style={{
+                                        padding: '12px', borderRadius: '12px', background: 'rgba(51, 144, 236, 0.1)',
+                                        border: '1px solid rgba(51, 144, 236, 0.2)', fontSize: '8px', textAlign: 'center', color: '#3390ec'
+                                    }}>
+                                        FINAL<br />OUTPUT
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Filters/Rack Tabs */}
                 {activeTab === 'synth' && (
                     <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

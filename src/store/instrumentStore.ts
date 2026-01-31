@@ -376,6 +376,22 @@ export interface HarmPreset {
     delayWet: number
     reverbDecay: number
     reverbWet: number
+    // Complex Mode (Buchla)
+    complexMode: boolean
+    complexFmIndex: number
+    complexAmIndex: number
+    complexTimbre: number
+    complexOrder: number
+    complexHarmonics: number
+    complexPitchMod: boolean
+    complexAmpMod: boolean
+    complexTimbreMod: boolean
+    complexModOscRange: 'low' | 'high'
+    complexModPitch: number
+    complexPrincipalPitch: number
+    complexVcaBypass: boolean
+    complexPhaseLock: boolean
+    complexModOscShape: HarmOscType
 }
 
 interface HarmState extends HarmPreset {
@@ -410,10 +426,28 @@ const BASE_PRESET: HarmPreset = {
     phaserFreq: 0.5, phaserDepth: 0.8, phaserStages: 5, phaserWet: 0,
     chorusFreq: 1.5, chorusDelay: 3.5, chorusDepth: 0.7, chorusWet: 0,
     delayTime: '8n', delayFeedback: 0.5, delayWet: 0,
-    reverbDecay: 2, reverbWet: 0
+    reverbDecay: 2, reverbWet: 0,
+    complexMode: false, complexFmIndex: 0, complexAmIndex: 0, complexTimbre: 0.5,
+    complexOrder: 0.5, complexHarmonics: 0.5,
+    complexPitchMod: true, complexAmpMod: false, complexTimbreMod: true,
+    complexModOscRange: 'high',
+    complexModPitch: 0, complexPrincipalPitch: 0,
+    complexVcaBypass: false, complexPhaseLock: false, complexModOscShape: 'triangle'
 }
 
 export const HARM_PRESETS: HarmPreset[] = [
+    {
+        ...BASE_PRESET,
+        name: 'Buchla 259 West Coast', category: 'West Coast',
+        complexMode: true, complexFmIndex: 0.4, complexAmIndex: 0.2, complexTimbre: 0.6,
+        complexOrder: 0.6, complexHarmonics: 0.4,
+        complexPitchMod: true, complexAmpMod: false, complexTimbreMod: true,
+        complexModOscRange: 'high',
+        osc1Type: 'sine' as any, osc2Type: 'sine' as any,
+        f1Freq: 4000, f1Q: 1,
+        reverbWet: 0.4, delayWet: 0.2,
+        osc1Env: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.2 }
+    },
     {
         ...BASE_PRESET,
         name: 'Modular Lead', category: 'Lead',

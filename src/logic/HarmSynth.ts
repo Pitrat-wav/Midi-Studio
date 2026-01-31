@@ -9,6 +9,24 @@ export interface ADSRParams {
     release: number
 }
 
+export interface BuchlaParams {
+    complexMode: boolean
+    fmIndex: number
+    amIndex: number
+    timbre: number
+    order: number
+    harmonics: number // symmetry/harmonics distribution
+    pitchMod: boolean
+    ampMod: boolean
+    timbreMod: boolean
+    modOscRange: 'low' | 'high'
+    modOscShape: HarmOscType
+    modPitch: number
+    principalPitch: number
+    vcaBypass: boolean
+    phaseLock: boolean
+}
+
 class HarmVoice {
     public osc1: Tone.Oscillator
     public osc1Env: Tone.AmplitudeEnvelope
@@ -29,6 +47,12 @@ class HarmVoice {
     public noiseEnv: Tone.AmplitudeEnvelope
     public noiseDirect: Tone.Gain
     public noiseFx: Tone.Gain
+
+    // Complex/Buchla nodes
+    public folder: Tone.WaveShaper
+    public fmGain: Tone.Gain
+    public amGain: Tone.Gain
+    public amNode: Tone.Gain
 
     constructor(fxBus: Tone.ToneAudioNode, directBus: Tone.ToneAudioNode) {
         // OSC 1
@@ -66,16 +90,108 @@ class HarmVoice {
         this.noise.connect(this.noiseEnv)
         this.noiseEnv.connect(this.noiseDirect)
         this.noiseEnv.connect(this.noiseFx)
+
+        // Complex Logic
+        this.fmGain = new Tone.Gain(0)
+        this.amGain = new Tone.Gain(0)
+        this.amNode = new Tone.Gain(1)
+
+        // Wavefolder transfer function (approximating Buchla harmonics)
+        this.folder = new Tone.WaveShaper((val) => {
+            // Simple recursive folding logic
+            let x = val * 5 // Increase Gain for more folds
+            for (let i = 0; i < 3; i++) {
+                if (x > 1) x = 2 - x
+                if (x < -1) x = -2 - x
+            }
+            return x
+        }, 4096)
+
+        // Patching for Complex Mode will be done dynamically or in trig
     }
 
     trigger(note: string, duration: string, time: number, velocity: number, settings: any) {
-        this.osc1.frequency.setValueAtTime(note, time)
-        this.osc2.frequency.setValueAtTime(note, time)
-        this.osc3.frequency.setValueAtTime(note, time)
+        const freq = Tone.Frequency(note).toFrequency()
+        const principalFreq = Tone.Frequency(note).transpose(settings.complex.principalPitch || 0).toFrequency()
+        let modFreq = Tone.Frequency(note).transpose(settings.complex.modPitch || 0).toFrequency()
 
-        if (settings.osc1.enabled) this.osc1Env.triggerAttackRelease(duration, time, velocity)
-        if (settings.osc2.enabled) this.osc2Env.triggerAttackRelease(duration, time, velocity)
-        if (settings.osc3.enabled) this.osc3Env.triggerAttackRelease(duration, time, velocity)
+        if (settings.complex.modOscRange === 'low') {
+            // LFO mode: 0.1Hz to 30Hz based on 'pitch' param
+            modFreq = 0.1 + (Math.abs(settings.complex.modPitch) * 1.5)
+        }
+
+        this.osc1.frequency.setValueAtTime(principalFreq, time)
+        this.osc2.frequency.setValueAtTime(modFreq, time)
+        this.osc2.type = settings.complex.modOscShape || 'triangle'
+        this.osc3.frequency.setValueAtTime(freq, time)
+
+        if (settings.complex.phaseLock) {
+            // Hard Sync approximation: reset phase of mod osc when principal triggers
+            this.osc2.stop(time)
+            this.osc2.start(time)
+        }
+
+        if (settings.complex.complexMode) {
+            this.osc1.disconnect()
+            this.osc2.disconnect()
+
+            if (settings.complex.pitchMod) {
+                this.fmGain.gain.setValueAtTime(settings.complex.fmIndex * 500 * (principalFreq / 440), time)
+                this.osc2.connect(this.fmGain)
+                this.fmGain.connect(this.osc1.frequency)
+            } else {
+                this.fmGain.disconnect()
+            }
+
+            if (settings.complex.ampMod) {
+                this.amGain.gain.setValueAtTime(settings.complex.amIndex, time)
+                this.osc2.connect(this.amGain)
+                this.osc1.connect(this.amNode)
+                this.amGain.connect(this.amNode.gain)
+            } else {
+                this.amGain.disconnect()
+                this.amNode.gain.setValueAtTime(1, time)
+                this.osc1.connect(this.amNode)
+            }
+
+            if (settings.complex.timbreMod) {
+                const modGain = new Tone.Gain(settings.complex.fmIndex * 0.5)
+                this.osc2.connect(modGain)
+                modGain.connect(this.amNode)
+            }
+
+            this.amNode.connect(this.folder)
+
+            if (settings.complex.vcaBypass) {
+                this.folder.disconnect()
+                // Open envelope indefinitely for droning
+                this.osc1Env.triggerAttack(time)
+                this.folder.connect(this.osc1Env)
+            } else {
+                this.folder.connect(this.osc1Env)
+            }
+
+        } else {
+            // Normal Mode
+            this.fmGain.disconnect()
+            this.amGain.disconnect()
+            this.amNode.disconnect()
+            this.folder.disconnect()
+            this.osc1.disconnect()
+            this.osc2.disconnect()
+
+            this.osc1.connect(this.osc1Env)
+            this.osc2.connect(this.osc2Env)
+        }
+
+        if (!settings.complex.vcaBypass) {
+            if (settings.osc1.enabled) this.osc1Env.triggerAttackRelease(duration, time, velocity)
+        }
+
+        if (!settings.complex.complexMode) {
+            if (settings.osc2.enabled) this.osc2Env.triggerAttackRelease(duration, time, velocity)
+            if (settings.osc3.enabled) this.osc3Env.triggerAttackRelease(duration, time, velocity)
+        }
         if (settings.noise.enabled) this.noiseEnv.triggerAttackRelease(duration, time, velocity)
     }
 
@@ -125,7 +241,24 @@ export class HarmSynth {
         osc3: { type: 'triangle' as HarmOscType, detune: -10, env: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.5 }, send: 0, enabled: true },
         noise: { env: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }, send: 0, enabled: true },
         f1: { freq: 2000, q: 1, type: 'lowpass' as BiquadFilterType, enabled: true },
-        f2: { freq: 5000, q: 1, type: 'lowpass' as BiquadFilterType, enabled: true }
+        f2: { freq: 5000, q: 1, type: 'lowpass' as BiquadFilterType, enabled: true },
+        complex: { // Complex Params
+            complexMode: false,
+            fmIndex: 0,
+            amIndex: 0,
+            timbre: 0.5,
+            order: 0.5,
+            harmonics: 0.5,
+            pitchMod: true,
+            ampMod: false,
+            timbreMod: true,
+            modOscRange: 'high' as 'low' | 'high',
+            modPitch: 0,
+            principalPitch: 0,
+            modOscShape: 'triangle' as HarmOscType,
+            vcaBypass: false,
+            phaseLock: false
+        }
     }
 
     private initialized = false
@@ -191,6 +324,39 @@ export class HarmSynth {
         voice.noiseEnv.set(this.settings.noise.env)
         voice.noiseFx.gain.setValueAtTime(this.settings.noise.send, Tone.now())
         voice.noiseDirect.gain.setValueAtTime(1 - this.settings.noise.send, Tone.now())
+
+        // Complex settings
+        if (this.settings.complex.complexMode) {
+            const { timbre, order, harmonics } = this.settings.complex
+
+            // Modulation Oscillator (OSC 2) Frequency Range
+            if (this.settings.complex.modOscRange === 'low') {
+                // scale down to LFO territory if range is low
+                const currentFreq = voice.osc2.frequency.value as number
+                voice.osc2.frequency.setValueAtTime(currentFreq * 0.01, Tone.now())
+            }
+
+            voice.folder.set({
+                mapping: (val: number) => {
+                    // Buchla 259 Timbre Circuit approximation
+                    let x = val * (1 + timbre * 10)
+                    let symmetry = (harmonics - 0.5) * 0.8
+                    x += symmetry
+
+                    // Multi-stage folding based on 'order'
+                    for (let i = 0; i < 4; i++) {
+                        let stageIntensity = Math.max(0, Math.min(1, order * 5 - i))
+                        if (stageIntensity > 0) {
+                            let folded = x
+                            if (folded > 1) folded = 2 - folded
+                            if (folded < -1) folded = -2 - folded
+                            x = (folded * stageIntensity) + (x * (1 - stageIntensity))
+                        }
+                    }
+                    return x - symmetry
+                }
+            })
+        }
     }
 
     triggerNote(note: string, duration: string, time: number, velocity: number = 0.8) {
@@ -311,5 +477,9 @@ export class HarmSynth {
     }
     setVolume(db: number) {
         this.outputGain?.volume.rampTo(db, 0.1)
+    }
+
+    setComplexParams(params: Partial<BuchlaParams>) {
+        this.settings.complex = { ...this.settings.complex, ...params }
     }
 }
