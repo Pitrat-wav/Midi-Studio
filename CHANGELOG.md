@@ -1,29 +1,29 @@
 # Журнал изменений (Changelog)
 
-## [2026-01-31] - 3D Studio Restoration & Buchla Integration
-- **FIX**: Resolved "Invisible Scene" bug caused by non-existent font paths in `Text` components.
-- **FIX**: Unified `focusedInstrument` state across `App.tsx` and `visualStore` to restore camera and HUD reactivity.
-- **FEAT**: Fully integrated **Buchla 259 Complex Generator** with 3D model, 2D HUD, and navigation shortcuts.
-- **FIX**: Synchronized `GlobalSequencer` keys with `audioStore` to restore instrument triggering.
-- **ENHANCE**: Updated `InstrumentNavigation` and `InstrumentSearch` to include Sampler and Buchla 259.
-- **SAFETY**: Added `NaN` protection to `AudioVisualBridge` to prevent rendering crashes from audio data glitches.
+## v3.3.0 - Восстановление 3D-студии и интеграция Buchla - [2026-01-31]
+- **ИСПРАВЛЕНО**: Решена ошибка «невидимой сцены», вызванная отсутствующими путями к шрифтам в компонентах `Text`.
+- **ИСПРАВЛЕНО**: Унифицировано состояние `focusedInstrument` между `App.tsx` и `visualStore` для восстановления реактивности камеры и HUD.
+- **НОВОЕ**: Полная интеграция **Buchla 259 Complex Generator** с 3D-моделью, 2D HUD и горячими клавишами.
+- **ИСПРАВЛЕНО**: Синхронизированы ключи `GlobalSequencer` с `audioStore` для восстановления триггеров инструментов.
+- **УЛУЧШЕНИЕ**: Обновлены `InstrumentNavigation` и `InstrumentSearch`, теперь они включают Sampler и Buchla 259.
+- **БЕЗОПАСНОСТЬ**: Добавлена защита от `NaN` в `AudioVisualBridge` для предотвращения сбоев рендеринга из-за ошибок в аудиоданных.
 
-## [2026-01-30] - Refining VJ Enginex & Loading UI
-- **Critical Fixes:**
-    - Resolved "Launch Studio" freeze caused by massive synchronous audio graph initialization.
-    - Fixed Pyodide version mismatch check in `DeterministicWorker` (updated to 0.29.3).
-    - Fixed `InvalidAccessError` by migrating all Instruments to manual routing (removed `.toDestination()`).
-    - Fixed React Hook ordering violation in `App.tsx`.
-- **UX Improvements:**
-    - **Click-to-Focus**: Added ability to click on any 3D instrument to automatically focus the camera on it. Clicking again returns to Overview.
-    - **Fast Approach**: Double-click on any instrument for instant focus trigger.
-    - **Global Navigation (WASD)**: WASD and Arrow keys now facilitate "Open World" flight navigation anywhere in the scene.
-    - **Camera Locking**: Camera rotation is now locked while interacting with knobs to prevent accidental view shifts.
-    - **Keyboard Shortcuts**: Restored number key (0-9) shortcuts for quick instrument switching & overview.
-    - **Visual Clarity**: Removed distracting artifacts (Yellow Beam) and refined Space Presets.
-    - **Layout Expansion**: Separated Sequencer, ML-185, and Snake into distinct 3D zones for better access.
-    - **Loading Screen**: Visual step-by-step status updates during startup.
-    - **Optimization**: Reduced `HarmSynth` default voice count to 4 for mobile performance.
+## v3.2.2 - Оптимизация VJ-движка и интерфейса загрузки - [2026-01-30]
+- **Критические исправления:**
+    - Устранены зависания на экране "Launch Studio", вызванные массовой синхронной инициализацией аудио-графа.
+    - Исправлена ошибка несоответствия версий Pyodide в `DeterministicWorker` (обновлено до 0.29.3).
+    - Исправлена ошибка `InvalidAccessError` путем перевода всех инструментов на ручную маршрутизацию (удален `.toDestination()`).
+    - Исправлено нарушение порядка вызова хуков React в `App.tsx`.
+- **Улучшения UX:**
+    - **Фокус по клику**: Добавлена возможность нажать на любой 3D-инструмент для автоматического наведения камеры. Повторное нажатие возвращает в обзорный режим.
+    - **Быстрое приближение**: Двойной клик по инструменту для мгновенного переключения фокуса.
+    - **Глобальная навигация (WASD)**: Клавиши WASD и стрелки теперь позволяют свободно перемещаться («летать») по всей сцене.
+    - **Блокировка камеры**: Вращение камеры теперь блокируется во время взаимодействия с регуляторами (knobs) для предотвращения случайных сдвигов вида.
+    - **Горячие клавиши**: Восстановлены ярлыки цифровых клавиш (0-9) для быстрого переключения инструментов.
+    - **Визуальная чистота**: Удалены отвлекающие артефакты (желтый луч) и доработаны пресеты пространства.
+    - **Расширение макета**: Секвенсор, ML-185 и Snake разделены на отдельные 3D-зоны для лучшего доступа.
+    - **Экран загрузки**: Визуальные пошаговые обновления статуса при запуске.
+    - **Оптимизация**: Стандартное количество голосов `HarmSynth` уменьшено до 4 для производительности на мобильных устройствах.
 
 ## v3.2.1 - Audit & Cleanup - 2026-01-31
 ### Deep Architecture Audit & Final Cleanup
