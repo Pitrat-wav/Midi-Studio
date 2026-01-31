@@ -33,4 +33,10 @@ Guides for the end user and general synthesis tips.
 - [Extended FAQ](./5_User_Reference/FAQ_EXTENDED.md)
 
 ---
-*Last updated: 2026-01-31*
+**Latest Updates (v3.4.0):**
+- Ambient Pads now have a dedicated 2D HUD with wave visualization
+- Critical postprocessing stability fix (removed @react-three/postprocessing)
+- Enhanced PIXEL theme with retro neon aesthetics
+- Comprehensive defensive coding across all 3D components
+
+*Last updated: 2026-01-31 20:57 UTC+5*
