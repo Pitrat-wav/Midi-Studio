@@ -77,18 +77,28 @@ export const audioReactiveVertexShader = `
     return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
   }
   
+  uniform float uPitch; // 0.0 - 1.0 (frequency mapping)
+  
+  varying float vDistortion;
+  
   void main() {
     vUv = uv;
     vNormal = normalize(normalMatrix * normal);
     
     vec3 pos = position;
     
-    // Audio-reactive displacement
-    float noise = snoise(pos * 0.5 + uTime * 0.3);
-    float displacement = noise * uAudioIntensity * 0.5;
+    // Spectral Displacement Formula: Vpos' = Vpos + n * (A_bass * noise + A_high * sin)
+    float n = snoise(pos * 0.1); // Small variation for normal factor
+    float A_bass = uAudioIntensity * 0.7;
+    float A_high = uAudioIntensity * 0.3;
+    float omega = 6.28318 * 4.0; // multiplier for pitch mapping
+    float phi = uTime * 2.0;
     
-    // Low frequency emphasis (bass response)
-    displacement += snoise(pos * 0.2) * uLowFreq * 0.3;
+    float noiseVal = snoise(pos * 0.5 + uTime * 0.3);
+    float waveVal = sin(omega * uPitch + phi + pos.x * 2.0);
+    
+    float displacement = (A_bass * noiseVal + A_high * waveVal);
+    vDistortion = displacement;
     
     pos += normal * displacement;
     
@@ -109,9 +119,18 @@ export const fresnelFragmentShader = `
   uniform float uAudioIntensity;
   uniform float uTime;
   
+  uniform float uPitch;
+  
   varying vec2 vUv;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
+  varying float vDistortion;
+
+  // HSL to RGB helper
+  vec3 huelight(float h) {
+    vec3 rgb = clamp( abs(mod(h*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0, 0.0, 1.0 );
+    return rgb;
+  }
   
   void main() {
     vec3 normal = normalize(vNormal);
@@ -120,11 +139,13 @@ export const fresnelFragmentShader = `
     // Fresnel effect
     float fresnel = pow(1.0 - abs(dot(normal, viewDir)), uResonanceExp);
     
-    // Pulse effect
-    float pulse = sin(uTime * 4.0) * 0.5 + 0.5;
+    // Spectral Color Mapping (40 octave shift simulation)
+    // Map uPitch to various spectral colors
+    vec3 spectralColor = huelight(uPitch * 0.8 + 0.1); 
     
-    // Combine base color with glow
-    vec3 color = uBaseColor + (uGlowColor * fresnel * uAudioIntensity * (0.5 + pulse * 0.5));
+    // Combine base color with spectral glow
+    vec3 color = mix(uBaseColor, spectralColor, fresnel + (vDistortion * 0.2));
+    color += spectralColor * fresnel * uAudioIntensity;
     
     gl_FragColor = vec4(color, 1.0);
   }

@@ -7,10 +7,11 @@ import { useFrame } from '@react-three/fiber'
 import { MeshWobbleMaterial } from '@react-three/drei'
 import * as THREE from 'three'
 import { useVisualStore } from '../../store/visualStore'
+import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
 
 export function AudioReactiveObject() {
     const interactionEnergy = useVisualStore(s => s.interactionEnergy)
-    const triggers = useVisualStore(s => s.triggers)
+    const bridge = useAudioVisualBridge()
     const meshRef = useRef<THREE.Mesh>(null!)
 
     useFrame((state) => {
@@ -18,7 +19,7 @@ export function AudioReactiveObject() {
 
         const t = state.clock.getElapsedTime()
         // Combine audio pulse with interaction energy
-        const scale = 1 + triggers.kick * 0.3 + interactionEnergy * 0.5
+        const scale = 1 + bridge.getPulse('kick') * 0.3 + interactionEnergy * 0.5
         meshRef.current.scale.set(scale, scale, scale)
 
         if (interactionEnergy > 0.1) {
@@ -28,7 +29,7 @@ export function AudioReactiveObject() {
 
     return (
         <mesh ref={meshRef} position={[0, 0, -8]}>
-            <torusGeometry args={[10, 0.05 + interactionEnergy * 0.1, 16, 128]} />
+            <torusGeometry args={[10, 0.05, 16, 128]} />
             <MeshWobbleMaterial
                 color={interactionEnergy > 0.1 ? "#ff3b30" : "#3390ec"}
                 speed={1 + interactionEnergy * 4}

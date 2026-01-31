@@ -12,7 +12,7 @@ import type { InstrumentType } from '../../lib/SpatialLayout'
 
 interface InstrumentSelector3DProps {
     currentInstrument: InstrumentType | null
-    onSelect: (instrument: InstrumentType) => void
+    onSelect: (instrument: InstrumentType | null) => void
 }
 
 const INSTRUMENTS: { id: InstrumentType; label: string; color: string }[] = [
@@ -21,6 +21,10 @@ const INSTRUMENTS: { id: InstrumentType; label: string; color: string }[] = [
     { id: 'harmony', label: 'Harmony', color: '#44ff44' },
     { id: 'pads', label: 'Pads', color: '#ff9944' },
     { id: 'sequencer', label: 'Sequencer', color: '#aa44ff' },
+    { id: 'drone', label: 'Drone', color: '#8800ff' },
+    { id: 'mixer', label: 'Mixer', color: '#ffcc33' },
+    { id: 'keyboard', label: 'Keyb', color: '#ffffff' },
+    { id: 'master', label: 'Master', color: '#cccccc' },
 ]
 
 function InstrumentButton({
@@ -29,7 +33,7 @@ function InstrumentButton({
     isActive,
     onClick
 }: {
-    instrument: typeof INSTRUMENTS[0]
+    instrument: typeof INSTRUMENTS[0] | { id: null, label: string, color: string }
     position: [number, number, number]
     isActive: boolean
     onClick: () => void
@@ -72,7 +76,7 @@ function InstrumentButton({
                     onClick()
                 }}
             >
-                <circleGeometry args={[0.4, 32]} />
+                <circleGeometry args={[0.3, 32]} />
                 <meshBasicMaterial
                     color={instrument.color}
                     transparent
@@ -82,8 +86,8 @@ function InstrumentButton({
 
             {/* Label */}
             <Text
-                position={[0, -0.6, 0]}
-                fontSize={0.15}
+                position={[0, -0.5, 0]}
+                fontSize={0.12}
                 color={isActive ? instrument.color : '#ffffff'}
                 anchorX="center"
                 anchorY="middle"
@@ -96,7 +100,7 @@ function InstrumentButton({
             {/* Active ring */}
             {isActive && (
                 <mesh>
-                    <ringGeometry args={[0.45, 0.5, 32]} />
+                    <ringGeometry args={[0.35, 0.4, 32]} />
                     <meshBasicMaterial
                         color={instrument.color}
                         transparent
@@ -117,8 +121,8 @@ export function InstrumentSelector3D({ currentInstrument, onSelect }: Instrument
         if (!groupRef.current) return
 
         // Position relative to camera
-        const distance = 5
-        const offset = new THREE.Vector3(0, -2, -distance)
+        const distance = 4
+        const offset = new THREE.Vector3(0, -1.8, -distance)
         offset.applyQuaternion(camera.quaternion)
         groupRef.current.position.copy(camera.position).add(offset)
 
@@ -127,9 +131,10 @@ export function InstrumentSelector3D({ currentInstrument, onSelect }: Instrument
     })
 
     // Arrange buttons in arc
-    const radius = 2.5
-    const angleStep = Math.PI / (INSTRUMENTS.length + 1)
-    const startAngle = -Math.PI / 2 - angleStep * (INSTRUMENTS.length / 2)
+    const radius = 2.0
+    const count = INSTRUMENTS.length
+    const angleStep = Math.PI / (count + 1)
+    const startAngle = -Math.PI / 2 - angleStep * (count / 2)
 
     return (
         <group ref={groupRef}>
@@ -151,10 +156,10 @@ export function InstrumentSelector3D({ currentInstrument, onSelect }: Instrument
 
             {/* Center "Overview" button */}
             <InstrumentButton
-                instrument={{ id: 'drums' as InstrumentType, label: 'Overview', color: '#888888' }}
+                instrument={{ id: null, label: 'Overview', color: '#ffffff' }}
                 position={[0, 0, 0]}
                 isActive={currentInstrument === null}
-                onClick={() => onSelect(null as any)}
+                onClick={() => onSelect(null)}
             />
         </group>
     )

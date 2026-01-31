@@ -8,16 +8,28 @@
 import { DrumMachine3D } from './DrumMachine3D'
 import { AcidSynth3D } from './AcidSynth3D'
 import { PadsSynth3D } from './PadsSynth3D'
+import { HarmSynth3D } from './HarmSynth3D'
+import { Sequencer3D } from './Sequencer3D'
+import { DroneEngine3D } from './DroneEngine3D'
+import { MasterControl3D } from './MasterControl3D'
+import { Mixer3D } from './Mixer3D'
+import { Keyboard3D } from './Keyboard3D'
 
 export function AllInstruments3D() {
     return (
         <group>
+            {/* Core Instruments */}
             <DrumMachine3D />
             <AcidSynth3D />
             <PadsSynth3D />
 
-            {/* TODO: HarmSynth3D - complex modular synth */}
-            {/* TODO: Sequencer3D - ML-185 + Snake + Turing */}
+            {/* Restored Instruments */}
+            <HarmSynth3D />
+            <Sequencer3D />
+            <DroneEngine3D />
+            <MasterControl3D />
+            <Mixer3D />
+            <Keyboard3D />
 
             {/* Global Lighting */}
             <ambientLight intensity={0.2} />

@@ -1,13 +1,51 @@
 # Журнал изменений (Changelog)
- 
-+## [Версия 2.7.0] - 2026-01-31
-+### Drone Engine & Global Stability
-+- **New Drone Engine**: Выделенный движок для создания бесконечных звуковых ландшафтов и текстур.
-+  - **Drone View**: Новый интерфейс управления дронами с визуализацией состояния.
-+  - **Independent Transport**: Дроны могут работать независимо от основного секвенсора или синхронизироваться с ним.
-+- **Buchla 259 Finalization**: Полная реализация логики cross-modulation и wavefolding в `HarmSynth`.
-+- **State Management**: Интеграция `droneStore` для сохранения состояния текстурных генераторов.
-+- **Audio Optimization**: Улучшенная маршрутизация сигналов для предотвращения перегрузок при использовании сложных модуляций Buchla.
+
+## [Версия 3.2.0] - 2026-01-31
+### Autonomous Studio Polish & WebGL Optimization
+- **Performance**:
+    - **Nebula Shader**: Переписан на GLSL (Vertex Shader) для переноса вычислений 2000 частиц на GPU.
+    - **Direct Modulation**: Отказ от React-state в критических местах (HandTracking, AudioBridge) в пользу прямой манипуляции `Tone.Param` и WebGL refs.
+    - **AudioBridge**: Оптимизация обработки MIDI-событий для предотвращения лавинных ре-рендеров.
+- **Global Systems**:
+    - **FX Rack**: Мастер-шина с Distortion, Delay и Reverb.
+    - **Preset Manager**: Система глобальных снапшотов (сохранение/загрузка состояния всей студии).
+    - **Landing Page v2**: Премиальный экран входа с 3D-эстетикой.
+- **Drone Engine**:
+    - **GPU-Accelerated**: Движок туманности теперь работает полностью на GPU, освобождая JS-поток.
+
+## [Версия 3.1.0] - 2026-01-31
+### Spatial Control & AI Vision
+- **AI Hand Tracking**: Интеграция MediaPipe Hands для бесконтактного управления.
+  - **Vision Mode**: Визуализация 3D-скелета руки в реальном времени.
+  - **Spatial Modulation**: Управление фильтрами и громкостью через жесты (Pinch, Theremin-style).
+- **Advanced Keyboard Orchestration**:
+  - **Full Mapping**: Все параметры MIDI-станций теперь доступны через WASD и стрелки.
+  - **Holographic HUD**: Визуальная индикация изменений параметров прямо в 3D сцене.
+  - **Navigation Shortcuts**: Прямой переход между станциями (клавиши 1-7).
+- **Optimization**: ES-модули для воркеров и улучшенная синхронизация FFT.
+
+## [Версия 3.0.0] - 2026-01-31
+### Autonomous 3D Studio Transformation (Stage 2)
+- **3D Interaction Engine**:
+  - **GestureManager**: Поддержка edge-свайпов, длинных нажатий и прямого манипулирования объектами.
+  - **RadialMenu3D**: Контекстное орбитальное меню для навигации и пресетов.
+- **Adaptive 3D Keyboard**: Полноценная музыкальная поверхность с зависимостью velocity от координаты нажатия.
+- **Spectral Shaders**:
+  - **Audio-Reactive Shaders**: Вершинная анимация на базе FFT и Pitch-to-Color mapping.
+  - **PBR Materials**: Переход на физически корректные материалы (Metalness/Roughness/Glow).
+- **Python-Engine (Pyodide)**: 
+  - **Deterministic Worker**: Вынос музыкальной логики в отдельный поток через WebAssembly/Python.
+  - **Euclidean Logic**: Генерация паттернов на базе Python-библиотек для идеального тайминга.
+- **Architecture**: Полный отказ от 2D UI в пользу иммерсивного 3D окружения.
+
+## [Версия 2.7.0] - 2026-01-31
+### Drone Engine & Global Stability
+- **New Drone Engine**: Выделенный движок для создания бесконечных звуковых ландшафтов и текстур.
+  - **Drone View**: Новый интерфейс управления дронами с визуализацией состояния.
+  - **Independent Transport**: Дроны могут работать независимо от основного секвенсора или синхронизироваться с ним.
+- **Buchla 259 Finalization**: Полная реализация логики cross-modulation и wavefolding в `HarmSynth`.
+- **State Management**: Интеграция `droneStore` для сохранения состояния текстурных генераторов.
+- **Audio Optimization**: Улучшенная маршрутизация сигналов для предотвращения перегрузок при использовании сложных модуляций Buchla.
 +
 
 ## [Версия 2.6.0] - 2026-01-30

@@ -28,49 +28,69 @@ import { MeshDistortMaterial, MeshWobbleMaterial } from '@react-three/drei'
 import { Knob3D } from '../controls/Knob3D'
 import { Button3D } from '../controls/Button3D'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
+import { useGestureStore } from '../../../logic/GestureManager'
+import { audioReactiveVertexShader, fresnelFragmentShader } from '../../../shaders/audioReactive.glsl'
 
 /**
  * Kick Drum — Центральная пульсирующая сфера
  */
 function KickDrum() {
     const meshRef = useRef<THREE.Mesh>(null!)
-    const kickTrigger = useVisualStore(s => s.triggers.kick)
+    const bridge = useAudioVisualBridge()
     const kickPitch = useDrumStore(s => s.kick.pitch)
-    const kickDecay = useDrumStore(s => s.kick.decay)
+    const setParams = useDrumStore(s => s.setParams)
+    const gestures = useGestureStore()
 
-    useFrame(() => {
+    const uniforms = useMemo(() => ({
+        uTime: { value: 0 },
+        uAudioIntensity: { value: 0 },
+        uPitch: { value: 0 },
+        uBaseColor: { value: new THREE.Color('#ff4444') },
+        uGlowColor: { value: new THREE.Color('#ffaa00') },
+        uResonanceExp: { value: 3.0 }
+    }), [])
+
+    useFrame((state) => {
         if (!meshRef.current) return
 
-        // Pulsation на kick trigger
+        const drumState = useDrumStore.getState()
+        const currentKickPitch = drumState.kick.pitch
+        const kickTrigger = bridge.getPulse('kick')
+
+        uniforms.uTime.value = state.clock.elapsedTime
+        uniforms.uAudioIntensity.value = 0.2 + kickTrigger * 0.8
+        uniforms.uPitch.value = currentKickPitch * 0.2
+
         const scale = 1.0 + kickTrigger * 0.5
         meshRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.2)
-
-        // Небольшое вращение
         meshRef.current.rotation.y += 0.002
+
+        // Gesture Modulation
+        if (gestures.activeGesture === 'drag' && gestures.targetPosition && gestures.targetPosition.distanceTo(meshRef.current.position) < 2) {
+            const dy = gestures.currentPos.y - gestures.startPos.y
+            const dx = gestures.currentPos.x - gestures.startPos.x
+
+            setParams('kick', {
+                pitch: THREE.MathUtils.clamp(drumState.kick.pitch - dy * 0.005, 0, 1),
+                decay: THREE.MathUtils.clamp(drumState.kick.decay + dx * 0.005, 0, 1)
+            })
+        }
     })
 
-    // Цвет зависит от pitch (низкие частоты = красный, высокие = оранжевый)
-    // drumStore.pitch is normalized 0-1, convert to semitones first
-    const color = useMemo(() => {
-        const semitones = THREE.MathUtils.mapLinear(kickPitch, 0, 1, -12, 12)
-        const hue = THREE.MathUtils.mapLinear(semitones, -12, 12, 0, 0.1) // 0° to 36° hue
-        return new THREE.Color().setHSL(hue, 0.8, 0.5)
-    }, [kickPitch])
-
     return (
-        <mesh ref={meshRef} position={[0, 0, 0]}>
+        <mesh
+            ref={meshRef}
+            position={[0, 0, 0]}
+            onPointerDown={(e) => {
+                e.stopPropagation()
+                gestures.onStart(e.clientX, e.clientY, e.point)
+            }}
+        >
             <sphereGeometry args={[1.5, 64, 64]} />
-            <MeshDistortMaterial
-                color={color}
-                envMapIntensity={2}
-                clearcoat={1}
-                clearcoatRoughness={0.1}
-                metalness={0.9}
-                roughness={0.1}
-                distort={0.2 + kickTrigger * 0.3}
-                speed={2}
-                emissive={color}
-                emissiveIntensity={kickTrigger * 2}
+            <shaderMaterial
+                vertexShader={audioReactiveVertexShader}
+                fragmentShader={fresnelFragmentShader}
+                uniforms={uniforms}
             />
         </mesh>
     )
@@ -81,36 +101,51 @@ function KickDrum() {
  */
 function SnareDrum() {
     const meshRef = useRef<THREE.Mesh>(null!)
-    const snareTrigger = useVisualStore(s => s.triggers.snare)
+    const bridge = useAudioVisualBridge()
     const snarePitch = useDrumStore(s => s.snare.pitch)
+    const setParams = useDrumStore(s => s.setParams)
+    const gestures = useGestureStore()
 
     useFrame((state) => {
         if (!meshRef.current) return
+        const drumState = useDrumStore.getState()
+        const snareTrigger = bridge.getPulse('snare')
 
-        // Bounce эффект при trigger
         const scale = 1.0 + snareTrigger * 0.4
         meshRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.15)
-
-        // Вращение
         meshRef.current.rotation.x += 0.01
         meshRef.current.rotation.y += 0.015
+
+        // Gesture Modulation
+        if (gestures.activeGesture === 'drag' && gestures.targetPosition && gestures.targetPosition.distanceTo(meshRef.current.position) < 2) {
+            const dy = gestures.currentPos.y - gestures.startPos.y
+            setParams('snare', {
+                pitch: THREE.MathUtils.clamp(drumState.snare.pitch - dy * 0.005, 0, 1)
+            })
+        }
     })
 
     const color = useMemo(() => {
-        const semitones = THREE.MathUtils.mapLinear(snarePitch, 0, 1, -12, 12)
-        const hue = THREE.MathUtils.mapLinear(semitones, -12, 12, 0.55, 0.65) // cyan-blue range
+        const hue = THREE.MathUtils.mapLinear(snarePitch, 0, 1, 0.55, 0.7)
         return new THREE.Color().setHSL(hue, 0.9, 0.6)
     }, [snarePitch])
 
     return (
-        <mesh ref={meshRef} position={[-3, 0, -2]}>
+        <mesh
+            ref={meshRef}
+            position={[-3, 0, -2]}
+            onPointerDown={(e) => {
+                e.stopPropagation()
+                gestures.onStart(e.clientX, e.clientY, e.point)
+            }}
+        >
             <icosahedronGeometry args={[0.8, 2]} />
             <MeshWobbleMaterial
                 color={color}
-                speed={1 + snareTrigger * 4}
-                factor={0.2 + snareTrigger * 0.5}
+                speed={1}
+                factor={0.2}
                 emissive={color}
-                emissiveIntensity={snareTrigger * 1.5}
+                emissiveIntensity={0}
                 metalness={0.8}
                 roughness={0.2}
             />
@@ -123,12 +158,10 @@ function SnareDrum() {
  */
 function HiHatParticles() {
     const pointsRef = useRef<THREE.Points>(null!)
-    const hihatTrigger = useVisualStore(s => s.triggers.hihat)
+    const bridge = useAudioVisualBridge()
     const hihatPitch = useDrumStore(s => s.hihat.pitch)
     const drumStore = useDrumStore()
-
-    // Количество частиц зависит от Bjorklund steps
-    const particleCount = drumStore.hihat.steps * 10
+    const particleCount = useDrumStore(s => s.hihat.steps * 10)
 
     const { positions, colors } = useMemo(() => {
         const positions = new Float32Array(particleCount * 3)
@@ -158,6 +191,7 @@ function HiHatParticles() {
 
     useFrame((state) => {
         if (!pointsRef.current) return
+        const hihatTrigger = bridge.getPulse('hihat')
 
         // Вращение спирали
         pointsRef.current.rotation.y += 0.005
@@ -210,11 +244,9 @@ interface BjorklundRingProps {
 
 function BjorklundRing({ instrument, position, color }: BjorklundRingProps) {
     const groupRef = useRef<THREE.Group>(null!)
-    const drumStore = useDrumStore()
+    const steps = useDrumStore(s => s[instrument].steps)
+    const pulses = useDrumStore(s => s[instrument].pulses)
     const currentStep = useVisualStore(s => s.triggers[instrument])
-
-    const steps = drumStore[instrument].steps
-    const pulses = drumStore[instrument].pulses
 
     // Генерируем Bjorklund pattern (упрощенная версия)
     const pattern = useMemo(() => {
@@ -264,36 +296,89 @@ function BjorklundRing({ instrument, position, color }: BjorklundRingProps) {
     )
 }
 
+const KickControls = () => {
+    const kick = useDrumStore(s => s.kick)
+    const setParams = useDrumStore(s => s.setParams)
+    const triggerKick = useDrumStore(s => s.triggerKick)
+    const controls = SPATIAL_LAYOUT.drums.controls
+
+    return (
+        <>
+            <Knob3D
+                position={controls.kickPitch}
+                value={kick.pitch}
+                min={0} max={1}
+                label="Kick Pitch"
+                onChange={(v) => setParams('kick', { pitch: v })}
+                color="#ff4444"
+                size={0.8}
+            />
+            <Knob3D
+                position={controls.kickDecay}
+                value={kick.decay}
+                min={0} max={1}
+                label="Kick Decay"
+                onChange={(v) => setParams('kick', { decay: v })}
+                color="#ff4444"
+                size={0.8}
+            />
+            <Knob3D
+                position={controls.kickVolume}
+                value={THREE.MathUtils.mapLinear(kick.volume, -60, 0, 0, 1)}
+                min={0} max={1}
+                label="Kick Vol"
+                onChange={(v) => setParams('kick', { volume: THREE.MathUtils.mapLinear(v, 0, 1, -60, 0) })}
+                color="#ff4444"
+                size={0.8}
+            />
+            <Button3D
+                position={[controls.kickMute[0], controls.kickMute[1] - 0.7, controls.kickMute[2]]}
+                label="TRIG"
+                active={false}
+                onClick={triggerKick}
+                color="#ff4444"
+                size={0.5}
+            />
+            <Knob3D
+                position={controls.kickSteps}
+                value={kick.steps / 32}
+                min={0} max={1} step={1 / 32}
+                label="Kick Steps"
+                onChange={(v) => setParams('kick', { steps: Math.round(v * 32) })}
+                color="#ff4444"
+                size={0.7}
+            />
+            <Knob3D
+                position={controls.kickPulses}
+                value={kick.pulses / 32}
+                min={0} max={1} step={1 / 32}
+                label="Kick Pulses"
+                onChange={(v) => setParams('kick', { pulses: Math.round(v * 32) })}
+                color="#ff4444"
+                size={0.7}
+            />
+        </>
+    )
+}
+
 /**
- * Main DrumMachine3D Component with Interactive Controls
+ * Main DrumMachine3D Component
  */
 export function DrumMachine3D() {
     const bridge = useAudioVisualBridge()
-    const drumStore = useDrumStore()
-    const controls = SPATIAL_LAYOUT.drums.controls
 
-    // Register this component with AudioVisualBridge
+    // Register with Bridge
     useEffect(() => {
-        const handleAudioData = (data: any) => {
-            // Можно использовать FFT data для дополнительных эффектов
-            // Например, kick ring реагирует на low frequencies
-        }
-
-        bridge.register('drumMachine3D', handleAudioData)
-
-        return () => {
-            bridge.unregister('drumMachine3D')
-        }
+        bridge.register('drumMachine3D', () => { })
+        return () => bridge.unregister('drumMachine3D')
     }, [bridge])
 
     return (
         <group>
-            {/* Основные инструменты */}
             <KickDrum />
             <SnareDrum />
             <HiHatParticles />
 
-            {/* Bjorklund Pattern Rings */}
             <BjorklundRing
                 instrument="kick"
                 position={[0, -2.5, 0]}
@@ -310,153 +395,8 @@ export function DrumMachine3D() {
                 color={new THREE.Color('#ffff44')}
             />
 
-            {/* INTERACTIVE CONTROLS */}
+            <KickControls />
 
-            {/* Kick Controls */}
-            <Knob3D
-                position={controls.kickPitch}
-                value={drumStore.kick.pitch}
-                min={0}
-                max={1}
-                label="Kick Pitch"
-                onChange={(v) => drumStore.setParams('kick', { pitch: v })}
-                color="#ff4444"
-                size={0.8}
-            />
-            <Knob3D
-                position={controls.kickDecay}
-                value={drumStore.kick.decay}
-                min={0}
-                max={1}
-                label="Kick Decay"
-                onChange={(v) => drumStore.setParams('kick', { decay: v })}
-                color="#ff4444"
-                size={0.8}
-            />
-            <Knob3D
-                position={controls.kickVolume}
-                value={THREE.MathUtils.mapLinear(drumStore.kick.volume, -60, 0, 0, 1)}
-                min={0}
-                max={1}
-                label="Kick Vol"
-                onChange={(v) => drumStore.setParams('kick', { volume: THREE.MathUtils.mapLinear(v, 0, 1, -60, 0) })}
-                color="#ff4444"
-                size={0.8}
-            />
-            <Button3D
-                position={controls.kickMute}
-                label="Mute"
-                active={drumStore.kick.muted}
-                onClick={() => drumStore.setParams('kick', { muted: !drumStore.kick.muted })}
-                color="#ff4444"
-                size={0.6}
-            />
-
-            {/* Snare Controls */}
-            <Knob3D
-                position={controls.snarePitch}
-                value={drumStore.snare.pitch}
-                min={0}
-                max={1}
-                label="Snare Pitch"
-                onChange={(v) => drumStore.setParams('snare', { pitch: v })}
-                color="#4444ff"
-                size={0.8}
-            />
-            <Knob3D
-                position={controls.snareDecay}
-                value={drumStore.snare.decay}
-                min={0}
-                max={1}
-                label="Snare Decay"
-                onChange={(v) => drumStore.setParams('snare', { decay: v })}
-                color="#4444ff"
-                size={0.8}
-            />
-            <Knob3D
-                position={controls.snareVolume}
-                value={THREE.MathUtils.mapLinear(drumStore.snare.volume, -60, 0, 0, 1)}
-                min={0}
-                max={1}
-                label="Snare Vol"
-                onChange={(v) => drumStore.setParams('snare', { volume: THREE.MathUtils.mapLinear(v, 0, 1, -60, 0) })}
-                color="#4444ff"
-                size={0.8}
-            />
-            <Button3D
-                position={controls.snareMute}
-                label="Mute"
-                active={drumStore.snare.muted}
-                onClick={() => drumStore.setParams('snare', { muted: !drumStore.snare.muted })}
-                color="#4444ff"
-                size={0.6}
-            />
-
-            {/* HiHat Controls */}
-            <Knob3D
-                position={controls.hihatPitch}
-                value={drumStore.hihat.pitch}
-                min={0}
-                max={1}
-                label="HiHat Pitch"
-                onChange={(v) => drumStore.setParams('hihat', { pitch: v })}
-                color="#ffff44"
-                size={0.8}
-            />
-            <Knob3D
-                position={controls.hihatDecay}
-                value={drumStore.hihat.decay}
-                min={0}
-                max={1}
-                label="HiHat Decay"
-                onChange={(v) => drumStore.setParams('hihat', { decay: v })}
-                color="#ffff44"
-                size={0.8}
-            />
-            <Knob3D
-                position={controls.hihatVolume}
-                value={THREE.MathUtils.mapLinear(drumStore.hihat.volume, -60, 0, 0, 1)}
-                min={0}
-                max={1}
-                label="HiHat Vol"
-                onChange={(v) => drumStore.setParams('hihat', { volume: THREE.MathUtils.mapLinear(v, 0, 1, -60, 0) })}
-                color="#ffff44"
-                size={0.8}
-            />
-            <Button3D
-                position={controls.hihatMute}
-                label="Mute"
-                active={drumStore.hihat.muted}
-                onClick={() => drumStore.setParams('hihat', { muted: !drumStore.hihat.muted })}
-                color="#ffff44"
-                size={0.6}
-            />
-
-            {/* Pattern Controls */}
-            <Knob3D
-                position={controls.kickSteps}
-                value={drumStore.kick.steps / 32} // normalize to 0-1
-                min={0}
-                max={1}
-                step={1 / 32}
-                label="Kick Steps"
-                onChange={(v) => drumStore.setParams('kick', { steps: Math.round(v * 32) })}
-                color="#ff4444"
-                size={0.7}
-            />
-            <Knob3D
-                position={controls.kickPulses}
-                value={drumStore.kick.pulses / 32}
-                min={0}
-                max={1}
-                step={1 / 32}
-                label="Kick Pulses"
-                onChange={(v) => drumStore.setParams('kick', { pulses: Math.round(v * 32) })}
-                color="#ff4444"
-                size={0.7}
-            />
-
-            {/* Ambient Light */}
             <ambientLight intensity={0.3} />
             <pointLight position={[0, 5, 5]} intensity={1} color="#ff4444" />
             <pointLight position={[-5, 0, 0]} intensity={0.5} color="#4444ff" />

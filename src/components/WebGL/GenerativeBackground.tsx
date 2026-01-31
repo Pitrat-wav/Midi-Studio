@@ -2,30 +2,29 @@
  * GenerativeBackground — Animated 3D background
  */
 
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Stars, Float, MeshDistortMaterial } from '@react-three/drei'
 import * as THREE from 'three'
 import { useAudioStore } from '../../store/audioStore'
 import { useVisualStore } from '../../store/visualStore'
+import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
 
 export function GenerativeBackground() {
     const isPlaying = useAudioStore(s => s.isPlaying)
-    const triggers = useVisualStore(s => s.triggers)
-    const decay = useVisualStore(s => s.decay)
+    const bridge = useAudioVisualBridge()
     const meshRef = useRef<THREE.Mesh>(null!)
 
     useFrame((state) => {
-        decay() // Global frame-rate based decay
         const t = state.clock.getElapsedTime()
 
         if (meshRef.current) {
             meshRef.current.rotation.x = Math.sin(t * 0.2) * 0.1
             meshRef.current.rotation.y = Math.cos(t * 0.3) * 0.1
 
-            // Pulse on kick/snare
-            const pulse = triggers.kick * 0.2 + triggers.snare * 0.1
-            meshRef.current.scale.set(1 + pulse, 1 + pulse, 1 + pulse)
+            // Pulse on kick/snare (non-reactive)
+            const pulse = bridge.getPulse('kick') * 0.2 + bridge.getPulse('snare') * 0.1
+            meshRef.current.scale.lerp(new THREE.Vector3(1 + pulse, 1 + pulse, 1 + pulse), 0.1)
         }
     })
 

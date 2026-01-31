@@ -14,6 +14,7 @@ import * as THREE from 'three'
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { OrbitControls } from '@react-three/drei'
 import { SPATIAL_LAYOUT, OVERVIEW_CAMERA_PRESET, type InstrumentType } from '../../lib/SpatialLayout'
+import { useGestureStore } from '../../logic/GestureManager'
 
 interface CameraControllerProps {
     focusInstrument?: InstrumentType | null
@@ -25,6 +26,7 @@ export function CameraController({ focusInstrument, mode = 'overview' }: CameraC
     const controlsRef = useRef<OrbitControlsImpl>(null!)
     const targetPosition = useRef(new THREE.Vector3())
     const targetLookAt = useRef(new THREE.Vector3())
+    const gestures = useGestureStore()
 
     // Update target camera position based on mode
     useEffect(() => {
@@ -53,6 +55,7 @@ export function CameraController({ focusInstrument, mode = 'overview' }: CameraC
     return (
         <OrbitControls
             ref={controlsRef}
+            enabled={gestures.activeGesture !== 'drag'}
             enableDamping
             dampingFactor={0.05}
             minDistance={3}

@@ -7,7 +7,7 @@
 
 import * as THREE from 'three'
 
-export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads'
+export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard'
 
 export interface CameraPreset {
     position: [number, number, number]
@@ -24,153 +24,187 @@ export interface InstrumentLayout {
 /**
  * Main Layout Configuration
  * 
- * Instruments are arranged in a circular pattern:
- * - Drums: Center (0, 0, 0)
- * - Bass: Left (-8, 0, 0)
- * - Harmony: Right (8, 0, 0)
- * - Sequencer: Back (0, 0, -8)
- * - Pads: Front (0, 0, 8)
+ * Instruments are arranged in a spatial cosmic field:
  */
 export const SPATIAL_LAYOUT: Record<InstrumentType, InstrumentLayout> = {
     drums: {
         position: [0, 0, 0],
         cameraPreset: {
-            position: [0, 3, 6],
+            position: [0, 5, 8],
             lookAt: [0, 0, 0],
             fov: 60
         },
         controls: {
-            // Kick controls (left side)
-            kickPitch: [-2.5, -1.5, 0],
-            kickDecay: [-2.5, -1, 0],
-            kickVolume: [-2.5, -0.5, 0],
-            kickMute: [-2.5, 0, 0],
-
-            // Snare controls (center-left)
-            snarePitch: [-1, -1.5, 0],
-            snareDecay: [-1, -1, 0],
-            snareVolume: [-1, -0.5, 0],
-            snareMute: [-1, 0, 0],
-
-            // HiHat controls (center-right)
-            hihatPitch: [1, -1.5, 0],
-            hihatDecay: [1, -1, 0],
-            hihatVolume: [1, -0.5, 0],
-            hihatMute: [1, 0, 0],
-
-            // Pattern controls (right side)
-            kickSteps: [2.5, -1.5, 0],
-            kickPulses: [2.5, -1, 0],
-            snareSteps: [2.5, -0.5, 0],
-            snarePulses: [2.5, 0, 0],
-            hihatSteps: [2.5, 0.5, 0],
-            hihatPulses: [2.5, 1, 0]
+            // Kick
+            kickPitch: [-3, -2, 1],
+            kickDecay: [-3, -1, 1],
+            kickVolume: [-3, 0, 1],
+            kickMute: [-3, 1, 1],
+            // Snare
+            snarePitch: [-1.5, -2, 1],
+            snareDecay: [-1.5, -1, 1],
+            snareVolume: [-1.5, 0, 1],
+            snareMute: [-1.5, 1, 1],
+            // HiHat
+            hihatPitch: [1.5, -2, 1],
+            hihatDecay: [1.5, -1, 1],
+            hihatVolume: [1.5, 0, 1],
+            hihatMute: [1.5, 1, 1],
+            // Euclidean
+            kickSteps: [3, -2, 1],
+            kickPulses: [3, -1, 1],
+            snareSteps: [4.5, -2, 1],
+            snarePulses: [4.5, -1, 1],
         }
     },
 
     bass: {
-        position: [-8, 0, 0],
+        position: [-15, 0, 0],
         cameraPreset: {
-            position: [-8, 3, 6],
-            lookAt: [-8, 0, 0],
+            position: [-15, 4, 7],
+            lookAt: [-15, 0, 0],
             fov: 60
         },
         controls: {
-            // Main controls
-            cutoff: [-9.5, -1.5, 0],
-            resonance: [-8.5, -1.5, 0],
-            slide: [-7.5, -1.5, 0],
-            distortion: [-6.5, -1.5, 0],
-
-            // Pattern
-            density: [-9.5, -0.5, 0],
-            type: [-8.5, -0.5, 0],
-            morph: [-7.5, -0.5, 0],
+            // Acid
+            cutoff: [-17, 2, 0],
+            resonance: [-17, 1, 0],
+            slide: [-17, 0, 0],
+            distortion: [-17, -1, 0],
+            density: [-13, 2, 0],
+            type: [-13, 1, 0],
+            morph: [-13, 0, 0],
+            // FM
+            fmHarmonicity: [-15, -2, 1],
+            fmModIndex: [-13.5, -2, 1],
+            fmAttack: [-16.5, -2, 1],
+            fmDecay: [-15, -3, 1]
         }
     },
 
     harmony: {
-        position: [8, 0, 0],
+        position: [15, 0, 0],
         cameraPreset: {
-            position: [8, 3, 6],
-            lookAt: [8, 0, 0],
-            fov: 60
+            position: [15, 6, 10],
+            lookAt: [15, 0, 0],
+            fov: 55
         },
         controls: {
-            // OSC 1 (left module)
-            osc1Type: [6, 1, 0],
-            osc1Detune: [6, 0.5, 0],
-            osc1Attack: [6, 0, 0],
-            osc1Decay: [6, -0.5, 0],
-            osc1Sustain: [6, -1, 0],
-            osc1Release: [6, -1.5, 0],
+            // Buchla Section
+            complexTimbre: [13, 3, 0],
+            complexFmIndex: [14, 3, 0],
+            complexAmIndex: [15, 3, 0],
+            complexOrder: [16, 3, 0],
+            complexHarmonics: [17, 3, 0],
+            complexModPitch: [14, 1.5, 0],
+            complexPrincipalPitch: [16, 1.5, 0],
 
-            // OSC 2 (center module)
-            osc2Type: [8, 1, 0],
-            osc2Detune: [8, 0.5, 0],
-            osc2Attack: [8, 0, 0],
-            osc2Decay: [8, -0.5, 0],
-            osc2Sustain: [8, -1, 0],
-            osc2Release: [8, -1.5, 0],
+            // OSC Modules
+            osc1Detune: [13, -1, 0],
+            osc2Detune: [15, -1, 0],
+            osc3Detune: [17, -1, 0],
 
-            // OSC 3 (right module)
-            osc3Type: [10, 1, 0],
-            osc3Detune: [10, 0.5, 0],
-            osc3Attack: [10, 0, 0],
-            osc3Decay: [10, -0.5, 0],
-            osc3Sustain: [10, -1, 0],
-            osc3Release: [10, -1.5, 0],
-
-            // Filters (bottom)
-            f1Freq: [7, -2.5, 0],
-            f1Q: [7.5, -2.5, 0],
-            f2Freq: [8.5, -2.5, 0],
-            f2Q: [9, -2.5, 0],
+            // ADSR (Conceptualized as vertical clusters)
+            osc1Attack: [12.5, -2.5, 1],
+            osc1Decay: [13, -2.5, 1],
+            osc2Attack: [14.5, -2.5, 1],
+            osc2Decay: [15, -2.5, 1]
         }
     },
 
     sequencer: {
-        position: [0, 0, -8],
+        position: [0, 0, -15],
         cameraPreset: {
-            position: [0, 3, -2],
-            lookAt: [0, 0, -8],
-            fov: 60
+            position: [0, 8, -5],
+            lookAt: [0, 0, -15],
+            fov: 65
         },
         controls: {
-            // ML-185 controls would go here
-            // Snake grid controls
-            // Turing machine controls
+            // ML-185 (Circular)
+            turingProb: [-3, 2, -15],
+            turingBits: [-3, 1, -15],
+            snakePattern: [3, 2, -15],
+            snakeRange: [3, 1, -15]
         }
     },
 
     pads: {
-        position: [0, 0, 8],
+        position: [0, 0, 15],
         cameraPreset: {
-            position: [0, 3, 14],
-            lookAt: [0, 0, 8],
+            position: [0, 4, 22],
+            lookAt: [0, 0, 15],
             fov: 60
         },
         controls: {
-            brightness: [-1, -1.5, 8],
-            complexity: [0, -1.5, 8],
-            active: [1, -1.5, 8]
+            brightness: [-2, 0, 15],
+            complexity: [0, 0, 15],
+            active: [2, 0, 15]
         }
+    },
+
+    drone: {
+        position: [0, 12, -8],
+        cameraPreset: {
+            position: [0, 15, 2],
+            lookAt: [0, 12, -8],
+            fov: 70
+        },
+        controls: {
+            droneIntensity: [-3, 12, -6],
+            droneChaos: [-1, 12, -6],
+            droneGrit: [1, 12, -6],
+            droneNervousness: [3, 12, -6]
+        }
+    },
+
+    master: {
+        position: [-10, 0, 12],
+        cameraPreset: {
+            position: [-10, 5, 18],
+            lookAt: [-10, 0, 12],
+            fov: 60
+        },
+        controls: {
+            masterVol: [-12, 1, 12],
+            masterBpm: [-10, 1, 12],
+            masterSwing: [-8, 1, 12],
+            reverbWet: [-12, -1, 12],
+            delayWet: [-10, -1, 12],
+            distWet: [-8, -1, 12]
+        }
+    },
+    mixer: {
+        position: [10, 0, 12],
+        cameraPreset: {
+            position: [10, 6, 20],
+            lookAt: [10, 0, 12],
+            fov: 55
+        },
+        controls: {
+            volDrums: [8, 0, 12],
+            volBass: [9, 0, 12],
+            volLead: [10, 0, 12],
+            volPads: [11, 0, 12],
+            volHarm: [12, 0, 12],
+        }
+    },
+    keyboard: {
+        position: [0, -2, 10],
+        cameraPreset: {
+            position: [0, 4, 18],
+            lookAt: [0, -2, 10],
+            fov: 60
+        },
+        controls: {}
     }
 }
 
-/**
- * Overview Camera Position
- * Shows all instruments at once
- */
 export const OVERVIEW_CAMERA_PRESET: CameraPreset = {
-    position: [0, 15, 15],
+    position: [0, 25, 25],
     lookAt: [0, 0, 0],
-    fov: 75
+    fov: 65
 }
 
-/**
- * Helper: Get control position in world coordinates
- */
 export function getControlWorldPosition(
     instrument: InstrumentType,
     controlName: string
@@ -180,15 +214,12 @@ export function getControlWorldPosition(
 
     if (!controlPos) {
         console.warn(`Control "${controlName}" not found in ${instrument} layout`)
-        return new THREE.Vector3()
+        return new THREE.Vector3().set(...layout.position)
     }
 
     return new THREE.Vector3(...controlPos)
 }
 
-/**
- * Helper: Get all control positions for an instrument
- */
 export function getInstrumentControls(instrument: InstrumentType) {
     return SPATIAL_LAYOUT[instrument].controls
 }

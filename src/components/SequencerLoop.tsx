@@ -156,10 +156,16 @@ export function SequencerLoop() {
                 metronomeSynthRef.current?.triggerAttackRelease('C6', '32n', time)
             }
 
-            // 2. Bass
             const bassStep = currentBass.pattern?.[step]
             const prevBassStep = currentBass.pattern?.[(step + 15) % 16]
             if (currentBass.isPlaying && bassStep && bassStep.active) {
+                const visual = useVisualStore.getState()
+                const freq = Tone.Frequency(bassStep.note).toFrequency()
+                Tone.Draw.schedule(() => {
+                    useBassStore.getState().setParams({ lastNoteFrequency: freq })
+                    visual.triggerPulse('bass')
+                }, time)
+
                 if (currentBass.activeInstrument === 'acid' && bassSynth) {
                     const isContinuing = prevBassStep?.active && prevBassStep?.slide
                     bassSynth.triggerNote(bassStep.note, '16n', time, bassStep.velocity, bassStep.slide, bassStep.accent, !!isContinuing)

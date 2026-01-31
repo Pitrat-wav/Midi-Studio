@@ -15,7 +15,6 @@ interface GenerativeGrid3DProps {
 export function GenerativeGrid3D({ pattern, currentStep, color, position, onToggleStep }: GenerativeGrid3DProps) {
     console.log('🎨 GenerativeGrid3D render - pattern:', pattern, 'isArray:', Array.isArray(pattern), 'length:', pattern?.length)
     const groupRef = useRef<THREE.Group>(null!)
-    const triggers = useVisualStore(s => s.triggers)
 
     // CRITICAL: Freeze pattern in useMemo to prevent race conditions
     const safePattern = useMemo(() => {

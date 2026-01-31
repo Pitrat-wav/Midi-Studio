@@ -12,6 +12,12 @@ export interface EnvironmentConditions {
     lunarPhase: number // 0-1 (0 = new moon, 0.5 = full moon)
 }
 
+export interface HandLandmark {
+    x: number
+    y: number
+    z: number
+}
+
 interface VisualState {
     // Current "Energy" levels for different parts of the scene (0-1)
     energy: {
@@ -28,6 +34,10 @@ interface VisualState {
         hihat: number
         clap: number
         note: number
+        bass: number
+        lead: number
+        pads: number
+        harm: number
     }
     // Interaction state (which knob is being turned)
     activeParam: string | null
@@ -40,6 +50,9 @@ interface VisualState {
     conditions: EnvironmentConditions
     viewMode: '2D' | '3D'
     webglEnabled: boolean
+    handTrackingEnabled: boolean
+    handData: HandLandmark[] | null
+    statusMessage: string | null
 
     // Actions
     updateEnergy: (instrument: InstrumentType, value: number) => void
@@ -54,6 +67,9 @@ interface VisualState {
     setConditions: (conditions: Partial<EnvironmentConditions>) => void
     setViewMode: (mode: '2D' | '3D') => void
     toggleWebGL: () => void
+    setHandTrackingEnabled: (enabled: boolean) => void
+    setHandData: (data: HandLandmark[] | null) => void
+    setStatus: (msg: string | null) => void
 }
 
 export const useVisualStore = create<VisualState>((set) => ({
@@ -69,7 +85,11 @@ export const useVisualStore = create<VisualState>((set) => ({
         snare: 0,
         hihat: 0,
         clap: 0,
-        note: 0
+        note: 0,
+        bass: 0,
+        lead: 0,
+        pads: 0,
+        harm: 0
     },
     activeParam: null,
     interactionEnergy: 0,
@@ -80,6 +100,9 @@ export const useVisualStore = create<VisualState>((set) => ({
     performanceMode: 'high', // Default to high quality
     viewMode: '3D', // Default to 3D mode
     webglEnabled: true,
+    handTrackingEnabled: false,
+    handData: null,
+    statusMessage: null,
     conditions: {
         temperature: 20,
         precipitation: false,
@@ -117,6 +140,15 @@ export const useVisualStore = create<VisualState>((set) => ({
 
     toggleWebGL: () => set((state) => ({ webglEnabled: !state.webglEnabled })),
 
+    setHandTrackingEnabled: (enabled) => set({ handTrackingEnabled: enabled }),
+
+    setHandData: (data) => set({ handData: data }),
+
+    setStatus: (msg) => {
+        set({ statusMessage: msg })
+        setTimeout(() => set({ statusMessage: null }), 2000)
+    },
+
     decay: () => set((state) => {
         // Slow decay for energy, fast for triggers
         const d = (val: number, rate: number) => Math.max(0, val - rate)
@@ -133,7 +165,11 @@ export const useVisualStore = create<VisualState>((set) => ({
                 snare: d(state.triggers.snare, 0.15),
                 hihat: d(state.triggers.hihat, 0.2),
                 clap: d(state.triggers.clap, 0.15),
-                note: d(state.triggers.note, 0.2)
+                note: d(state.triggers.note, 0.2),
+                bass: d(state.triggers.bass, 0.15),
+                lead: d(state.triggers.lead, 0.15),
+                pads: d(state.triggers.pads, 0.15),
+                harm: d(state.triggers.harm, 0.15)
             },
             interactionEnergy: d(state.interactionEnergy, 0.05),
             globalAudioIntensity: d(state.globalAudioIntensity, 0.1)

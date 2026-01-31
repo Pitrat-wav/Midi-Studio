@@ -1,0 +1,191 @@
+/**
+ * HarmSynth3D — Buchla-Inspired Modular Synth Visualization
+ * 
+ * Features:
+ * - 3x OSC Modules with glowing orbs
+ * - Buchla 259 Complex Section with Wavefolding visualization
+ * - Audio-reactive glowing cables and ADSR lines
+ * - Futuristic glass-rack aesthetic
+ */
+
+import { useRef, useMemo } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { Text, Float, MeshDistortMaterial, MeshWobbleMaterial } from '@react-three/drei'
+import * as THREE from 'three'
+import { useHarmStore, HARM_PRESETS } from '../../../store/instrumentStore'
+import { useVisualStore } from '../../../store/visualStore'
+import { Knob3D } from '../controls/Knob3D'
+import { Button3D } from '../controls/Button3D'
+import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
+import { useGestureStore } from '../../../logic/GestureManager'
+import { audioReactiveVertexShader, fresnelFragmentShader } from '../../../shaders/audioReactive.glsl'
+
+function WavefoldingVisual({ position, timbre, order, harmonics, active, onGesture }: {
+    position: [number, number, number],
+    timbre: number,
+    order: number,
+    harmonics: number,
+    active: boolean,
+    onGesture: (e: any) => void
+}) {
+    const meshRef = useRef<THREE.Mesh>(null!)
+    const gestures = useGestureStore()
+
+    const uniforms = useMemo(() => ({
+        uTime: { value: 0 },
+        uAudioIntensity: { value: 0 },
+        uPitch: { value: 0.5 },
+        uBaseColor: { value: new THREE.Color('#ffcc33') },
+        uGlowColor: { value: new THREE.Color('#ff9900') },
+        uResonanceExp: { value: 3.0 }
+    }), [])
+
+    useFrame((state) => {
+        if (!meshRef.current) return
+        uniforms.uTime.value = state.clock.elapsedTime
+        uniforms.uAudioIntensity.value = active ? 0.5 + timbre : 0.1
+        uniforms.uPitch.value = timbre // map timbre to color
+    })
+
+    return (
+        <group position={position}>
+            <mesh ref={meshRef} onPointerDown={onGesture}>
+                <torusKnotGeometry args={[0.8, 0.3, 128, 32, Math.floor(2 + order * 3), Math.floor(3 + harmonics * 5)]} />
+                <shaderMaterial
+                    vertexShader={audioReactiveVertexShader}
+                    fragmentShader={fresnelFragmentShader}
+                    uniforms={uniforms}
+                />
+            </mesh>
+            <Text position={[0, 1.5, 0]} fontSize={0.2} color="#ffcc33">TOUCH TO FOLD</Text>
+        </group>
+    )
+}
+
+export function HarmSynth3D() {
+    const isPlaying = useHarmStore(s => s.isPlaying)
+    const setParam = useHarmStore(s => s.setParam)
+    const togglePlay = useHarmStore(s => s.togglePlay)
+
+    // Complex params for WavefoldingVisual (Atomic selectors for simple ones)
+    const complexTimbre = useHarmStore(s => s.complexTimbre)
+    const complexOrder = useHarmStore(s => s.complexOrder)
+    const complexHarmonics = useHarmStore(s => s.complexHarmonics)
+    const complexMode = useHarmStore(s => s.complexMode)
+
+    // OSC Toggles (Atomic)
+    const osc1Enabled = useHarmStore(s => s.osc1Enabled)
+    const osc2Enabled = useHarmStore(s => s.osc2Enabled)
+    const osc3Enabled = useHarmStore(s => s.osc3Enabled)
+
+    const gestures = useGestureStore()
+    const layout = SPATIAL_LAYOUT.harmony.position
+
+    useFrame(() => {
+        if (gestures.activeGesture === 'drag' && gestures.targetPosition && gestures.targetPosition.distanceTo(new THREE.Vector3(...layout)) < 5) {
+            const dx = gestures.currentPos.x - gestures.startPos.x
+            const dy = gestures.currentPos.y - gestures.startPos.y
+
+            const harmState = useHarmStore.getState()
+
+            // Simple mapping: Y = Timbre, X = FM Index
+            const newTimbre = THREE.MathUtils.clamp(harmState.complexTimbre - dy * 0.005, 0, 1)
+            const newFM = THREE.MathUtils.clamp(harmState.complexFmIndex + dx * 0.005, 0, 1)
+            setParam({ complexTimbre: newTimbre, complexFmIndex: newFM })
+        }
+    })
+
+    // Group controls logically
+    const buchlaPos: [number, number, number] = [layout[0], layout[1] + 2, layout[2]]
+    const osc1Pos: [number, number, number] = [layout[0] - 3, layout[1], layout[2]]
+    const osc2Pos: [number, number, number] = [layout[0], layout[1], layout[2]]
+    const osc3Pos: [number, number, number] = [layout[0] + 3, layout[1], layout[2]]
+
+    return (
+        <group position={layout}>
+            {/* Background glowing panel */}
+            <mesh position={[0, 0, -1]}>
+                <planeGeometry args={[10, 8]} />
+                <meshStandardMaterial
+                    color="#050510"
+                    transparent
+                    opacity={0.8}
+                    metalness={0.9}
+                    roughness={0.1}
+                />
+            </mesh>
+
+            {/* Buchla Section */}
+            <group position={[0, 3, 0]}>
+                <WavefoldingVisual
+                    position={[0, 0, 0]}
+                    timbre={complexTimbre}
+                    order={complexOrder}
+                    harmonics={complexHarmonics}
+                    active={complexMode}
+                    onGesture={(e) => {
+                        e.stopPropagation()
+                        gestures.onStart(e.clientX, e.clientY, e.point)
+                    }}
+                />
+
+                {/* Direct Modulation Logic handled in main useFrame */}
+
+                <Button3D
+                    label="COMPLEX"
+                    position={[0, -2.5, 0.5]}
+                    active={complexMode}
+                    onClick={() => setParam({ complexMode: !complexMode })}
+                    color="#ffcc33"
+                />
+            </group>
+
+            {/* OSC Sections - Simplified for gesture interaction */}
+            <group position={[-3, -1, 0]}>
+                <mesh onClick={() => setParam({ osc1Enabled: !osc1Enabled })}>
+                    <octahedronGeometry args={[0.5, 0]} />
+                    <meshStandardMaterial color={osc1Enabled ? "#3390ec" : "#222"} emissive={osc1Enabled ? "#3390ec" : "#000"} />
+                </mesh>
+            </group>
+
+            <group position={[0, -1, 0]}>
+                <mesh onClick={() => setParam({ osc2Enabled: !osc2Enabled })}>
+                    <icosahedronGeometry args={[0.5, 0]} />
+                    <meshStandardMaterial color={osc2Enabled ? "#ff3b30" : "#222"} emissive={osc2Enabled ? "#ff3b30" : "#000"} />
+                </mesh>
+            </group>
+
+            <group position={[3, -1, 0]}>
+                <mesh onClick={() => setParam({ osc3Enabled: !osc3Enabled })}>
+                    <boxGeometry args={[0.7, 0.7, 0.7]} />
+                    <meshStandardMaterial color={osc3Enabled ? "#4cd964" : "#222"} emissive={osc3Enabled ? "#4cd964" : "#000"} />
+                </mesh>
+            </group>
+
+            {/* Remove Old Control Surface - Use gestures */}
+            <Text position={[0, -4, 0]} fontSize={0.2} color="#ffcc33">
+                MANIPULATE CORE TO MODULATE
+            </Text>
+
+            {/* Play/Stop Toggle */}
+            <Button3D
+                label={isPlaying ? "STOP" : "PLAY"}
+                position={[0, -5, 0.5]}
+                active={isPlaying}
+                onClick={() => togglePlay()}
+                color="#3390ec"
+                size={1}
+            />
+
+            {/* Station Title */}
+            <Text
+                position={[0, 4.5, 0]}
+                fontSize={0.4}
+                color="#ffffff"
+                anchorX="center"
+            >
+                HARMONY STATION: BUCHLA 259 MODULAR
+            </Text>
+        </group>
+    )
+}

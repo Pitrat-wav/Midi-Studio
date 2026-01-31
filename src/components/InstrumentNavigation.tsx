@@ -13,18 +13,19 @@ interface InstrumentNavigationProps {
 }
 
 const INSTRUMENTS = [
-    { id: null, label: 'All', icon: '🎹', shortcut: '0', color: '#888888' },
+    { id: null, label: 'All', icon: '🌌', shortcut: '0', color: '#888888' },
     { id: 'drums' as InstrumentType, label: 'Drums', icon: '🥁', shortcut: '1', color: '#ff4444' },
     { id: 'bass' as InstrumentType, label: 'Bass', icon: '🎸', shortcut: '2', color: '#3390ec' },
     { id: 'harmony' as InstrumentType, label: 'Synth', icon: '🎹', shortcut: '3', color: '#44ff44' },
     { id: 'pads' as InstrumentType, label: 'Pads', icon: '☁️', shortcut: '4', color: '#ff9944' },
-    { id: 'sequencer' as InstrumentType, label: 'Sequencer', icon: '🎛️', shortcut: '5', color: '#aa44ff' },
+    { id: 'sequencer' as InstrumentType, label: 'Seq', icon: '🎛️', shortcut: '5', color: '#aa44ff' },
+    { id: 'drone' as InstrumentType, label: 'Drone', icon: '☄️', shortcut: '6', color: '#8800ff' },
+    { id: 'master' as InstrumentType, label: 'Master', icon: '🕹️', shortcut: '7', color: '#cccccc' },
 ]
 
 export function InstrumentNavigation({ currentInstrument, onSelect }: InstrumentNavigationProps) {
     return (
         <div className="instrument-navigation">
-            <div className="nav-hint">Switch instruments:</div>
             <div className="nav-buttons">
                 {INSTRUMENTS.map((instrument) => {
                     const isActive = currentInstrument === instrument.id

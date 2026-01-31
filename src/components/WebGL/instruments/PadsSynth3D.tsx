@@ -14,6 +14,7 @@ import { usePadStore } from '../../../store/instrumentStore'
 import { Knob3D } from '../controls/Knob3D'
 import { Button3D } from '../controls/Button3D'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
+import { useGestureStore } from '../../../logic/GestureManager'
 
 export function PadsSynth3D() {
     const pointsRef = useRef<THREE.Points>(null!)
@@ -50,12 +51,25 @@ export function PadsSynth3D() {
         return { positions, colors }
     }, [particleCount, padStore.brightness])
 
+    const gestures = useGestureStore()
+    const layout = SPATIAL_LAYOUT.pads.position
+
     useFrame((state) => {
         if (!pointsRef.current) return
 
         // Slow rotation
         pointsRef.current.rotation.y += 0.002
         pointsRef.current.rotation.x += 0.001
+
+        // Modulation via gesture
+        if (gestures.activeGesture === 'drag' && gestures.targetPosition && gestures.targetPosition.distanceTo(new THREE.Vector3(...layout)) < 5) {
+            const dx = gestures.currentPos.x - gestures.startPos.x
+            const dy = gestures.currentPos.y - gestures.startPos.y
+            padStore.setParams({
+                brightness: THREE.MathUtils.clamp(padStore.brightness - dy * 0.005, 0, 1),
+                complexity: THREE.MathUtils.clamp(padStore.complexity + dx * 0.005, 0, 1)
+            })
+        }
 
         // Pulsating scale when active
         if (padStore.active) {
@@ -75,7 +89,13 @@ export function PadsSynth3D() {
     return (
         <group position={SPATIAL_LAYOUT.pads.position}>
             {/* Particle Cloud */}
-            <points ref={pointsRef}>
+            <points
+                ref={pointsRef}
+                onPointerDown={(e) => {
+                    e.stopPropagation()
+                    gestures.onStart(e.clientX, e.clientY, e.point)
+                }}
+            >
                 <bufferGeometry>
                     <bufferAttribute
                         attach="attributes-position"

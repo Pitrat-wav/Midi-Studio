@@ -41,6 +41,9 @@ interface DrumState {
     activePatterns: { kick: boolean[], snare: boolean[], hihat: boolean[], hihatOpen: boolean[], clap: boolean[], ride: boolean[] }
     isPlaying: boolean
     togglePlay: () => void
+    triggerKick: () => void
+    triggerSnare: () => void
+    triggerHiHat: () => void
 }
 
 export const useDrumStore = create<DrumState>((set) => ({
@@ -70,7 +73,10 @@ export const useDrumStore = create<DrumState>((set) => ({
         return newState
     }),
     setKit: (kit) => set({ kit }),
-    togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying }))
+    togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+    triggerKick: () => { /* Logic is handled by AudioVisualBridge on MIDI event or directly by local triggers */ },
+    triggerSnare: () => { },
+    triggerHiHat: () => { }
 }))
 
 
@@ -127,6 +133,8 @@ interface BassState {
     setDistortion: (v: number) => void
     setPattern: (p: BassStep[]) => void
     togglePlay: () => void
+    lastNoteFrequency?: number
+    setParams: (params: Partial<BassState>) => void
 }
 
 export const useBassStore = create<BassState>((set) => ({
@@ -147,6 +155,7 @@ export const useBassStore = create<BassState>((set) => ({
     fmMode: 'offbeat',
     pattern: [],
     isPlaying: false,
+    lastNoteFrequency: 55,
     setInstrument: (activeInstrument) => set({ activeInstrument }),
     setDensity: (density) => set({ density }),
     setType: (type) => set({ type }),
@@ -157,7 +166,8 @@ export const useBassStore = create<BassState>((set) => ({
     setSlide: (slide) => set({ slide }),
     setDistortion: (distortion) => set({ distortion }),
     setPattern: (pattern) => set({ pattern }),
-    togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying }))
+    togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+    setParams: (params) => set((state) => ({ ...state, ...params }))
 }))
 
 // Sequencer Store (ML-185 + Snake)

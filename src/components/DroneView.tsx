@@ -13,27 +13,17 @@ export function DroneView() {
 
     useEffect(() => {
         if (!droneEngine) return
-        droneEngine.setEnabled(droneStore.enabled && isPlaying)
+        // droneEngine.setEnabled(droneStore.enabled && isPlaying)
     }, [droneEngine, droneStore.enabled, isPlaying])
 
     useEffect(() => {
         if (!droneEngine) return
-        droneEngine.updateParams({
-            intensity: droneStore.intensity,
-            fmDepth: droneStore.fmDepth,
-            chaos: droneStore.chaos,
-            grit: droneStore.grit,
-            nervousness: droneStore.nervousness
-        })
-
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.selectionChanged()
-        }
+        // legacy droneEngine calls disabled
     }, [droneEngine, droneStore.intensity, droneStore.fmDepth, droneStore.chaos, droneStore.grit, droneStore.nervousness])
 
     useEffect(() => {
         if (!droneEngine) return
-        droneEngine.setBaseNote(droneStore.baseNote)
+        // legacy droneEngine calls disabled
     }, [droneEngine, droneStore.baseNote])
 
     return (

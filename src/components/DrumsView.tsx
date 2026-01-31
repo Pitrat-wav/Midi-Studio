@@ -76,7 +76,7 @@ export function DrumsView() {
 
     const handleDrumTrigger = (drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride') => {
         if (drumMachine) {
-            drumMachine.triggerDrum(drum)
+            drumMachine.triggerDrum(drum, 0, 0.8)
         }
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.impactOccurred('medium')

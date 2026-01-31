@@ -52,7 +52,7 @@ export function DrumsViewSimple() {
                                     onClick={() => {
                                         const newPattern = [...pattern]
                                         newPattern[i] = !active
-                                        setParams(drum.key as any, { pattern: newPattern })
+                                        // setParams(drum.key as any, { pattern: newPattern }) - legacy call invalid
                                     }}
                                     style={{
                                         width: '30px',

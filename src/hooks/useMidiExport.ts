@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useDrumStore, useBassStore, usePadStore, useHarmonyStore, useSequencerStore, useHarmStore } from '../store/instrumentStore'
+/// <reference types="vite/client" />
 import { useAudioStore } from '../store/audioStore'
 import { exportToMidi } from '../logic/MidiExporter'
 import { bjorklund } from '../logic/bjorklund'
@@ -44,7 +45,7 @@ export function useMidiExport() {
             )
             const base64Midi = btoa(String.fromCharCode(...midiData))
 
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+            const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3001'
 
             const response = await fetch(`${API_URL}/upload-midi`, {
                 method: 'POST',

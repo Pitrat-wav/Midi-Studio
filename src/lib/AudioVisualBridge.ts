@@ -50,6 +50,9 @@ class AudioVisualBridgeClass {
     private waveformAnalyser: Tone.Analyser | null = null
     private visualCallbacks: Map<string, VisualCallback> = new Map()
     private midiCallbacks: Map<string, MIDICallback> = new Map()
+    private pulses: Record<string, number> = {
+        kick: 0, snare: 0, hihat: 0, clap: 0, note: 0, bass: 0, lead: 0, pads: 0, harm: 0
+    }
     private uniforms: UniformData
     private isInitialized = false
     private animationFrameId: number | null = null
@@ -64,6 +67,22 @@ class AudioVisualBridgeClass {
             uBPM: 120,
             uBeat: 0
         }
+    }
+
+    /**
+     * Trigger a visual pulse (non-reactive)
+     */
+    triggerPulse(id: string, intensity: number = 1.0) {
+        if (this.pulses[id] !== undefined) {
+            this.pulses[id] = intensity
+        }
+    }
+
+    /**
+     * Get current pulse value (0-1)
+     */
+    getPulse(id: string): number {
+        return this.pulses[id] || 0
     }
 
     /**
@@ -141,6 +160,11 @@ class AudioVisualBridgeClass {
             this.uniforms.uMidFreq = midFreq
             this.uniforms.uHighFreq = highFreq
 
+            // Decay pulses (60fps smooth)
+            for (let id in this.pulses) {
+                this.pulses[id] = Math.max(0, this.pulses[id] - 0.05)
+            }
+
             // Отправляем данные всем подписчикам
             const audioData: AudioData = {
                 fftData,
@@ -194,27 +218,22 @@ class AudioVisualBridgeClass {
             // Отправляем во все MIDI callbacks
             this.midiCallbacks.forEach(callback => callback(event))
 
-            // Обновляем visualStore для базовых триггеров
-            const store = useVisualStore.getState()
-
             if (event.type === 'noteOn') {
-                // Определяем тип инструмента и триггерим соответствующий pulse
+                // Determine instrument type and trigger pulse
                 switch (event.instrument) {
                     case 'drums':
-                        // Простая эвристика: низкие ноты = kick, средние = snare, высокие = hihat
                         if (event.note && event.note < 40) {
-                            store.triggerPulse('kick', event.velocity ?? 1)
+                            this.triggerPulse('kick', event.velocity ?? 1)
                         } else if (event.note && event.note < 60) {
-                            store.triggerPulse('snare', event.velocity ?? 1)
+                            this.triggerPulse('snare', event.velocity ?? 1)
                         } else {
-                            store.triggerPulse('hihat', event.velocity ?? 1)
+                            this.triggerPulse('hihat', event.velocity ?? 1)
                         }
                         break
                     case 'bass':
                     case 'lead':
                     case 'harm':
-                        store.triggerPulse('note', event.velocity ?? 1)
-                        store.updateEnergy(event.instrument, event.velocity ?? 1)
+                        this.triggerPulse('note', event.velocity ?? 1)
                         break
                 }
             }

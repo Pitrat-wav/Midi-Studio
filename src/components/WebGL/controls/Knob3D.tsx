@@ -1,19 +1,9 @@
 /**
  * Knob3D — Interactive 3D Knob Control
- * 
- * Cylindrical knob с ray-cast interaction для управления параметрами.
- * Supports mouse drag, touch, and scroll wheel.
- * 
- * Features:
- * - Hover detection с emissive glow
- * - Click+Drag для rotation
- * - Touch support (vertical drag)
- * - Floating label при interaction
- * - Haptic feedback
  */
 
 import { useRef, useState, useMemo, useCallback } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame, useThree, ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Text } from '@react-three/drei'
 
@@ -46,20 +36,17 @@ export function Knob3D({
     const [isDragging, setIsDragging] = useState(false)
     const [showLabel, setShowLabel] = useState(false)
 
-    const { camera, gl } = useThree()
+    const { gl } = useThree()
     const dragStartRef = useRef<{ x: number; y: number; initialValue: number } | null>(null)
 
-    // Normalize value to 0-1 for rotation
     const normalizedValue = useMemo(() => {
         return (value - min) / (max - min)
     }, [value, min, max])
 
-    // Rotation: -135° to +135° (270° total range)
     const targetRotation = useMemo(() => {
-        return (normalizedValue - 0.5) * Math.PI * 1.5 // -135° to +135°
+        return (normalizedValue - 0.5) * Math.PI * 1.5
     }, [normalizedValue])
 
-    // Display value (formatted)
     const displayValue = useMemo(() => {
         if (Number.isInteger(min) && Number.isInteger(max)) {
             return Math.round(value).toString()
@@ -67,11 +54,9 @@ export function Knob3D({
         return value.toFixed(2)
     }, [value, min, max])
 
-    // Color variants
     const baseColor = useMemo(() => new THREE.Color(color), [color])
     const emissiveColor = useMemo(() => new THREE.Color(color).multiplyScalar(0.5), [color])
 
-    // Smooth rotation animation
     useFrame(() => {
         if (meshRef.current) {
             meshRef.current.rotation.y = THREE.MathUtils.lerp(
@@ -80,7 +65,6 @@ export function Knob3D({
                 0.15
             )
 
-            // Scale animation on hover/drag
             const targetScale = (isHovered || isDragging) ? 1.1 : 1.0
             meshRef.current.scale.lerp(
                 new THREE.Vector3(targetScale, targetScale, targetScale),
@@ -89,53 +73,44 @@ export function Knob3D({
         }
     })
 
-    // Pointer events
-    const handlePointerDown = useCallback((e: THREE.Event) => {
+    const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation()
         setIsDragging(true)
         setShowLabel(true)
 
+        const native = e.nativeEvent as any
         dragStartRef.current = {
-            x: e.clientX ?? e.touches?.[0]?.clientX ?? 0,
-            y: e.clientY ?? e.touches?.[0]?.clientY ?? 0,
+            x: native.clientX ?? 0,
+            y: native.clientY ?? 0,
             initialValue: value
         }
 
-        // Haptic feedback
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+        if ((window as any).Telegram?.WebApp?.HapticFeedback) {
+            (window as any).Telegram.WebApp.HapticFeedback.impactOccurred('light')
         }
 
         gl.domElement.style.cursor = 'grabbing'
     }, [value, gl])
 
-    const handlePointerMove = useCallback((e: PointerEvent | TouchEvent) => {
+    const handlePointerMove = useCallback((e: MouseEvent | TouchEvent) => {
         if (!isDragging || !dragStartRef.current) return
 
-        const clientX = 'clientX' in e ? e.clientX : e.touches[0].clientX
         const clientY = 'clientY' in e ? e.clientY : e.touches[0].clientY
 
-        // Vertical drag: down = decrease, up = increase
         const deltaY = dragStartRef.current.y - clientY
         const sensitivity = 0.005
         const deltaValue = deltaY * sensitivity * (max - min)
 
         let newValue = dragStartRef.current.initialValue + deltaValue
-
-        // Apply step
         if (step > 0) {
             newValue = Math.round(newValue / step) * step
         }
-
-        // Clamp
         newValue = Math.max(min, Math.min(max, newValue))
 
         if (newValue !== value) {
             onChange(newValue)
-
-            // Haptic on value change
-            if (window.Telegram?.WebApp?.HapticFeedback) {
-                window.Telegram.WebApp.HapticFeedback.selectionChanged()
+            if ((window as any).Telegram?.WebApp?.HapticFeedback) {
+                (window as any).Telegram.WebApp.HapticFeedback.selectionChanged()
             }
         }
     }, [isDragging, value, min, max, step, onChange])
@@ -146,18 +121,16 @@ export function Knob3D({
         dragStartRef.current = null
         gl.domElement.style.cursor = isHovered ? 'pointer' : 'auto'
 
-        // Haptic feedback
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('medium')
+        if ((window as any).Telegram?.WebApp?.HapticFeedback) {
+            (window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium')
         }
     }, [isHovered, gl])
 
-    // Mouse/touch listeners
     useMemo(() => {
         if (isDragging) {
             const handleMove = (e: MouseEvent | TouchEvent) => {
-                e.preventDefault()
-                handlePointerMove(e as any)
+                if ('preventDefault' in e) e.preventDefault()
+                handlePointerMove(e)
             }
 
             window.addEventListener('mousemove', handleMove)
@@ -176,7 +149,6 @@ export function Knob3D({
 
     return (
         <group ref={groupRef} position={position}>
-            {/* Main Knob Cylinder */}
             <mesh
                 ref={meshRef}
                 onPointerEnter={(e) => {
@@ -194,7 +166,6 @@ export function Knob3D({
                     }
                 }}
                 onPointerDown={handlePointerDown}
-                userData={{ type: 'control', controlType: 'knob', label }}
             >
                 <cylinderGeometry args={[0.3 * size, 0.3 * size, 0.15 * size, 32]} />
                 <meshStandardMaterial
@@ -206,13 +177,11 @@ export function Knob3D({
                 />
             </mesh>
 
-            {/* Indicator Line (показывает текущее положение) */}
             <mesh position={[0, 0.08 * size, 0.25 * size]} rotation={[0, targetRotation, 0]}>
                 <boxGeometry args={[0.05 * size, 0.02 * size, 0.15 * size]} />
                 <meshBasicMaterial color="#ffffff" />
             </mesh>
 
-            {/* Base Ring */}
             <mesh position={[0, -0.1 * size, 0]} rotation={[Math.PI / 2, 0, 0]}>
                 <ringGeometry args={[0.32 * size, 0.4 * size, 32]} />
                 <meshStandardMaterial
@@ -224,7 +193,6 @@ export function Knob3D({
                 />
             </mesh>
 
-            {/* Floating Label (показывается при hover/drag) */}
             {showLabel && (
                 <group position={[0, 0.6 * size, 0]}>
                     <Text
@@ -252,7 +220,6 @@ export function Knob3D({
                 </group>
             )}
 
-            {/* Halo Ring (glow при hover) */}
             {(isHovered || isDragging) && (
                 <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
                     <ringGeometry args={[0.45 * size, 0.5 * size, 32]} />

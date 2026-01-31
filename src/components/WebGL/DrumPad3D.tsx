@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { MeshDistortMaterial } from '@react-three/drei'
 import { useVisualStore } from '../../store/visualStore'
+import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
 
 interface DrumPad3DProps {
     id: 'kick' | 'snare' | 'hihat' | 'clap'
@@ -15,7 +16,7 @@ interface DrumPad3DProps {
 export function DrumPad3D({ id, position, color, label, onClick }: DrumPad3DProps) {
     const meshRef = useRef<THREE.Mesh>(null!)
     const materialRef = useRef<any>(null!)
-    const trigger = useVisualStore(s => s.triggers[id === 'hihat' ? 'hihat' : id])
+    const bridge = useAudioVisualBridge()
 
     // Custom shader uniforms for "Energy"
     const uniforms = useMemo(() => ({
@@ -26,6 +27,8 @@ export function DrumPad3D({ id, position, color, label, onClick }: DrumPad3DProp
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime()
+        const trigger = bridge.getPulse(id)
+
         if (meshRef.current) {
             // Pulse on trigger
             const scale = 1 + trigger * 0.4
@@ -38,6 +41,7 @@ export function DrumPad3D({ id, position, color, label, onClick }: DrumPad3DProp
         if (materialRef.current) {
             materialRef.current.distort = 0.2 + trigger * 0.5
             materialRef.current.speed = 1 + trigger * 10
+            materialRef.current.emissiveIntensity = trigger * 2
         }
     })
 
@@ -59,7 +63,7 @@ export function DrumPad3D({ id, position, color, label, onClick }: DrumPad3DProp
                 distort={0.2}
                 speed={2}
                 emissive={color}
-                emissiveIntensity={trigger * 2}
+                emissiveIntensity={0}
             />
         </mesh>
     )

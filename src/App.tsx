@@ -9,12 +9,16 @@
  */
 
 import { useEffect, useState } from 'react'
+import { LandingPage } from './components/LandingPage'
 import { useAudioStore } from './store/audioStore'
 import { useVisualStore } from './store/visualStore'
 import { WebGLScene } from './components/WebGL/WebGLScene'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { InstrumentNavigation } from './components/InstrumentNavigation'
+import { KeyboardController } from './components/KeyboardController'
+import { FAQ } from './components/FAQ'
 import { AudioVisualBridge } from './lib/AudioVisualBridge'
+import { useCompositionManager } from './logic/CompositionManager'
 import type { InstrumentType } from './lib/SpatialLayout'
 import './App.css'
 
@@ -28,6 +32,10 @@ function App() {
 
     const [focusedInstrument, setFocusedInstrument] = useState<InstrumentType | null>(null)
     const [showOverlay, setShowOverlay] = useState(true)
+    const [showFAQ, setShowFAQ] = useState(false)
+
+    // Pyodide Bridge
+    useCompositionManager()
 
     // Initialize Audio Engine
     const handleInit = async () => {
@@ -70,59 +78,21 @@ function App() {
         }
     }, [isInitialized, isPlaying])
 
-    // Keyboard shortcuts for instrument navigation
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Ignore if typing in input
-            if (e.target instanceof HTMLInputElement) return
-
-            switch (e.key) {
-                case ' ':
-                    e.preventDefault()
-                    togglePlay()
-                    break
-                case 'h':
-                case 'H':
-                    e.preventDefault()
-                    setShowOverlay(!showOverlay)
-                    break
-                case '0':
-                    setFocusedInstrument(null)
-                    break
-                case '1':
-                    setFocusedInstrument('drums')
-                    break
-                case '2':
-                    setFocusedInstrument('bass')
-                    break
-                case '3':
-                    setFocusedInstrument('harmony')
-                    break
-                case '4':
-                    setFocusedInstrument('pads')
-                    break
-                case '5':
-                    setFocusedInstrument('sequencer')
-                    break
-            }
-        }
-
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [togglePlay, showOverlay])
-
     if (!isInitialized) {
         return (
             <div className="init-screen">
                 <div className="init-content">
-                    <h1>🎹 Telegram MIDI Studio</h1>
-                    <p>Generative 3D Music Environment</p>
+                    <h1>🌌 MIDI Studio Pro 3D</h1>
+                    <p>Immersive Generative Music Environment</p>
                     <button
                         onClick={handleInit}
                         className="init-button"
                     >
                         Launch Studio
                     </button>
+                    <p style={{ marginTop: '1.5rem', opacity: 0.6, fontSize: '0.9rem' }}>
+                        SPACE to Play/Stop • 1-7 to Navigate • ? for Help
+                    </p>
                 </div>
             </div>
         )
@@ -131,19 +101,29 @@ function App() {
     return (
         <ErrorBoundary>
             <div className="app-3d">
+                {/* Keyboard Shortcuts Control */}
+                <KeyboardController
+                    showOverlay={showOverlay}
+                    onToggleOverlay={() => setShowOverlay(!showOverlay)}
+                    onSelectInstrument={setFocusedInstrument}
+                    focusedInstrument={focusedInstrument}
+                    onToggleFAQ={() => setShowFAQ(!showFAQ)}
+                />
+
                 {/* Full-screen WebGL Scene */}
                 <WebGLScene
                     focusInstrument={focusedInstrument}
                     cameraMode={focusedInstrument ? 'focus' : 'overview'}
                 />
 
-                {/* Minimal 2D Overlay (показывается при hover или нажатии клавиши) */}
+                {/* Minimal 2D Overlay */}
                 {showOverlay && (
                     <div className="control-overlay">
                         <div className="transport-controls">
                             <button
                                 onClick={togglePlay}
                                 className={`play-button ${isPlaying ? 'playing' : ''}`}
+                                title="Play/Stop (Space)"
                             >
                                 {isPlaying ? '⏸' : '▶'}
                             </button>
@@ -159,19 +139,30 @@ function App() {
                                 />
                                 <span>{bpm}</span>
                             </div>
+
+                            <button
+                                className="help-button-circle"
+                                onClick={() => setShowFAQ(true)}
+                                title="FAQ & Help (?)"
+                            >
+                                ?
+                            </button>
                         </div>
 
                         <button
                             className="overlay-toggle"
                             onClick={() => setShowOverlay(false)}
-                            title="Hide controls (press H to show)"
+                            title="Hide HUD (H)"
                         >
                             ✕
                         </button>
                     </div>
                 )}
 
-                {/* Instrument Navigation Bar */}
+                {/* FAQ Overlay */}
+                {showFAQ && <FAQ onClose={() => setShowFAQ(false)} />}
+
+                {/* Instrument Navigation Bar (Holographic Quick-Bar) */}
                 <InstrumentNavigation
                     currentInstrument={focusedInstrument}
                     onSelect={setFocusedInstrument}
@@ -180,7 +171,7 @@ function App() {
                 {/* Help hint (bottom right) */}
                 {!showOverlay && (
                     <div className="help-hint">
-                        Press <kbd>H</kbd> for controls
+                        Press <kbd>H</kbd> for HUD / <kbd>?</kbd> for Help
                     </div>
                 )}
             </div>

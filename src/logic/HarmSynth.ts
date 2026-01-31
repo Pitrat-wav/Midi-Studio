@@ -336,27 +336,36 @@ export class HarmSynth {
                 voice.osc2.frequency.setValueAtTime(currentFreq * 0.01, Tone.now())
             }
 
-            voice.folder.set({
-                mapping: (val: number) => {
-                    // Buchla 259 Timbre Circuit approximation
-                    let x = val * (1 + timbre * 10)
-                    let symmetry = (harmonics - 0.5) * 0.8
-                    x += symmetry
-
-                    // Multi-stage folding based on 'order'
-                    for (let i = 0; i < 4; i++) {
-                        let stageIntensity = Math.max(0, Math.min(1, order * 5 - i))
-                        if (stageIntensity > 0) {
-                            let folded = x
-                            if (folded > 1) folded = 2 - folded
-                            if (folded < -1) folded = -2 - folded
-                            x = (folded * stageIntensity) + (x * (1 - stageIntensity))
-                        }
-                    }
-                    return x - symmetry
-                }
-            })
+            // Buchla 259 Timbre Circuit approximation
+            this.updateWavefolder(voice, timbre, order, harmonics)
         }
+    }
+
+    private updateWavefolder(voice: HarmVoice, timbre: number, order: number, harmonics: number) {
+        // Ensure inputs are clamped
+        const cTimbre = Math.max(0, Math.min(1, timbre))
+        const cOrder = Math.max(0, Math.min(1, order))
+        const cHarmonics = Math.max(0, Math.min(1, harmonics))
+
+        voice.folder.set({
+            mapping: (val: number) => {
+                let x = val * (1 + cTimbre * 10)
+                let symmetry = (cHarmonics - 0.5) * 0.8
+                x += symmetry
+
+                // Multi-stage folding based on 'order'
+                for (let i = 0; i < 4; i++) {
+                    let stageIntensity = Math.max(0, Math.min(1, cOrder * 5 - i))
+                    if (stageIntensity > 0) {
+                        let folded = x
+                        if (folded > 1) folded = 2 - folded
+                        if (folded < -1) folded = -2 - folded
+                        x = (folded * stageIntensity) + (x * (1 - stageIntensity))
+                    }
+                }
+                return x - symmetry
+            }
+        })
     }
 
     triggerNote(note: string, duration: string, time: number, velocity: number = 0.8) {
@@ -365,7 +374,21 @@ export class HarmSynth {
         // Find an unused voice (FIFO or simple recycle)
         const voice = this.voicePool.shift()
         if (voice) {
-            this.applyVoiceSettings(voice)
+            // Only apply per-note dynamic settings here
+            voice.osc1.type = this.settings.osc1.type
+            voice.osc1.detune.value = this.settings.osc1.detune
+            voice.osc1Env.set(this.settings.osc1.env)
+
+            voice.osc2.type = this.settings.osc2.type
+            voice.osc2.detune.value = this.settings.osc2.detune
+            voice.osc2Env.set(this.settings.osc2.env)
+
+            voice.osc3.type = this.settings.osc3.type
+            voice.osc3.detune.value = this.settings.osc3.detune
+            voice.osc3Env.set(this.settings.osc3.env)
+
+            voice.noiseEnv.set(this.settings.noise.env)
+
             voice.trigger(note, duration, time, velocity, this.settings)
 
             // Put it back later (duration + release)
@@ -480,6 +503,18 @@ export class HarmSynth {
     }
 
     setComplexParams(params: Partial<BuchlaParams>) {
-        this.settings.complex = { ...this.settings.complex, ...params }
+        // Clamp critical values defensively
+        const clamped = { ...params }
+        if (clamped.fmIndex !== undefined) clamped.fmIndex = Math.max(0, Math.min(1, clamped.fmIndex))
+        if (clamped.amIndex !== undefined) clamped.amIndex = Math.max(0, Math.min(1, clamped.amIndex))
+        if (clamped.timbre !== undefined) clamped.timbre = Math.max(0, Math.min(1, clamped.timbre))
+        if (clamped.order !== undefined) clamped.order = Math.max(0, Math.min(1, clamped.order))
+
+        this.settings.complex = { ...this.settings.complex, ...clamped }
+
+        // Update all voices in the pool and active voices
+        const { timbre, order, harmonics } = this.settings.complex
+        this.voicePool.forEach(v => this.updateWavefolder(v, timbre, order, harmonics))
+        this.voices.forEach(v => this.updateWavefolder(v, timbre, order, harmonics))
     }
 }
