@@ -13,7 +13,8 @@ import * as THREE from 'three'
 import { useDrumStore } from '../../../store/instrumentStore'
 import { useVisualStore } from '../../../store/visualStore'
 import { useAudioVisualBridge } from '../../../lib/AudioVisualBridge'
-import { MeshWobbleMaterial, Text, Box, RoundedBox, MeshTransmissionMaterial, Instances, Instance } from '@react-three/drei'
+import { Text, Box, RoundedBox, MeshTransmissionMaterial, Instances, Instance } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 import { Knob3D } from '../controls/Knob3D'
 import { Button3D } from '../controls/Button3D'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
@@ -103,14 +104,13 @@ function SnareDrum() {
     return (
         <mesh ref={meshRef} position={[-3.5, 1, 1]}>
             <tetrahedronGeometry args={[0.8, 2]} />
-            <MeshWobbleMaterial
-                color="#4466ff"
+            <WhiskMaterial
+                baseColor="#4466ff"
                 emissive="#1122aa"
-                emissiveIntensity={0.5}
-                factor={0.4}
-                speed={2}
                 metalness={0.8}
                 roughness={0.1}
+                distort={0.4}
+                speed={2}
             />
         </mesh>
     )
@@ -132,7 +132,7 @@ function HiHatParticles() {
             {Array.from({ length: 40 }).map((_, i) => (
                 <mesh key={i} position={[Math.cos(i / 40 * Math.PI * 2) * 1.2, (Math.random() - 0.5) * 0.5, Math.sin(i / 40 * Math.PI * 2) * 1.2]}>
                     <boxGeometry args={[0.05, 0.05, 0.05]} />
-                    <meshStandardMaterial color="#ffff44" emissive="#ffff00" emissiveIntensity={0.8} />
+                    <WhiskMaterial baseColor="#ffff44" emissive="#ffff00" />
                 </mesh>
             ))}
         </group>
@@ -215,7 +215,7 @@ function ChannelStrip({ instrument, xPos, color, label }: { instrument: 'kick' |
         <group position={[xPos, 0, 0]}>
             {/* Backplate */}
             <RoundedBox args={[2.8, 0.2, 3]} radius={0.1} position={[0, -0.1, 0]}>
-                <meshStandardMaterial color="#1a1a1a" roughness={0.5} metalness={0.5} />
+                <WhiskMaterial baseColor="#1a1a1a" roughness={0.5} metalness={0.5} />
             </RoundedBox>
 
             {/* Label */}
@@ -265,7 +265,7 @@ function ControlConsole() {
         <group position={[0, -3.5, 4]} rotation={[-Math.PI / 6, 0, 0]}>
             {/* Desk Base */}
             <RoundedBox args={[11, 0.1, 4.5]} radius={0.2} position={[0, -0.3, 0]}>
-                <meshStandardMaterial color="#050505" roughness={0.2} metalness={0.8} />
+                <WhiskMaterial baseColor="#050505" roughness={0.2} metalness={0.8} />
             </RoundedBox>
 
             <ChannelStrip instrument="snare" xPos={-3.5} color="#4466ff" label="Snare" />

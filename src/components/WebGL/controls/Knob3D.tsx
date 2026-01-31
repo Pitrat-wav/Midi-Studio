@@ -6,6 +6,7 @@ import { useRef, useState, useMemo, useCallback } from 'react'
 import { useFrame, useThree, ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Text } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 
 export interface Knob3DProps {
     position: [number, number, number]
@@ -168,12 +169,11 @@ export function Knob3D({
                 onPointerDown={handlePointerDown}
             >
                 <cylinderGeometry args={[0.3 * size, 0.3 * size, 0.15 * size, 32]} />
-                <meshStandardMaterial
-                    color={baseColor}
+                <WhiskMaterial
+                    baseColor={color}
                     metalness={0.9}
                     roughness={0.2}
-                    emissive={emissiveColor}
-                    emissiveIntensity={isHovered || isDragging ? 1.5 : 0.5}
+                    emissive={color}
                 />
             </mesh>
 
@@ -184,8 +184,8 @@ export function Knob3D({
 
             <mesh position={[0, -0.1 * size, 0]} rotation={[Math.PI / 2, 0, 0]}>
                 <ringGeometry args={[0.32 * size, 0.4 * size, 32]} />
-                <meshStandardMaterial
-                    color={baseColor}
+                <WhiskMaterial
+                    baseColor={color}
                     metalness={0.7}
                     roughness={0.3}
                     opacity={0.5}

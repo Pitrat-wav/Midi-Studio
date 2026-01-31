@@ -656,7 +656,7 @@ import sampleManifestDataRaw from '../data/sampleManifest.json'
 const sampleManifestData = sampleManifestDataRaw as SampleItem[]
 
 export const useSamplerStore = create<SamplerState>((set, get) => ({
-    url: sampleManifestData.length > 0 ? sampleManifestData[0].path : 'https://tonejs.github.io/audio/berklee/gong_1.mp3',
+    url: (sampleManifestData && sampleManifestData.length > 0) ? sampleManifestData[0].path : 'https://tonejs.github.io/audio/berklee/gong_1.mp3',
     slices: 8,
     activeSlice: -1,
     playbackRate: 1,
@@ -682,7 +682,7 @@ export const useSamplerStore = create<SamplerState>((set, get) => ({
 
     nextSample: () => {
         const { availableSamples, currentSampleIndex } = get()
-        if (availableSamples.length === 0) return
+        if (!availableSamples || availableSamples.length === 0) return
 
         const nextIndex = (currentSampleIndex + 1) % availableSamples.length
         const nextUrl = availableSamples[nextIndex].path
@@ -694,10 +694,11 @@ export const useSamplerStore = create<SamplerState>((set, get) => ({
 
     prevSample: () => {
         const { availableSamples, currentSampleIndex } = get()
-        if (availableSamples.length === 0) return
+        if (!availableSamples || availableSamples.length === 0) return
 
         const prevIndex = (currentSampleIndex - 1 + availableSamples.length) % availableSamples.length
-        const prevUrl = availableSamples[prevIndex].path
+        const prevUrl = (availableSamples[prevIndex] && availableSamples[prevIndex].path) ? availableSamples[prevIndex].path : ''
+        if (!prevUrl) return
         set({
             currentSampleIndex: prevIndex,
             url: prevUrl

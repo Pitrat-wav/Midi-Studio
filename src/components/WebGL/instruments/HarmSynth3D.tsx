@@ -10,7 +10,8 @@
 
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Text, Float, MeshDistortMaterial, MeshWobbleMaterial } from '@react-three/drei'
+import { Text, Float } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 import * as THREE from 'three'
 import { useHarmStore, HARM_PRESETS } from '../../../store/instrumentStore'
 import { useVisualStore } from '../../../store/visualStore'
@@ -29,7 +30,7 @@ function WavefoldingVisual({ position, timbre, order, harmonics, active, onGestu
     onGesture: (e: any) => void
 }) {
     const meshRef = useRef<THREE.Mesh>(null!)
-    const gestures = useGestureStore()
+    const theme = useVisualStore(s => s.aestheticTheme)
 
     const uniforms = useMemo(() => ({
         uTime: { value: 0 },
@@ -44,20 +45,41 @@ function WavefoldingVisual({ position, timbre, order, harmonics, active, onGestu
         if (!meshRef.current) return
         uniforms.uTime.value = state.clock.elapsedTime
         uniforms.uAudioIntensity.value = active ? 0.5 + timbre : 0.1
-        uniforms.uPitch.value = timbre // map timbre to color
+        uniforms.uPitch.value = timbre
+
+        if (theme !== 'none') {
+            meshRef.current.rotation.x += 0.01 * (1 + timbre * 5)
+            meshRef.current.rotation.y += 0.015 * (1 + timbre * 5)
+        }
     })
 
     return (
         <group position={position}>
             <mesh ref={meshRef} onPointerDown={onGesture}>
-                <torusKnotGeometry args={[0.8, 0.3, 128, 32, Math.floor(2 + order * 3), Math.floor(3 + harmonics * 5)]} />
-                <shaderMaterial
-                    vertexShader={audioReactiveVertexShader}
-                    fragmentShader={fresnelFragmentShader}
-                    uniforms={uniforms}
-                />
+                {theme === 'none' ? (
+                    <>
+                        <torusKnotGeometry args={[0.8, 0.3, 128, 32, Math.floor(2 + order * 3), Math.floor(3 + harmonics * 5)]} />
+                        <shaderMaterial
+                            vertexShader={audioReactiveVertexShader}
+                            fragmentShader={fresnelFragmentShader}
+                            uniforms={uniforms}
+                        />
+                    </>
+                ) : (
+                    <>
+                        <icosahedronGeometry args={[1.2, 4]} />
+                        <WhiskMaterial
+                            baseColor="#ffffff"
+                            distort={0.4 + timbre * 0.4}
+                            speed={2 + harmonics * 5}
+                            emissive={theme === 'cosmic' ? "#ff00ff" : "#00ff88"}
+                        />
+                    </>
+                )}
             </mesh>
-            <Text position={[0, 1.5, 0]} fontSize={0.2} color="#ffcc33">TOUCH TO FOLD</Text>
+            <Text position={[0, 1.5, 0]} fontSize={0.2} color={theme === 'none' ? "#ffcc33" : "#00ffff"}>
+                {theme === 'none' ? "TOUCH TO FOLD" : "WHISK ENERGY CORE"}
+            </Text>
         </group>
     )
 }
@@ -106,8 +128,8 @@ export function HarmSynth3D() {
             {/* Background glowing panel */}
             <mesh position={[0, 0, -1]}>
                 <planeGeometry args={[10, 8]} />
-                <meshStandardMaterial
-                    color="#050510"
+                <WhiskMaterial
+                    baseColor="#050510"
                     transparent
                     opacity={0.8}
                     metalness={0.9}
@@ -144,21 +166,21 @@ export function HarmSynth3D() {
             <group position={[-3, -1, 0]}>
                 <mesh onClick={() => setParam({ osc1Enabled: !osc1Enabled })}>
                     <octahedronGeometry args={[0.5, 0]} />
-                    <meshStandardMaterial color={osc1Enabled ? "#3390ec" : "#222"} emissive={osc1Enabled ? "#3390ec" : "#000"} />
+                    <WhiskMaterial baseColor={osc1Enabled ? "#3390ec" : "#222"} emissive={osc1Enabled ? "#3390ec" : "#000"} />
                 </mesh>
             </group>
 
             <group position={[0, -1, 0]}>
                 <mesh onClick={() => setParam({ osc2Enabled: !osc2Enabled })}>
                     <icosahedronGeometry args={[0.5, 0]} />
-                    <meshStandardMaterial color={osc2Enabled ? "#ff3b30" : "#222"} emissive={osc2Enabled ? "#ff3b30" : "#000"} />
+                    <WhiskMaterial baseColor={osc2Enabled ? "#ff3b30" : "#222"} emissive={osc2Enabled ? "#ff3b30" : "#000"} />
                 </mesh>
             </group>
 
             <group position={[3, -1, 0]}>
                 <mesh onClick={() => setParam({ osc3Enabled: !osc3Enabled })}>
                     <boxGeometry args={[0.7, 0.7, 0.7]} />
-                    <meshStandardMaterial color={osc3Enabled ? "#4cd964" : "#222"} emissive={osc3Enabled ? "#4cd964" : "#000"} />
+                    <WhiskMaterial baseColor={osc3Enabled ? "#4cd964" : "#222"} emissive={osc3Enabled ? "#4cd964" : "#000"} />
                 </mesh>
             </group>
 

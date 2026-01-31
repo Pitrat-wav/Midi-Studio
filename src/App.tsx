@@ -26,6 +26,8 @@ import { HarmonyScreen } from './components/HUD/HarmonyScreen'
 import { Buchla259Screen } from './components/HUD/Buchla259Screen'
 import { DrumsScreen } from './components/HUD/DrumsScreen'
 import { BassScreen } from './components/HUD/BassScreen'
+import { PadsScreen } from './components/HUD/PadsScreen'
+import { GamepadManager } from './lib/GamepadManager'
 import './App.css'
 
 function App() {
@@ -56,6 +58,11 @@ function App() {
             console.error('Failed to initialize audio engine:', err)
         }
     }
+
+    // Initialize Gamepad Manager
+    useEffect(() => {
+        GamepadManager.init()
+    }, [])
 
     // Initialize AudioVisualBridge when audio engine is ready
     useEffect(() => {
@@ -195,6 +202,7 @@ function App() {
                 {focusedInstrument === 'sampler' && <SamplerScreen />}
                 {focusedInstrument === 'harmony' && <HarmonyScreen />}
                 {focusedInstrument === 'buchla' && <Buchla259Screen />}
+                {focusedInstrument === 'pads' && <PadsScreen />}
 
                 {/* Help hint (bottom right) */}
                 {!showOverlay && (

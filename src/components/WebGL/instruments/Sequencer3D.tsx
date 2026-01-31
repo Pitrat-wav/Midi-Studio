@@ -10,6 +10,7 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text, Float, Line } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 import * as THREE from 'three'
 import { useSequencerStore, Stage, SnakeCell } from '../../../store/instrumentStore'
 import { Knob3D } from '../controls/Knob3D'
@@ -44,11 +45,11 @@ function NeuralRingVisual({ position, register, bits, probability }: { position:
             {/* Nucleus */}
             <mesh position={[0, 0, 0]}>
                 <icosahedronGeometry args={[0.5, 1]} />
-                <meshStandardMaterial
-                    color="#ff00ff"
+                <WhiskMaterial
+                    baseColor="#ff00ff"
                     emissive="#ff00ff"
-                    emissiveIntensity={probability * 2}
-                    wireframe
+                    opacity={probability * 0.8}
+                    transparent
                 />
             </mesh>
 
@@ -71,7 +72,14 @@ function NeuralRingVisual({ position, register, bits, probability }: { position:
                         {/* Node */}
                         <mesh position={[x, 0, z]}>
                             <sphereGeometry args={[0.15, 16, 16]} />
-                            <primitive object={isActive ? activeMaterial : inactiveMaterial} />
+                            <WhiskMaterial
+                                baseColor={isActive ? "#00ffff" : "#112233"}
+                                emissive={isActive ? "#00ffff" : "#000000"}
+                                metalness={0.8}
+                                roughness={0.1}
+                                transparent
+                                opacity={isActive ? 0.8 : 0.2}
+                            />
                         </mesh>
 
                         {/* Synapse Connection (Line to next) */}

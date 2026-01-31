@@ -7,19 +7,8 @@ import { useFrame } from '@react-three/fiber'
 import { Stars, Float, MeshDistortMaterial, Sparkles } from '@react-three/drei'
 import * as THREE from 'three'
 import { useAudioStore } from '../../store/audioStore'
-import { useVisualStore } from '../../store/visualStore'
+import { PRESETS, useVisualStore } from '../../store/visualStore'
 import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
-
-export const PRESETS = [
-    { name: 'DEEP VOID', color: '#000000', stars: 1500, haze: 0, light1: '#ffffff', light2: '#111111' }, // Pure black, cold
-    { name: 'ORION NEBULA', color: '#0a0010', stars: 4000, haze: 0.02, light1: '#ff00cc', light2: '#3300ff' }, // Purple/Pink haze
-    { name: 'BLUE GIANT', color: '#000510', stars: 3000, haze: 0.01, light1: '#00ccff', light2: '#002244' }, // Cold Blue
-    { name: 'RED SUPERGIANT', color: '#100200', stars: 3000, haze: 0.015, light1: '#ff3300', light2: '#441100' }, // Warm Red
-    { name: 'MILKY WAY', color: '#050505', stars: 6000, haze: 0.005, light1: '#ffeeaa', light2: '#aabbff' }, // Dense, varied
-    { name: 'CYBER SPACE', color: '#000205', stars: 2000, haze: 0.01, light1: '#00ffaa', light2: '#ff00ff' }, // Neon accents
-    { name: 'EVENT HORIZON', color: '#000000', stars: 500, haze: 0.002, light1: '#333333', light2: '#000000' }, // Dark, minimal
-    { name: 'GOLDEN CLUSTER', color: '#050300', stars: 5000, haze: 0.01, light1: '#ffcc00', light2: '#ff8800' } // Gold/Warm
-]
 
 export function GenerativeBackground() {
     const isPlaying = useAudioStore(s => s.isPlaying)
@@ -27,7 +16,9 @@ export function GenerativeBackground() {
     const bridge = useAudioVisualBridge()
     const meshRef = useRef<THREE.Mesh>(null!)
 
-    const preset = PRESETS[presetIndex % PRESETS.length]
+    const preset = (PRESETS && Array.isArray(PRESETS) && PRESETS.length > 0)
+        ? PRESETS[presetIndex % PRESETS.length]
+        : { name: 'DEFAULT', color: '#000000', stars: 1000, haze: 0, light1: '#ffffff', light2: '#111111' }
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime()
@@ -48,6 +39,12 @@ export function GenerativeBackground() {
             meshRef.current.scale.lerp(new THREE.Vector3(1 + pulse, 1 + pulse, 1 + pulse), 0.05)
         }
     })
+
+    // Load custom texture if present
+    const map = useMemo(() => {
+        if (!preset.texture) return null
+        return new THREE.TextureLoader().load(preset.texture)
+    }, [preset.texture])
 
     return (
         <group>
@@ -74,7 +71,8 @@ export function GenerativeBackground() {
                 <mesh ref={meshRef} position={[0, 0, -15]}>
                     <icosahedronGeometry args={[5, 15]} />
                     <MeshDistortMaterial
-                        color="#050505"
+                        map={map}
+                        color={map ? "#ffffff" : "#050505"}
                         envMapIntensity={1}
                         clearcoat={1}
                         clearcoatRoughness={0.1}
@@ -83,7 +81,7 @@ export function GenerativeBackground() {
                         distort={isPlaying ? 0.3 : 0.1} // Less distortion
                         speed={isPlaying ? 1.5 : 0.5}   // Slower animation
                         emissive={preset.light1}
-                        emissiveIntensity={0.05} // Less glow flicker
+                        emissiveIntensity={map ? 0.1 : 0.05} // Less glow flicker
                     />
                 </mesh>
             </Float>

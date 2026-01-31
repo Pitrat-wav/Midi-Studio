@@ -255,7 +255,7 @@ export function SequencerLoop() {
                     if (leadSynth) {
                         const scaleScale = Scale.get(`${currentHarmony.root} ${currentHarmony.scale}`)
                         const scaleNotes = scaleScale ? scaleScale.notes : []
-                        if (scaleNotes && scaleNotes.length > 0) {
+                        if (scaleNotes && Array.isArray(scaleNotes) && scaleNotes.length > 0) {
                             const noteCount = scaleNotes.length * 3
                             const noteIdx = Math.floor(normValue * noteCount)
                             const octave = 3 + Math.floor(noteIdx / scaleNotes.length)

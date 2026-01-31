@@ -34,5 +34,21 @@ The Sampler (Instrument #9) was upgraded to a full Granular Synthesis engine on 
 - **Store Sync**: `useSamplerStore` manages the grain parameters.
 - **Engine**: The `SamplerInstrument` class handles the conversion of audio buffers into grain clouds.
 
+## Generative Backgrounds («Whisk» Engine)
+Added high-fidelity generative presets inspired by Google's Whisk AI on **2026-01-31**.
+
+### Components
+- **Custom Textures**: High-resolution abstract maps ("Cosmic Fusion", "Cybernetic Bloom").
+- **Material Shader**: Enhanced `MeshDistortMaterial` with custom clearcoat and metalness settings for textured presets.
+- **Dynamic Cycle**: Background cycle logic refactored to support arbitrary number of presets.
+
+## PlayStation 5 Gamepad Integration
+Native support for Sony DualSense controllers added on **2026-01-31**.
+
+### Components
+- **GamepadManager**: Singleton handling connection, button mapping, and axis polling.
+- **Haptic Feedback**: Context-aware vibrations (Dual-Rumble) for studio interactions.
+- **Mapping**: BPM control via Right Stick, Instrument cycle via L1/R1, and Face Button shortcuts.
+
 ---
 *Last modified: 2026-01-31*

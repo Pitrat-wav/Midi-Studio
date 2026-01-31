@@ -9,6 +9,7 @@ import { useRef, useState, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Text } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 
 export interface Button3DProps {
     position: [number, number, number]
@@ -100,12 +101,11 @@ export function Button3D({
                 userData={{ type: 'control', controlType: 'button', label }}
             >
                 <boxGeometry args={[0.5 * size, 0.15 * size, 0.5 * size]} />
-                <meshStandardMaterial
-                    color={active ? activeColor : baseColor}
+                <WhiskMaterial
+                    baseColor={active ? activeColor.getStyle() : baseColor.getStyle()}
                     metalness={0.8}
                     roughness={0.3}
-                    emissive={active ? activeColor : baseColor}
-                    emissiveIntensity={active ? 0.8 : (isHovered ? 0.3 : 0.1)}
+                    emissive={active ? activeColor.getStyle() : baseColor.getStyle()}
                 />
             </mesh>
 
@@ -126,8 +126,8 @@ export function Button3D({
             {/* Base Platform */}
             <mesh position={[0, -0.1 * size, 0]}>
                 <boxGeometry args={[0.55 * size, 0.05 * size, 0.55 * size]} />
-                <meshStandardMaterial
-                    color="#222222"
+                <WhiskMaterial
+                    baseColor="#222222"
                     metalness={0.5}
                     roughness={0.5}
                 />

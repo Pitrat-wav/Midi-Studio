@@ -13,7 +13,8 @@
 
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Text, MeshDistortMaterial } from '@react-three/drei'
+import { Text } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 import * as THREE from 'three'
 import { useBassStore } from '../../../store/instrumentStore'
 import { useVisualStore } from '../../../store/visualStore'
@@ -79,15 +80,11 @@ export function AcidSynth3D() {
                 }}
             >
                 <planeGeometry args={[5, 5, 128, 128]} />
-                <MeshDistortMaterial
-                    ref={matRef}
-                    color="#3390ec"
+                <WhiskMaterial
+                    baseColor="#3390ec"
                     emissive="#001133"
-                    emissiveIntensity={0.2}
                     metalness={0.9}
                     roughness={0.1}
-                    clearcoat={1}
-                    clearcoatRoughness={0.1}
                     distort={0.4}
                     speed={2}
                 />

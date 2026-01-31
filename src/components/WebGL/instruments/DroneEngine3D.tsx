@@ -10,6 +10,7 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text, Float, Points, PointMaterial } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 import * as THREE from 'three'
 import { useDroneStore } from '../../../store/droneStore'
 import { Knob3D } from '../controls/Knob3D'
@@ -122,7 +123,7 @@ export function DroneEngine3D() {
             {/* Simple Core Indicator instead of Beam */}
             <mesh position={[0, 0, 0]}>
                 <sphereGeometry args={[0.5, 16, 16]} />
-                <meshStandardMaterial color="#8800ff" emissive="#4400ff" emissiveIntensity={0.5} wireframe />
+                <WhiskMaterial baseColor="#8800ff" emissive="#4400ff" />
             </mesh>
 
             {/* Controls */}

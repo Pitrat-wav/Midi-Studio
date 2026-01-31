@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { Text } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 import * as THREE from 'three'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
 import { useVisualStore } from '../../../store/visualStore'
@@ -14,12 +15,11 @@ export function Buchla3D() {
             {/* Rack Main Body */}
             <mesh onClick={() => setFocus('buchla')}>
                 <boxGeometry args={[4, 3, 0.5]} />
-                <meshStandardMaterial
-                    color="#cccccc"
+                <WhiskMaterial
+                    baseColor="#cccccc"
                     metalness={0.8}
                     roughness={0.2}
                     emissive={focused ? "#3366ff" : "#000"}
-                    emissiveIntensity={focused ? 0.5 : 0}
                 />
             </mesh>
 
@@ -40,7 +40,7 @@ export function Buchla3D() {
             <group position={[1, 0, 0.3]}>
                 <mesh rotation={[Math.PI / 2, 0, 0]}>
                     <cylinderGeometry args={[0.3, 0.3, 0.2, 16]} />
-                    <meshStandardMaterial color="#0055ff" />
+                    <WhiskMaterial baseColor="#0055ff" />
                 </mesh>
             </group>
 

@@ -1,7 +1,6 @@
-import { useVisualStore } from '../../store/visualStore'
+import { useVisualStore, PRESETS } from '../../store/visualStore'
 import { useAudioStore } from '../../store/audioStore'
 import { useGestureStore } from '../../logic/GestureManager'
-import { PRESETS } from './GenerativeBackground'
 
 export function GlobalHUD() {
     const handTrackingEnabled = useVisualStore(s => s.handTrackingEnabled)
@@ -51,8 +50,8 @@ export function GlobalHUD() {
                 {/* Mic Monitor Toggle */}
                 <MicControl />
 
-                {/* Background Cycle */}
-                <BgControl />
+                {/* Whisk Generative UI */}
+                <WhiskUI />
             </div>
 
             {/* Status Message */}
@@ -144,26 +143,120 @@ function MicControl() {
     )
 }
 
-function BgControl() {
-    const { cycleBackgroundPreset, backgroundPreset } = useVisualStore()
+function WhiskUI() {
+    const { setBackgroundPreset, backgroundPreset, setAestheticTheme } = useVisualStore()
+
+    // Whisk presets are at the end of the PRESETS array
+    const whisk1Index = PRESETS?.findIndex(p => p.name === 'WHISK: COSMIC') ?? -1
+    const whisk2Index = PRESETS?.findIndex(p => p.name === 'WHISK: CYBER') ?? -1
+    const whisk3Index = PRESETS?.findIndex(p => p.name === 'WHISK: PIXEL') ?? -1
 
     return (
-        <button
-            onClick={() => cycleBackgroundPreset()}
-            style={{
-                background: 'rgba(0,0,0,0.5)',
-                color: '#ffcc33',
-                border: '1px solid #ffcc33',
-                padding: '8px 15px',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontSize: '12px',
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            background: 'rgba(51, 144, 236, 0.1)',
+            padding: '12px',
+            borderRadius: '15px',
+            border: '1px solid rgba(51, 144, 236, 0.3)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+        }}>
+            <div style={{
+                fontSize: '10px',
+                color: '#00ffff',
                 fontFamily: 'monospace',
-                width: 'fit-content',
-                textTransform: 'uppercase'
-            }}
-        >
-            🎨 BG: {PRESETS[backgroundPreset % PRESETS.length].name}
-        </button>
+                letterSpacing: '1px',
+                marginBottom: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+            }}>
+                <span style={{ animation: 'pulse 1.5s infinite' }}>🧪</span> GOOGLE WHISK LABS
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                    onClick={() => {
+                        setAestheticTheme('none')
+                        setBackgroundPreset(0)
+                    }}
+                    style={{
+                        background: backgroundPreset < 6 ? '#ffcc33' : 'rgba(0,0,0,0.6)',
+                        color: backgroundPreset < 6 ? '#000000' : '#ffcc33',
+                        border: '1px solid #ffcc33',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontFamily: 'monospace',
+                        transition: 'all 0.2s ease',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    DEFAULT
+                </button>
+                <button
+                    onClick={() => whisk1Index >= 0 && setBackgroundPreset(whisk1Index)}
+                    style={{
+                        background: backgroundPreset === whisk1Index ? '#00ffff' : 'rgba(0,0,0,0.6)',
+                        color: backgroundPreset === whisk1Index ? '#000000' : '#00ffff',
+                        border: '1px solid #00ffff',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontFamily: 'monospace',
+                        transition: 'all 0.2s ease',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    COSMIC
+                </button>
+                <button
+                    onClick={() => whisk2Index >= 0 && setBackgroundPreset(whisk2Index)}
+                    style={{
+                        background: backgroundPreset === whisk2Index ? '#00ffff' : 'rgba(0,0,0,0.6)',
+                        color: backgroundPreset === whisk2Index ? '#000000' : '#00ffff',
+                        border: '1px solid #00ffff',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontFamily: 'monospace',
+                        transition: 'all 0.2s ease',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    CYBER
+                </button>
+                <button
+                    onClick={() => whisk3Index >= 0 && setBackgroundPreset(whisk3Index)}
+                    style={{
+                        background: backgroundPreset === whisk3Index ? '#ffff00' : 'rgba(0,0,0,0.6)',
+                        color: backgroundPreset === whisk3Index ? '#000000' : '#ffff00',
+                        border: '1px solid #ffff00',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontFamily: 'monospace',
+                        transition: 'all 0.2s ease',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    PIXEL
+                </button>
+            </div>
+
+            <style>{`
+                @keyframes pulse {
+                    0% { opacity: 0.5; transform: scale(0.95); }
+                    50% { opacity: 1; transform: scale(1.05); }
+                    100% { opacity: 0.5; transform: scale(0.95); }
+                }
+            `}</style>
+        </div>
     )
 }

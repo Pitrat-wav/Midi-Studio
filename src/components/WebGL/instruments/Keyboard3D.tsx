@@ -13,6 +13,7 @@ import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import * as Tone from 'tone'
+import { WhiskMaterial } from '../WhiskMaterial'
 import { useAudioStore } from '../../../store/audioStore'
 import { useVisualStore } from '../../../store/visualStore'
 import { useAudioVisualBridge } from '../../../lib/AudioVisualBridge'
@@ -84,11 +85,11 @@ function Key3D({ note, octave, position, width, height, color, onTrigger }: {
             onPointerOut={handlePointerUp}
         >
             <boxGeometry args={[width, 0.2, height]} />
-            <shaderMaterial
-                vertexShader={audioReactiveVertexShader}
-                fragmentShader={fresnelFragmentShader}
-                uniforms={uniforms}
+            <WhiskMaterial
+                baseColor={color}
+                emissive={isActive ? "#ffffff" : "#000000"}
                 transparent
+                opacity={isActive ? 1.0 : 0.8}
             />
         </mesh>
     )
@@ -116,7 +117,9 @@ export function Keyboard3D() {
                 if (!isBlack) currentX += 0.8
                 else {
                     // Adjust black key position to sit between whites
-                    keys[keys.length - 1].position[0] -= 0.4
+                    if (keys.length > 0) {
+                        keys[keys.length - 1].position[0] -= 0.4
+                    }
                 }
             }
         }

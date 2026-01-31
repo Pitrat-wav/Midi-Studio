@@ -23,46 +23,65 @@ import { useRef } from 'react'
 import * as THREE from 'three'
 import { useAudioVisualBridge } from '../../../lib/AudioVisualBridge'
 import { useVisualStore, type InstrumentType } from '../../../store/visualStore'
+import { useAudioStore } from '../../../store/audioStore'
+import React from 'react'
 
-export function AllInstruments3D() {
+function InstrumentGroup({ instrument, children }: { instrument: InstrumentType, children: React.ReactNode }) {
     const setFocus = useVisualStore(s => s.setFocusInstrument)
     const focus = useVisualStore(s => s.focusInstrument)
 
-    const handleSelect = (e: any, type: InstrumentType) => {
+    const isMuted = useAudioStore(s => {
+        const m = s.mutes as any
+        const key = instrument === 'harmony' ? 'harm' :
+            instrument === 'pads' ? 'pads' :
+                instrument === 'bass' ? 'bass' :
+                    instrument === 'drums' ? 'drums' :
+                        instrument === 'sampler' ? 'sampler' : null
+        return (key && m && m[key]) ? m[key] : false
+    })
+    const energy = useVisualStore(s => (s.energy && s.energy[instrument as string]) || 0)
+    const isFocused = useVisualStore(s => s.focusInstrument === instrument)
+
+    const handleSelect = (e: any) => {
         e.stopPropagation()
-        // If already focused, maybe toggle back to null? Or stay focused?
-        // User asked: "when I click object it approaches".
-        // Usually clicking again might zoom out, or just stay. Let's stay for now or toggle if desired.
-        // Let's implement toggle: if clicked active, go to overview (null).
-        if (focus === type) {
+        if (focus === instrument) {
             setFocus(null)
         } else {
-            setFocus(type)
+            setFocus(instrument)
         }
     }
 
     return (
+        <group onClick={handleSelect}>
+            {/* Display status label if focused? Optional */}
+            {children}
+        </group>
+    )
+}
+
+export function AllInstruments3D() {
+    return (
         <group>
             {/* Core Instruments */}
-            <group onClick={(e) => handleSelect(e, 'drums')}><DrumMachine3D /></group>
-            <group onClick={(e) => handleSelect(e, 'bass')}><AcidSynth3D /></group>
-            <group onClick={(e) => handleSelect(e, 'pads')}><PadsSynth3D /></group>
+            <InstrumentGroup instrument="drums"><DrumMachine3D /></InstrumentGroup>
+            <InstrumentGroup instrument="bass"><AcidSynth3D /></InstrumentGroup>
+            <InstrumentGroup instrument="pads"><PadsSynth3D /></InstrumentGroup>
 
             {/* Restored Instruments */}
-            <group onClick={(e) => handleSelect(e, 'harmony')}><HarmSynth3D /></group>
+            <InstrumentGroup instrument="harmony"><HarmSynth3D /></InstrumentGroup>
 
             {/* Sequencer Cluster - Separated */}
-            <group onClick={(e) => handleSelect(e, 'sequencer')}><Sequencer3D /></group>
-            <group onClick={(e) => handleSelect(e, 'ml185')}><ML1853D /></group>
-            <group onClick={(e) => handleSelect(e, 'snake')}><SnakeGrid3D /></group>
+            <InstrumentGroup instrument="sequencer"><Sequencer3D /></InstrumentGroup>
+            <InstrumentGroup instrument="ml185"><ML1853D /></InstrumentGroup>
+            <InstrumentGroup instrument="snake"><SnakeGrid3D /></InstrumentGroup>
 
-            <group onClick={(e) => handleSelect(e, 'drone')}><DroneEngine3D /></group>
-            <group onClick={(e) => handleSelect(e, 'master')}><MasterControl3D /></group>
-            <group onClick={(e) => handleSelect(e, 'mixer')}><Mixer3D /></group>
-            <group onClick={(e) => handleSelect(e, 'keyboard')}><Keyboard3D /></group>
+            <InstrumentGroup instrument="drone"><DroneEngine3D /></InstrumentGroup>
+            <InstrumentGroup instrument="master"><MasterControl3D /></InstrumentGroup>
+            <InstrumentGroup instrument="mixer"><Mixer3D /></InstrumentGroup>
+            <InstrumentGroup instrument="keyboard"><Keyboard3D /></InstrumentGroup>
 
-            <group onClick={(e) => handleSelect(e, 'sampler')}><Sampler3D /></group>
-            <group onClick={(e) => handleSelect(e, 'buchla')}><Buchla3D /></group>
+            <InstrumentGroup instrument="sampler"><Sampler3D /></InstrumentGroup>
+            <InstrumentGroup instrument="buchla"><Buchla3D /></InstrumentGroup>
 
             {/* Global Lighting - Reactive */}
             <ReactiveLights />
@@ -77,7 +96,10 @@ function ReactiveLights() {
     const hemiLight = useRef<THREE.HemisphereLight>(null)
 
     useFrame(() => {
-        const { uAudioIntensity, uLowFreq, uHighFreq } = bridge.getUniforms()
+        const uniforms = bridge.getUniforms()
+        if (!uniforms) return
+
+        const { uAudioIntensity, uLowFreq, uHighFreq } = uniforms
 
         // Base intensity + Audio reaction
         if (dirLight.current) {

@@ -5,6 +5,7 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text, Box } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 import * as THREE from 'three'
 import { usePresetStore } from '../../../store/usePresetStore'
 import { useCompositionManager } from '../../../logic/CompositionManager'
@@ -36,11 +37,9 @@ function LfoVisualizer({ position, value, target }: { position: [number, number,
         <group position={position}>
             <mesh ref={meshRef}>
                 <dodecahedronGeometry args={[0.5, 0]} />
-                <meshStandardMaterial
-                    color="#00ffff"
+                <WhiskMaterial
+                    baseColor="#00ffff"
                     emissive="#00ffff"
-                    emissiveIntensity={0.5 + value * 2}
-                    wireframe
                 />
             </mesh>
             <Text position={[0, -0.8, 0]} fontSize={0.15} color="#00ffff">LFO: {target}</Text>
@@ -52,12 +51,11 @@ function FxModule({ position, label, wet, color, onChange }: { position: [number
     return (
         <group position={position}>
             <Box args={[1, 1, 1]}>
-                <meshStandardMaterial
-                    color={color}
+                <WhiskMaterial
+                    baseColor={color}
                     transparent
                     opacity={0.3 + wet * 0.7}
                     emissive={color}
-                    emissiveIntensity={wet}
                 />
             </Box>
             <Knob3D
@@ -161,7 +159,7 @@ export function MasterControl3D() {
             <group position={[4.5, -0.5, 0]}>
                 <mesh>
                     <planeGeometry args={[2.5, 1.8]} />
-                    <meshStandardMaterial color="#222244" metalness={0.9} roughness={0.1} transparent opacity={0.8} />
+                    <WhiskMaterial baseColor="#222244" metalness={0.9} roughness={0.1} transparent opacity={0.8} />
                 </mesh>
                 <Text position={[0, 0.5, 0.1]} fontSize={0.15} color="#8888ff">SMART CHORD</Text>
                 <Text position={[0, 0, 0.1]} fontSize={0.3} color="#ffffff">{smartChordType.toUpperCase()}</Text>

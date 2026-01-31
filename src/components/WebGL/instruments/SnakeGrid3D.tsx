@@ -3,6 +3,7 @@
  */
 
 import { Text } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 import { useSequencerStore } from '../../../store/instrumentStore'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
 
@@ -20,10 +21,9 @@ export function SnakeGrid3D() {
                 return (
                     <mesh key={i} position={[x, 0, z]}>
                         <boxGeometry args={[0.8, 0.05, 0.8]} />
-                        <meshStandardMaterial
-                            color={isActive ? "#ff00ff" : cell.active ? "#440044" : "#111111"}
+                        <WhiskMaterial
+                            baseColor={isActive ? "#ff00ff" : cell.active ? "#440044" : "#111111"}
                             emissive={isActive ? "#ff00ff" : "#000000"}
-                            emissiveIntensity={isActive ? 3 : 0}
                             transparent
                             opacity={0.8}
                         />

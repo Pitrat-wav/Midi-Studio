@@ -22,6 +22,7 @@ import { HandVision3D } from './HandVision3D'
 import { GlobalHUD } from './GlobalHUD'
 import { SpectrumAnalyzer3D } from './visualizers/SpectrumAnalyzer3D'
 import { WaveformScope3D } from './visualizers/WaveformScope3D'
+// Postprocessing library removed due to crashes - using custom shaders instead
 import type { InstrumentType } from '../../lib/SpatialLayout'
 
 interface WebGLSceneProps {
@@ -33,6 +34,7 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
     const webglEnabled = useVisualStore(s => s.webglEnabled)
     const internalFocus = useVisualStore(s => s.focusInstrument)
     const setInternalFocus = useVisualStore(s => s.setFocusInstrument)
+    const aestheticTheme = useVisualStore(s => s.aestheticTheme)
 
     // Use external focus if provided, otherwise use internal (Store)
     const focusInstrument = externalFocus ?? internalFocus
@@ -128,7 +130,11 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
 
                     {/* Hand Tracking Visualizer */}
                     <HandVision3D />
+
                 </Suspense>
+
+                {/* Post-Processing disabled due to @react-three/postprocessing library crash */}
+                {/* Pixel effect will be implemented via custom shaders in materials instead */}
             </Canvas>
         </div>
     )

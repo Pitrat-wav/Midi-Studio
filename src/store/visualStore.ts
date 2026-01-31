@@ -1,7 +1,21 @@
 import { create } from 'zustand'
+export const PRESETS = [
+    { name: 'DEEP VOID', color: '#000000', stars: 1500, haze: 0, light1: '#ffffff', light2: '#111111' },
+    { name: 'ORION NEBULA', color: '#0a0010', stars: 4000, haze: 0.02, light1: '#ff00cc', light2: '#3300ff' },
+    { name: 'BLUE GIANT', color: '#000510', stars: 3000, haze: 0.01, light1: '#00ccff', light2: '#002244' },
+    { name: 'RED SUPERGIANT', color: '#100200', stars: 3000, haze: 0.015, light1: '#ff3300', light2: '#441100' },
+    { name: 'MILKY WAY', color: '#050505', stars: 6000, haze: 0.005, light1: '#ffeeaa', light2: '#aabbff' },
+    { name: 'CYBER SPACE', color: '#000205', stars: 2000, haze: 0.01, light1: '#00ffaa', light2: '#ff00ff' },
+    { name: 'EVENT HORIZON', color: '#000000', stars: 500, haze: 0.002, light1: '#333333', light2: '#000000' },
+    { name: 'GOLDEN CLUSTER', color: '#050300', stars: 5000, haze: 0.01, light1: '#ffcc00', light2: '#ff8800' },
+    { name: 'WHISK: COSMIC', color: '#050010', stars: 4000, haze: 0.02, light1: '#ff00ff', light2: '#00ffff', texture: '/assets/visuals/whisk_preset_1.png' },
+    { name: 'WHISK: CYBER', color: '#001005', stars: 3000, haze: 0.015, light1: '#00ff88', light2: '#ffcc00', texture: '/assets/visuals/whisk_preset_2.png' },
+    { name: 'WHISK: PIXEL', color: '#332255', stars: 1000, haze: 0.005, light1: '#ff00ff', light2: '#ffff00', texture: '/assets/visuals/whisk_preset_3.png' }
+]
 
 export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'
 export type PerformanceMode = 'low' | 'medium' | 'high' | 'ultra'
+export type AestheticTheme = 'none' | 'cosmic' | 'cyber' | 'pixel'
 
 export interface EnvironmentConditions {
     temperature: number // Celsius
@@ -60,8 +74,10 @@ interface VisualState {
 
     // Background
     backgroundPreset: number
+    aestheticTheme: AestheticTheme
     setBackgroundPreset: (index: number) => void
     cycleBackgroundPreset: () => void
+    setAestheticTheme: (theme: AestheticTheme) => void
 }
 
 export const useVisualStore = create<VisualState>((set) => ({
@@ -133,10 +149,29 @@ export const useVisualStore = create<VisualState>((set) => ({
 
     // Background Presets
     backgroundPreset: 0,
-    setBackgroundPreset: (index) => set({ backgroundPreset: index }),
-    cycleBackgroundPreset: () => set((state) => ({
-        backgroundPreset: (state.backgroundPreset + 1) % 10 // 10 presets
-    })),
+    aestheticTheme: 'none',
+    setBackgroundPreset: (index) => set({
+        backgroundPreset: index,
+        aestheticTheme: (index >= 0 && PRESETS && PRESETS[index]) ? (
+            PRESETS[index].name?.includes('COSMIC') ? 'cosmic' :
+                PRESETS[index].name?.includes('CYBER') ? 'cyber' :
+                    PRESETS[index].name?.includes('PIXEL') ? 'pixel' : 'none'
+        ) : 'none'
+    }),
+    setAestheticTheme: (theme) => set({ aestheticTheme: theme }),
+    cycleBackgroundPreset: () => set((state) => {
+        const presetsCount = (PRESETS && Array.isArray(PRESETS)) ? PRESETS.length : 1
+        const next = (state.backgroundPreset + 1) % presetsCount
+        const preset = (PRESETS && PRESETS[next]) ? PRESETS[next] : null
+        const nextName = preset?.name || ''
+        return {
+            backgroundPreset: next,
+            aestheticTheme:
+                nextName.includes('COSMIC') ? 'cosmic' :
+                    nextName.includes('CYBER') ? 'cyber' :
+                        nextName.includes('PIXEL') ? 'pixel' : 'none'
+        }
+    }),
 
     setStatus: (msg) => {
         set({ statusMessage: msg })

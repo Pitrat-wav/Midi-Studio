@@ -11,6 +11,7 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text, Box, RoundedBox } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 import * as THREE from 'three'
 import { useAudioStore } from '../../../store/audioStore'
 import { useLfoStore } from '../../../store/instrumentStore'
@@ -76,7 +77,7 @@ export function Mixer3D() {
         <group position={layout}>
             {/* Console Base */}
             <RoundedBox args={[8, 6, 0.5]} radius={0.1} smoothness={4} position={[0, -0.5, -0.2]}>
-                <meshStandardMaterial color="#050505" metalness={0.8} roughness={0.2} />
+                <WhiskMaterial baseColor="#050505" metalness={0.8} roughness={0.2} />
             </RoundedBox>
 
             {/* Title */}
@@ -101,7 +102,7 @@ export function Mixer3D() {
             <group position={[0, -4.5, 0]}>
                 <mesh onClick={(e) => { e.stopPropagation(); panic(); }}>
                     <cylinderGeometry args={[0.5, 0.5, 0.2, 32]} />
-                    <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.5} />
+                    <WhiskMaterial baseColor="#ff0000" emissive="#ff0000" />
                 </mesh>
                 <Text position={[0, 0, 0.15]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.2} color="white">PANIC</Text>
             </group>

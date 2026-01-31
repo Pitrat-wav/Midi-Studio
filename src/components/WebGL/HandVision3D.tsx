@@ -96,12 +96,19 @@ export function HandVision3D() {
             ))}
 
             {/* Draw lines for bones */}
-            <line>
-                <bufferGeometry attach="geometry">
-                    <bufferAttribute attach="attributes-position" count={joints.length} array={new Float32Array(joints.flatMap(j => [j.x, j.y, j.z]))} itemSize={3} />
-                </bufferGeometry>
-                <lineBasicMaterial color="#ffffff" opacity={0.3} transparent />
-            </line>
+            {joints.length > 0 && (
+                <line>
+                    <bufferGeometry attach="geometry">
+                        <bufferAttribute
+                            attach="attributes-position"
+                            count={joints.length}
+                            array={new Float32Array(joints.flatMap(j => [j.x, j.y, j.z]))}
+                            itemSize={3}
+                        />
+                    </bufferGeometry>
+                    <lineBasicMaterial color="#ffffff" opacity={0.3} transparent />
+                </line>
+            )}
         </group>
     )
 }

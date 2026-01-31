@@ -4,6 +4,7 @@
 
 import { useMemo } from 'react'
 import { Text } from '@react-three/drei'
+import { WhiskMaterial } from '../WhiskMaterial'
 import { useSequencerStore, type Stage } from '../../../store/instrumentStore'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
 
@@ -24,10 +25,11 @@ export function ML1853D() {
                     <group key={i} position={[x, 0, z]} rotation={[0, -angle, 0]}>
                         <mesh>
                             <cylinderGeometry args={[0.3, 0.1, 0.5, 6]} />
-                            <meshStandardMaterial
-                                color={isActive ? "#ffcc33" : "#333333"}
+                            <WhiskMaterial
+                                baseColor={isActive ? "#ffcc33" : "#333333"}
                                 emissive={isActive ? "#ff9900" : "#000000"}
-                                emissiveIntensity={isActive ? 2 : 0}
+                                metalness={0.9}
+                                roughness={0.1}
                             />
                         </mesh>
                         <Text position={[0, 0.5, 0]} fontSize={0.15} color="#ffffff">{stage.pitch}</Text>

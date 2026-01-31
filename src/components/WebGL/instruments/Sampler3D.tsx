@@ -10,20 +10,19 @@
  * - Active slice glows
  */
 
-import { useRef, useMemo, useState, useEffect } from 'react'
+import { useRef, useMemo, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { Text, Instances, Instance, Cylinder } from '@react-three/drei'
+import { Text } from '@react-three/drei'
 import { useSamplerStore } from '../../../store/instrumentStore'
 import { useAudioStore } from '../../../store/audioStore'
-import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
 
 function Slice({ index, total, isActive, color, onClick }: { index: number, total: number, isActive: boolean, color: string, onClick: () => void }) {
     const meshRef = useRef<THREE.Mesh>(null!)
     const [hovered, setHover] = useState(false)
 
     // Cylinder Sector Logic
-    const anglePerSlice = (Math.PI * 2) / total
+    const anglePerSlice = (Math.PI * 2) / (total || 1)
     const startAngle = index * anglePerSlice
     const midAngle = startAngle + anglePerSlice / 2
 
@@ -36,17 +35,9 @@ function Slice({ index, total, isActive, color, onClick }: { index: number, tota
         if (!meshRef.current) return
         const pulse = isActive ? 0.2 : 0
         meshRef.current.scale.setScalar(1 + pulse)
-        if (isActive) {
-            if (meshRef.current && (meshRef.current.material as any).emissiveIntensity !== undefined) {
-                (meshRef.current.material as any).emissiveIntensity = 2
-                setTimeout(() => {
-                    if (meshRef.current) (meshRef.current.material as any).emissiveIntensity = hovered ? 0.5 : 0.1
-                }, 100)
-            }
-        } else {
-            if (meshRef.current && (meshRef.current.material as any).emissiveIntensity !== undefined) {
-                (meshRef.current.material as any).emissiveIntensity = hovered ? 0.5 : 0.1
-            }
+
+        if (meshRef.current.material && (meshRef.current.material as any).emissiveIntensity !== undefined) {
+            (meshRef.current.material as any).emissiveIntensity = isActive ? 2 : (hovered ? 0.5 : 0.1)
         }
     })
 
@@ -58,59 +49,43 @@ function Slice({ index, total, isActive, color, onClick }: { index: number, tota
                 onPointerOver={() => setHover(true)}
                 onPointerOut={() => setHover(false)}
             >
-                {/* Slice Geometry */}
-                <cylinderGeometry args={[0.5, 0.5, 3, 16, 1, false, 0, anglePerSlice * 0.9]} />
+                <boxGeometry args={[0.5, 3, 0.1]} />
                 <meshStandardMaterial
-                    color={isActive ? "#ffffff" : color}
+                    color={color}
                     emissive={color}
+                    emissiveIntensity={0.1}
                     transparent
-                    opacity={0.6}
-                    side={THREE.DoubleSide}
+                    opacity={0.8}
                 />
             </mesh>
         </group>
     )
 }
 
-export function Sampler3D() {
-    const { slices, playbackRate, volume, setParam, url, availableSamples, currentSampleIndex, nextSample, prevSample } = useSamplerStore()
-    const audioStore = useAudioStore()
-    const { position } = SPATIAL_LAYOUT.sampler
-
-    const [activeSlice, setActiveSlice] = useState(-1)
+export function Sampler3D({ position }: { position: [number, number, number] }) {
+    const { slices, activeSlice, currentSampleIndex, availableSamples } = useSamplerStore()
+    const { triggerSampler } = useAudioStore()
     const timeoutRef = useRef<any>(null)
-
-    // Reload Audio when URL changes
-    useEffect(() => {
-        if (!audioStore.samplerInstrument || !url) return
-        audioStore.samplerInstrument.load(url).then(() => {
-            console.log(`[Sampler3D] Loaded ${url}`)
-        }).catch(err => {
-            console.warn(`[Sampler3D] Failed to load ${url}`, err)
-        })
-    }, [url, audioStore.samplerInstrument])
+    const [, setActiveSlice] = useState(-1) // Local visual feedback
 
     const handleTrigger = (index: number) => {
-        // Audio Trigger
-        audioStore.samplerInstrument?.triggerSlice(index, slices)
-
-        // Visual Trigger
+        triggerSampler(index)
         setActiveSlice(index)
         if (timeoutRef.current) clearTimeout(timeoutRef.current)
         timeoutRef.current = setTimeout(() => setActiveSlice(-1), 200)
     }
 
-    const currentSampleName = availableSamples[currentSampleIndex]?.name || "No Sample"
+    const currentSampleName = (availableSamples && availableSamples[currentSampleIndex]) ? availableSamples[currentSampleIndex].name : "No Sample"
 
     return (
         <group position={position}>
             {/* Main Hologram */}
             <group rotation={[Math.PI / 4, 0, 0]}>
-                {Array.from({ length: slices }).map((_, i) => (
+                {Array.from({ length: Math.max(0, slices || 0) }).map((_, i) => (
                     <Slice
                         key={i}
                         index={i}
-                        total={slices}
+                        total={slices || 8}
                         isActive={i === activeSlice}
                         color="#00ffcc"
                         onClick={() => handleTrigger(i)}
@@ -124,10 +99,11 @@ export function Sampler3D() {
                 </mesh>
             </group>
 
-
-
             <Text position={[0, 3, 0]} fontSize={0.5} color="#00ffcc">
                 CHRONO SPLITTER
+            </Text>
+            <Text position={[0, -3, 0]} fontSize={0.2} color="#ffffff">
+                {currentSampleName}
             </Text>
         </group>
     )

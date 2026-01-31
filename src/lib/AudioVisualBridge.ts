@@ -127,12 +127,14 @@ class AudioVisualBridgeClass {
             const fftData = this.analyser.getValue() as Float32Array
             const waveformData = this.waveformAnalyser.getValue() as Float32Array
 
+            if (!fftData || !waveformData) return
+
             // Вычисляем RMS (Root Mean Square) для общей громкости
             let sumSquares = 0
             for (let i = 0; i < waveformData.length; i++) {
                 sumSquares += waveformData[i] * waveformData[i]
             }
-            const rms = Math.sqrt(sumSquares / waveformData.length)
+            const rms = Math.sqrt(sumSquares / (waveformData.length || 1))
 
             // Разделяем частоты на диапазоны (приблизительно)
             // FFT bins распределены логарифмически от 0 до Nyquist (обычно 22050Hz)
