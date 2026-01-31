@@ -21,8 +21,51 @@ export const DrumsScreen: React.FC = () => {
 
     const [selectedDrum, setSelectedDrum] = React.useState<string>('kick')
 
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === '?') {
+                store.toggleInfo()
+            }
+            if (e.key === 'Escape' && store.showInfo) {
+                store.toggleInfo()
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [store.showInfo])
+
     return (
         <div className={`drums-screen hud-window hardware-panel kit-${store.kit}`}>
+            {/* ... rest of the existing JSX ... */}
+
+            {store.showInfo && (
+                <div className="module-info-overlay" onClick={store.toggleInfo}>
+                    <div className="info-card" onClick={e => e.stopPropagation()}>
+                        <button className="close-info" onClick={store.toggleInfo}>×</button>
+                        <h2>{store.kit === '808' ? 'TR-808' : 'TR-909'} REFERENCE</h2>
+                        <div className="info-grid">
+                            <div className="info-section">
+                                <h3>HISTORICAL CONTEXT</h3>
+                                <p>
+                                    {store.kit === '808'
+                                        ? "The Roland TR-808 Rhythm Composer (1980) is the foundation of hip-hop and electronic music. Known for its booming bass drum and crisp hi-hats."
+                                        : "The Roland TR-909 (1983) blended analog drum synthesis with digital 6-bit samples for cymbals, defining the sound of house and techno."}
+                                </p>
+                            </div>
+                            <div className="info-section">
+                                <h3>CONTROLS</h3>
+                                <ul>
+                                    <li><strong>START/STOP</strong>: Launch the master clock.</li>
+                                    <li><strong>KNOBS</strong>: Tactical control over PITCH, DECAY, and LEVEL.</li>
+                                    <li><strong>SEQUENCER</strong>: 16 physical buttons to program the pattern.</li>
+                                    <li><strong>?</strong>: Toggle this help screen.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* WOOD/PLASTIC SIDES */}
             <div className="side-panel left" />
             <div className="side-panel right" />

@@ -40,7 +40,9 @@ interface DrumState {
     setKit: (kit: '808' | '909') => void
     activePatterns: { kick: boolean[], snare: boolean[], hihat: boolean[], hihatOpen: boolean[], clap: boolean[], ride: boolean[] }
     isPlaying: boolean
+    showInfo: boolean
     togglePlay: () => void
+    toggleInfo: () => void
     toggleStep: (drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride', index: number) => void
     triggerKick: () => void
     triggerSnare: () => void
@@ -56,6 +58,7 @@ export const useDrumStore = create<DrumState>((set) => ({
     ride: { steps: 16, pulses: 0, rotate: 0, decay: 0.5, pitch: 0.5, volume: -5, muted: false },
     kit: '808',
     isPlaying: false,
+    showInfo: false,
     activePatterns: {
         kick: bjorklund(16, 4).map(v => v === 1),
         snare: bjorklund(16, 0).map(v => v === 1),
@@ -75,6 +78,7 @@ export const useDrumStore = create<DrumState>((set) => ({
     }),
     setKit: (kit) => set({ kit }),
     togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+    toggleInfo: () => set((state) => ({ showInfo: !state.showInfo })),
     toggleStep: (drum, index) => set((state) => {
         const pattern = [...state.activePatterns[drum]]
         pattern[index] = !pattern[index]
