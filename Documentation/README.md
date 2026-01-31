@@ -33,11 +33,12 @@ Guides for the end user and general synthesis tips.
 - [Extended FAQ](./5_User_Reference/FAQ_EXTENDED.md)
 
 ---
-**Latest Updates (v3.4.2):**
-- 🎸 NEW: South Park Rock Band theme - epic rock aesthetics!
-- 🎨 Enhanced Whisk UI with 2x2 grid and visual feedback
-- ✨ Active themes now scale and glow
-- 🔧 Fixed theme application to backgrounds and materials
-- Complete 2D HUD system for all instruments (v3.4.1)
+**Latest Updates (v3.5.0):**
+- 🏔️ AUTHENTIC South Park Theme - based on user references!
+- 🌤️ Light blue sky, green mountains, white snow landscape
+- 🌲 3D pine trees with flat/cartoon shading
+- ❄️ Snowy ground with snowball elements
+- 🎨 Complete cartoon aesthetic matching the TV show
+- Enhanced Whisk UI with visual themes (v3.4.2)
 
-*Last updated: 2026-01-31 21:50 UTC+5*
+*Last updated: 2026-01-31 22:15 UTC+5*
