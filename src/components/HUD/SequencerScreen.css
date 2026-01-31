@@ -1,0 +1,316 @@
+.sequencer-screen {
+    background: linear-gradient(135deg, #0a0a1e 0%, #1a1a3e 100%);
+    border: 2px solid #aa44ff;
+    box-shadow: 0 0 30px rgba(170, 68, 255, 0.3);
+}
+
+.ml185-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+.ml185-harmony-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(170, 68, 255, 0.2);
+}
+
+.ml185-param-compact label {
+    display: block;
+    color: #cc88ff;
+    font-size: 10px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+}
+
+.ml185-select {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    color: #aa44ff;
+    border: 1px solid #aa44ff;
+    padding: 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+.ml185-stages-panel {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(170, 68, 255, 0.3);
+}
+
+.ml185-panel-header {
+    color: #cc88ff;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(170, 68, 255, 0.2);
+}
+
+.ml185-stages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.ml185-stage-card {
+    background: rgba(170, 68, 255, 0.05);
+    border: 1px solid rgba(170, 68, 255, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.ml185-stage-card:hover {
+    background: rgba(170, 68, 255, 0.1);
+    border-color: #aa44ff;
+    transform: translateY(-2px);
+}
+
+.ml185-stage-card.active {
+    background: linear-gradient(135deg, rgba(170, 68, 255, 0.2), rgba(170, 68, 255, 0.1));
+    border-color: #aa44ff;
+    box-shadow: 0 0 15px rgba(170, 68, 255, 0.3);
+}
+
+.stage-number {
+    font-size: 20px;
+    font-weight: bold;
+    color: #aa44ff;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.stage-params {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.stage-param-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.param-label {
+    color: #cc88ff;
+    font-size: 9px;
+    font-weight: bold;
+    width: 30px;
+}
+
+.stage-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.5);
+    color: #aa44ff;
+    border: 1px solid rgba(170, 68, 255, 0.5);
+    padding: 4px;
+    border-radius: 3px;
+    font-size: 11px;
+    text-align: center;
+}
+
+.stage-select {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.5);
+    color: #aa44ff;
+    border: 1px solid rgba(170, 68, 255, 0.5);
+    padding: 4px 2px;
+    border-radius: 3px;
+    font-size: 9px;
+}
+
+.stage-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 14px;
+}
+
+.stage-indicator.on {
+    color: #aa44ff;
+    text-shadow: 0 0 8px #aa44ff;
+}
+
+.stage-indicator.off {
+    color: #444;
+}
+
+.ml185-turing-panel {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(170, 68, 255, 0.3);
+}
+
+.turing-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.turing-param {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.turing-param label {
+    color: #cc88ff;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.turing-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(170, 68, 255, 0.2);
+    outline: none;
+}
+
+.turing-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #aa44ff;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(170, 68, 255, 0.5);
+}
+
+.turing-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #aa44ff;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 10px rgba(170, 68, 255, 0.5);
+}
+
+.turing-value {
+    color: #aa44ff;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: right;
+}
+
+.turing-binary {
+    margin-top: 10px;
+}
+
+.binary-display {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 6px;
+    border: 1px solid rgba(170, 68, 255, 0.3);
+}
+
+.binary-bit {
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.binary-bit.on {
+    background: #aa44ff;
+    color: #000;
+    box-shadow: 0 0 10px rgba(170, 68, 255, 0.5);
+}
+
+.binary-bit.off {
+    background: rgba(170, 68, 255, 0.1);
+    color: #666;
+}
+
+.ml185-snake-panel {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(170, 68, 255, 0.3);
+}
+
+.snake-controls {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.snake-btn {
+    background: rgba(170, 68, 255, 0.1);
+    color: #cc88ff;
+    border: 1px solid rgba(170, 68, 255, 0.3);
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.snake-btn:hover {
+    background: rgba(170, 68, 255, 0.2);
+    border-color: #aa44ff;
+}
+
+.snake-btn.active {
+    background: #aa44ff;
+    color: #000;
+    box-shadow: 0 0 15px rgba(170, 68, 255, 0.5);
+}
+
+.ml185-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(170, 68, 255, 0.1);
+}
+
+.ml185-info-item {
+    display: flex;
+    gap: 8px;
+}
+
+.info-label {
+    color: #888;
+    font-size: 9px;
+    letter-spacing: 1px;
+    min-width: 80px;
+}
+
+.info-value {
+    color: #cc88ff;
+    font-size: 10px;
+    font-weight: bold;
+}

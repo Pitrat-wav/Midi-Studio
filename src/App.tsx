@@ -27,6 +27,9 @@ import { Buchla259Screen } from './components/HUD/Buchla259Screen'
 import { DrumsScreen } from './components/HUD/DrumsScreen'
 import { BassScreen } from './components/HUD/BassScreen'
 import { PadsScreen } from './components/HUD/PadsScreen'
+import { SequencerScreen } from './components/HUD/SequencerScreen'
+import { DroneScreen } from './components/HUD/DroneScreen'
+import { MasterScreen } from './components/HUD/MasterScreen'
 import { GamepadManager } from './lib/GamepadManager'
 import './App.css'
 
@@ -203,6 +206,9 @@ function App() {
                 {focusedInstrument === 'harmony' && <HarmonyScreen />}
                 {focusedInstrument === 'buchla' && <Buchla259Screen />}
                 {focusedInstrument === 'pads' && <PadsScreen />}
+                {(focusedInstrument === 'sequencer' || focusedInstrument === 'ml185') && <SequencerScreen />}
+                {focusedInstrument === 'drone' && <DroneScreen />}
+                {focusedInstrument === 'master' && <MasterScreen />}
 
                 {/* Help hint (bottom right) */}
                 {!showOverlay && (
