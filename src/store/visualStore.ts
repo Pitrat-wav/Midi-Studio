@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type InstrumentType = 'drums' | 'bass' | 'lead' | 'harm' | 'pads' | 'global'
+export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'
 export type PerformanceMode = 'low' | 'medium' | 'high' | 'ultra'
 
 export interface EnvironmentConditions {
@@ -20,26 +20,11 @@ export interface HandLandmark {
 
 interface VisualState {
     // Current "Energy" levels for different parts of the scene (0-1)
-    energy: {
-        drums: number
-        bass: number
-        lead: number
-        pads: number
-        global: number
-    }
-    // High-frequency triggers (for particle bursts, flashes)
-    triggers: {
-        kick: number
-        snare: number
-        hihat: number
-        clap: number
-        note: number
-        bass: number
-        lead: number
-        pads: number
-        harm: number
-    }
-    // Interaction state (which knob is being turned)
+    // Current "Energy" levels
+    energy: Record<string, number>
+    // High-frequency triggers
+    triggers: Record<string, number>
+    // Interaction state
     activeParam: string | null
     interactionEnergy: number
 
@@ -53,10 +38,12 @@ interface VisualState {
     handTrackingEnabled: boolean
     handData: HandLandmark[] | null
     statusMessage: string | null
+    focusInstrument: InstrumentType | null
+    setFocusInstrument: (instrument: InstrumentType | null) => void
 
     // Actions
-    updateEnergy: (instrument: InstrumentType, value: number) => void
-    triggerPulse: (type: keyof VisualState['triggers'], intensity?: number) => void
+    updateEnergy: (instrument: string, value: number) => void
+    triggerPulse: (type: string, intensity?: number) => void
     setInteraction: (param: string | null, value: number) => void
     decay: () => void
 
@@ -70,26 +57,23 @@ interface VisualState {
     setHandTrackingEnabled: (enabled: boolean) => void
     setHandData: (data: HandLandmark[] | null) => void
     setStatus: (msg: string | null) => void
+
+    // Background
+    backgroundPreset: number
+    setBackgroundPreset: (index: number) => void
+    cycleBackgroundPreset: () => void
 }
 
 export const useVisualStore = create<VisualState>((set) => ({
     energy: {
-        drums: 0,
-        bass: 0,
-        lead: 0,
-        pads: 0,
-        global: 0
+        drums: 0, bass: 0, harmony: 0, sequencer: 0, pads: 0,
+        ml185: 0, snake: 0, drone: 0, master: 0, mixer: 0, keyboard: 0,
+        sampler: 0, buchla: 0, global: 0, lead: 0
     },
     triggers: {
-        kick: 0,
-        snare: 0,
-        hihat: 0,
-        clap: 0,
-        note: 0,
-        bass: 0,
-        lead: 0,
-        pads: 0,
-        harm: 0
+        kick: 0, snare: 0, hihat: 0, clap: 0, note: 0,
+        bass: 0, harmony: 0, sequencer: 0, pads: 0,
+        sampler: 0, buchla: 0, lead: 0
     },
     activeParam: null,
     interactionEnergy: 0,
@@ -103,6 +87,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     handTrackingEnabled: false,
     handData: null,
     statusMessage: null,
+    focusInstrument: null,
     conditions: {
         temperature: 20,
         precipitation: false,
@@ -144,6 +129,15 @@ export const useVisualStore = create<VisualState>((set) => ({
 
     setHandData: (data) => set({ handData: data }),
 
+    setFocusInstrument: (instrument) => set({ focusInstrument: instrument }),
+
+    // Background Presets
+    backgroundPreset: 0,
+    setBackgroundPreset: (index) => set({ backgroundPreset: index }),
+    cycleBackgroundPreset: () => set((state) => ({
+        backgroundPreset: (state.backgroundPreset + 1) % 10 // 10 presets
+    })),
+
     setStatus: (msg) => {
         set({ statusMessage: msg })
         setTimeout(() => set({ statusMessage: null }), 2000)
@@ -151,13 +145,15 @@ export const useVisualStore = create<VisualState>((set) => ({
 
     decay: () => set((state) => {
         // Slow decay for energy, fast for triggers
-        const d = (val: number, rate: number) => Math.max(0, val - rate)
+        const d = (val: number, rate: number) => Math.max(0, (val || 0) - rate)
         return {
             energy: {
                 drums: d(state.energy.drums, 0.05),
                 bass: d(state.energy.bass, 0.05),
-                lead: d(state.energy.lead, 0.05),
+                harmony: d(state.energy.harmony, 0.05),
                 pads: d(state.energy.pads, 0.05),
+                buchla: d(state.energy.buchla, 0.05),
+                sampler: d(state.energy.sampler, 0.05),
                 global: d(state.energy.global, 0.02)
             },
             triggers: {
@@ -167,9 +163,10 @@ export const useVisualStore = create<VisualState>((set) => ({
                 clap: d(state.triggers.clap, 0.15),
                 note: d(state.triggers.note, 0.2),
                 bass: d(state.triggers.bass, 0.15),
-                lead: d(state.triggers.lead, 0.15),
+                harmony: d(state.triggers.harmony, 0.15),
                 pads: d(state.triggers.pads, 0.15),
-                harm: d(state.triggers.harm, 0.15)
+                sampler: d(state.triggers.sampler, 0.15),
+                buchla: d(state.triggers.buchla, 0.15)
             },
             interactionEnergy: d(state.interactionEnergy, 0.05),
             globalAudioIntensity: d(state.globalAudioIntensity, 0.1)

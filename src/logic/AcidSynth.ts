@@ -52,7 +52,7 @@ export class AcidSynth {
             this.synth.maxPolyphony = 8
 
             this.dist = new Tone.Distortion(this._distortionAmount)
-            this.outputGain = new Tone.Volume(this._volume).toDestination()
+            this.outputGain = new Tone.Volume(this._volume)
 
             this.synth.chain(this.dist, this.outputGain)
             this.initialized = true

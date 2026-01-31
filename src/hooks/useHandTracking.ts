@@ -47,10 +47,29 @@ export function useHandTracking() {
             const video = document.createElement('video')
             video.autoplay = true
             video.playsInline = true
+            video.muted = true // Prevent feedback
+
+            // Fullscreen background style for "Big" impact, or large overlay
+            Object.assign(video.style, {
+                position: 'fixed',
+                bottom: '20px',
+                left: '20px',
+                width: '320px', // Large PIP
+                height: '240px',
+                objectFit: 'cover',
+                zIndex: '50',
+                borderRadius: '12px',
+                border: '2px solid #3390ec',
+                transform: 'scaleX(-1)', // Mirror
+                opacity: '0.8',
+                pointerEvents: 'none'
+            })
+
+            document.body.appendChild(video)
             videoRef.current = video
 
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, frameRate: 30 }
+                video: { width: 1280, height: 720, frameRate: 60 } // Higher res
             })
             video.srcObject = stream
 
@@ -82,9 +101,12 @@ export function useHandTracking() {
 
         return () => {
             cancelAnimationFrame(requestRef.current!)
-            if (videoRef.current && videoRef.current.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream
-                stream.getTracks().forEach(track => track.stop())
+            if (videoRef.current) {
+                if (videoRef.current.srcObject) {
+                    const stream = videoRef.current.srcObject as MediaStream
+                    stream.getTracks().forEach(track => track.stop())
+                }
+                videoRef.current.remove() // Remove from DOM
             }
         }
     }, [isEnabled, setHandData])

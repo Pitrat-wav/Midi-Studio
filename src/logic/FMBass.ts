@@ -39,7 +39,7 @@ export class FMBass {
             })
 
             this.dist = new Tone.Distortion(0.2)
-            this.outputGain = new Tone.Volume(this._volume).toDestination()
+            this.outputGain = new Tone.Volume(this._volume)
 
             this.synth.chain(this.dist, this.outputGain)
             this.initialized = true

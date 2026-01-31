@@ -21,6 +21,8 @@ const INSTRUMENTS = [
     { id: 'sequencer' as InstrumentType, label: 'Seq', icon: '🎛️', shortcut: '5', color: '#aa44ff' },
     { id: 'drone' as InstrumentType, label: 'Drone', icon: '☄️', shortcut: '6', color: '#8800ff' },
     { id: 'master' as InstrumentType, label: 'Master', icon: '🕹️', shortcut: '7', color: '#cccccc' },
+    { id: 'sampler' as InstrumentType, label: 'Sampler', icon: '🎚️', shortcut: '8', color: '#00ffcc' },
+    { id: 'buchla' as InstrumentType, label: 'Buchla', icon: '🧬', shortcut: '9', color: '#3390ec' },
 ]
 
 export function InstrumentNavigation({ currentInstrument, onSelect }: InstrumentNavigationProps) {

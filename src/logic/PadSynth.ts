@@ -15,7 +15,7 @@ export class PadSynth {
         this.reverb = new Tone.Reverb({
             decay: 4,
             wet: 0.5
-        }).toDestination()
+        })
 
         this.synth = new Tone.PolySynth(Tone.Synth, {
             oscillator: {

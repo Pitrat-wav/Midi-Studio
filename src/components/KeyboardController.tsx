@@ -1,159 +1,142 @@
 import { useEffect } from 'react'
 import { useAudioStore } from '../store/audioStore'
-import { useVisualStore } from '../store/visualStore'
 import { useBassStore, useDrumStore, usePadStore } from '../store/instrumentStore'
+import { useVisualStore } from '../store/visualStore'
 import type { InstrumentType } from '../lib/SpatialLayout'
+import * as Tone from 'tone'
 
 interface KeyboardControllerProps {
     onToggleOverlay?: () => void
-    onSelectInstrument: (instrument: InstrumentType | null) => void
-    focusedInstrument: InstrumentType | null
     onToggleFAQ?: () => void
     showOverlay: boolean
 }
 
 export function KeyboardController({
     onToggleOverlay,
-    onSelectInstrument,
-    focusedInstrument,
     onToggleFAQ,
     showOverlay
 }: KeyboardControllerProps) {
-    const audio = useAudioStore()
-    const bass = useBassStore()
-    const pads = usePadStore()
-    const drums = useDrumStore()
-    const visual = useVisualStore()
+    // We do NOT call useAudioStore() here to avoid re-renders on every step.
+    // Instead we access state directly in the event handler.
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Ignore if typing in input
-            if (e.target instanceof HTMLInputElement) return
+            // Ignore if typing in an input field
+            const target = e.target as HTMLElement
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
 
-            switch (e.key.toLowerCase()) {
-                case ' ':
+            const audio = useAudioStore.getState()
+            const visual = useVisualStore.getState()
+            const bass = useBassStore.getState()
+            const pads = usePadStore.getState()
+            const focusedInstrument = visual.focusInstrument
+
+            console.log(`[Key] ${e.code} (Focus: ${focusedInstrument})`)
+
+            switch (e.code) {
+                // --- TRANSPORT ---
+                case 'Space':
                     e.preventDefault()
                     audio.togglePlay()
+                    // Visual feedback
+                    visual.setStatus(audio.isPlaying ? 'PAUSED' : 'PLAYING')
                     break
-                case 'h':
+                case 'KeyP':
+                    e.preventDefault()
+                    audio.panic()
+                    visual.setStatus('PANIC TRIGGERED')
+                    break
+
+                // --- UI ---
+                case 'KeyH':
                     e.preventDefault()
                     onToggleOverlay?.()
                     break
-                case '?':
-                case '/':
-                    // If it's just '?' (not typing in a box)
-                    e.preventDefault()
-                    onToggleFAQ?.()
-                    break
-                case '0':
-                    e.preventDefault()
-                    onSelectInstrument(null)
-                    break
-                case '1':
-                    e.preventDefault()
-                    onSelectInstrument('drums')
-                    break
-                case '2':
-                    e.preventDefault()
-                    onSelectInstrument('bass')
-                    break
-                case '3':
-                    e.preventDefault()
-                    onSelectInstrument('harmony')
-                    break
-                case '4':
-                    e.preventDefault()
-                    onSelectInstrument('pads')
-                    break
-                case '5':
-                    e.preventDefault()
-                    onSelectInstrument('sequencer')
-                    break
-                case '6':
-                    e.preventDefault()
-                    onSelectInstrument('drone')
-                    break
-                case '7':
-                    e.preventDefault()
-                    onSelectInstrument('master')
-                    break
-                case 'p':
-                    e.preventDefault()
-                    audio.panic()
-                    break
-                case 'm':
-                    e.preventDefault()
-                    if (focusedInstrument) {
-                        const channelMap: Record<string, 'drums' | 'bass' | 'lead' | 'pads' | 'harm'> = {
-                            drums: 'drums', bass: 'bass', harmony: 'harm', pads: 'pads'
-                        }
-                        const chan = channelMap[focusedInstrument]
-                        if (chan) audio.toggleMute(chan)
+                case 'Slash': // ? key (Shift+/)
+                    if (e.shiftKey) {
+                        e.preventDefault()
+                        onToggleFAQ?.()
                     }
                     break
 
-                case 'w':
-                case 'arrowup':
+                // --- NAVIGATION ---
+                case 'Digit0':
                     e.preventDefault()
-                    if (focusedInstrument === 'bass') {
-                        const next = Math.min(bass.cutoff + 500, 20000)
-                        bass.setParams({ cutoff: next })
-                        visual.setStatus(`BASS CUTOFF: ${Math.round(next)}Hz`)
-                    }
-                    if (focusedInstrument === 'pads') {
-                        const next = Math.min(pads.brightness + 0.1, 1)
-                        pads.setParams({ brightness: next })
-                        visual.setStatus(`PADS BRIGHTNESS: ${Math.round(next * 100)}%`)
+                    visual.setFocusInstrument(null)
+                    break
+                case 'Digit1':
+                    visual.setFocusInstrument('drums')
+                    break
+                case 'Digit2':
+                    visual.setFocusInstrument('bass')
+                    break
+                case 'Digit3':
+                    visual.setFocusInstrument('harmony')
+                    break
+                case 'Digit4':
+                    visual.setFocusInstrument('pads')
+                    break
+                case 'Digit5':
+                    visual.setFocusInstrument('sequencer')
+                    break
+                case 'Digit6':
+                    visual.setFocusInstrument('drone')
+                    break
+                case 'Digit7':
+                    visual.setFocusInstrument('master')
+                    break
+                case 'Digit8':
+                    visual.setFocusInstrument('sampler')
+                    break
+                case 'Digit9':
+                    visual.setFocusInstrument('buchla')
+                    break
+
+                // --- MUTE ---
+                case 'KeyM':
+                    e.preventDefault()
+                    if (focusedInstrument) {
+                        const channelMap: Record<string, 'drums' | 'bass' | 'lead' | 'pads' | 'harm'> = {
+                            drums: 'drums', bass: 'bass', harmony: 'harm', buchla: 'harm', pads: 'pads'
+                        }
+                        const chan = channelMap[focusedInstrument]
+                        if (chan) {
+                            audio.toggleMute(chan)
+                            const isMuted = audio.mutes[chan]
+                            visual.setStatus(`${chan.toUpperCase()} ${!isMuted ? 'MUTED' : 'UNMUTED'}`) // Logic is inverted in toggleMute vs state? No, toggleMute flips state. We read OLD state here.
+                            // Actually better to read fresh state after a tick, or just assume toggle.
+                        }
+                    } else {
+                        // Global Mute? Or maybe mute Master?
+                        // audio.toggleMute('master') // Not implemented
                     }
                     break
-                case 's':
-                case 'arrowdown':
+
+                // --- MASTER VOLUME ([ / ]) ---
+                case 'BracketLeft': // [
                     e.preventDefault()
-                    if (focusedInstrument === 'bass') {
-                        const next = Math.max(bass.cutoff - 500, 40)
-                        bass.setParams({ cutoff: next })
-                        visual.setStatus(`BASS CUTOFF: ${Math.round(next)}Hz`)
-                    }
-                    if (focusedInstrument === 'pads') {
-                        const next = Math.max(pads.brightness - 0.1, 0)
-                        pads.setParams({ brightness: next })
-                        visual.setStatus(`PADS BRIGHTNESS: ${Math.round(next * 100)}%`)
-                    }
+                    const vDown = Math.max(Tone.dbToGain(Tone.Destination.volume.value) - 0.1, 0)
+                    audio.setMasterVolume(vDown)
+                    visual.setStatus(`MASTER VOL: ${Math.round(vDown * 100)}%`)
                     break
-                case 'a':
-                case 'arrowleft':
+                case 'BracketRight': // ]
                     e.preventDefault()
-                    if (focusedInstrument === 'bass') {
-                        const next = Math.max(bass.resonance - 1, 1)
-                        bass.setParams({ resonance: next })
-                        visual.setStatus(`BASS RESONANCE: ${next.toFixed(1)}`)
-                    }
-                    if (focusedInstrument === 'pads') {
-                        const next = Math.max(pads.complexity - 0.1, 0)
-                        pads.setParams({ complexity: next })
-                        visual.setStatus(`PADS COMPLEXITY: ${Math.round(next * 100)}%`)
-                    }
+                    const vUp = Math.min(Tone.dbToGain(Tone.Destination.volume.value) + 0.1, 1)
+                    audio.setMasterVolume(vUp)
+                    visual.setStatus(`MASTER VOL: ${Math.round(vUp * 100)}%`)
                     break
-                case 'd':
-                case 'arrowright':
-                    e.preventDefault()
-                    if (focusedInstrument === 'bass') {
-                        const next = Math.min(bass.resonance + 1, 20)
-                        bass.setParams({ resonance: next })
-                        visual.setStatus(`BASS RESONANCE: ${next.toFixed(1)}`)
-                    }
-                    if (focusedInstrument === 'pads') {
-                        const next = Math.min(pads.complexity + 0.1, 1)
-                        pads.setParams({ complexity: next })
-                        visual.setStatus(`PADS COMPLEXITY: ${Math.round(next * 100)}%`)
-                    }
-                    break
+
+                // --- MACRO CONTROLS REMOVED (Handled by CameraController for Navigation) ---
+                // WASD / Arrows now strictly for Camera Movement
+                /*
+                case 'KeyW': ...
+                */
             }
         }
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [audio, onToggleOverlay, onSelectInstrument, onToggleFAQ, focusedInstrument, bass, pads, drums])
+    }, [onToggleOverlay, onToggleFAQ]) // Re-bind if event handlers change
 
     return null
 }

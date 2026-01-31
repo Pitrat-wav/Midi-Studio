@@ -1,39 +1,27 @@
 /**
- * DrumMachine3D — Генеративная WebGL визуализация драм-машины
+ * DrumMachine3D — Generative Physics Drum Visualization & Control Console
  * 
- * Визуальная Метафора:
- * - Kick: Большая пульсирующая сфера в центре
- * - Snare: Icosahedron с vertex displacement
- * - HiHat: Поток частиц по спирали  
- * - Bjorklund Patterns: Светящиеся кольца частиц
- * 
- * Интеграция:
- * - Подписывается на drumStore для параметров
- * - Реагирует на MIDI triggers через AudioVisualBridge
- * - FFT визуализация low frequencies на kick ring
- * 
- * NEW (3D UX):
- * - Interactive 3D controls (knobs, buttons)
- * - Ray-cast based interaction
- * - Spatial layout from SpatialLayout.ts
+ * Features:
+ * - Physics-based Generative Visuals (Gravity Kick, Graphite Snare, Orbital HiHats)
+ * - Interactive Holographic Rings (Drag to change Pulses)
+ * - "Mission Control" Console for precise parameter tuning
  */
 
-import { useRef, useEffect, useMemo } from 'react'
+import { useRef, useMemo, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useDrumStore } from '../../../store/instrumentStore'
 import { useVisualStore } from '../../../store/visualStore'
 import { useAudioVisualBridge } from '../../../lib/AudioVisualBridge'
-import { MeshDistortMaterial, MeshWobbleMaterial } from '@react-three/drei'
+import { MeshWobbleMaterial, Text, Box, RoundedBox, MeshTransmissionMaterial, Instances, Instance } from '@react-three/drei'
 import { Knob3D } from '../controls/Knob3D'
 import { Button3D } from '../controls/Button3D'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
 import { useGestureStore } from '../../../logic/GestureManager'
 import { audioReactiveVertexShader, fresnelFragmentShader } from '../../../shaders/audioReactive.glsl'
 
-/**
- * Kick Drum — Центральная пульсирующая сфера
- */
+// --- Generative Visuals (Preserved & Polished) ---
+
 function KickDrum() {
     const meshRef = useRef<THREE.Mesh>(null!)
     const bridge = useAudioVisualBridge()
@@ -45,361 +33,269 @@ function KickDrum() {
         uTime: { value: 0 },
         uAudioIntensity: { value: 0 },
         uPitch: { value: 0 },
-        uBaseColor: { value: new THREE.Color('#ff4444') },
-        uGlowColor: { value: new THREE.Color('#ffaa00') },
+        uBaseColor: { value: new THREE.Color('#ff2244') }, // Deeper Red
+        uGlowColor: { value: new THREE.Color('#ffaa44') },
         uResonanceExp: { value: 3.0 }
     }), [])
 
     useFrame((state) => {
         if (!meshRef.current) return
-
-        const drumState = useDrumStore.getState()
-        const currentKickPitch = drumState.kick.pitch
-        const kickTrigger = bridge.getPulse('kick')
-
+        const trigger = bridge.getPulse('kick')
         uniforms.uTime.value = state.clock.elapsedTime
-        uniforms.uAudioIntensity.value = 0.2 + kickTrigger * 0.8
-        uniforms.uPitch.value = currentKickPitch * 0.2
+        uniforms.uAudioIntensity.value = 0.2 + trigger * 0.8
+        uniforms.uPitch.value = kickPitch * 0.2
 
-        const scale = 1.0 + kickTrigger * 0.5
+        const scale = 1.0 + trigger * 0.3
         meshRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.2)
-        meshRef.current.rotation.y += 0.002
+        meshRef.current.rotation.y += 0.005
 
-        // Gesture Modulation
-        if (gestures.activeGesture === 'drag' && gestures.targetPosition && gestures.targetPosition.distanceTo(meshRef.current.position) < 2) {
+        // Direct Interact
+        if (gestures.activeGesture === 'drag' && gestures.targetPosition && gestures.targetPosition.distanceTo(meshRef.current.position) < 2.5) {
             const dy = gestures.currentPos.y - gestures.startPos.y
-            const dx = gestures.currentPos.x - gestures.startPos.x
-
-            setParams('kick', {
-                pitch: THREE.MathUtils.clamp(drumState.kick.pitch - dy * 0.005, 0, 1),
-                decay: THREE.MathUtils.clamp(drumState.kick.decay + dx * 0.005, 0, 1)
-            })
+            setParams('kick', { decay: THREE.MathUtils.clamp(useDrumStore.getState().kick.decay + dy * 0.01, 0.1, 1) })
         }
     })
 
     return (
-        <mesh
-            ref={meshRef}
-            position={[0, 0, 0]}
-            onPointerDown={(e) => {
-                e.stopPropagation()
-                gestures.onStart(e.clientX, e.clientY, e.point)
-            }}
-        >
-            <sphereGeometry args={[1.5, 64, 64]} />
-            <shaderMaterial
-                vertexShader={audioReactiveVertexShader}
-                fragmentShader={fresnelFragmentShader}
-                uniforms={uniforms}
-            />
-        </mesh>
-    )
-}
-
-/**
- * Snare Drum — Icosahedron с deformation
- */
-function SnareDrum() {
-    const meshRef = useRef<THREE.Mesh>(null!)
-    const bridge = useAudioVisualBridge()
-    const snarePitch = useDrumStore(s => s.snare.pitch)
-    const setParams = useDrumStore(s => s.setParams)
-    const gestures = useGestureStore()
-
-    useFrame((state) => {
-        if (!meshRef.current) return
-        const drumState = useDrumStore.getState()
-        const snareTrigger = bridge.getPulse('snare')
-
-        const scale = 1.0 + snareTrigger * 0.4
-        meshRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.15)
-        meshRef.current.rotation.x += 0.01
-        meshRef.current.rotation.y += 0.015
-
-        // Gesture Modulation
-        if (gestures.activeGesture === 'drag' && gestures.targetPosition && gestures.targetPosition.distanceTo(meshRef.current.position) < 2) {
-            const dy = gestures.currentPos.y - gestures.startPos.y
-            setParams('snare', {
-                pitch: THREE.MathUtils.clamp(drumState.snare.pitch - dy * 0.005, 0, 1)
-            })
-        }
-    })
-
-    const color = useMemo(() => {
-        const hue = THREE.MathUtils.mapLinear(snarePitch, 0, 1, 0.55, 0.7)
-        return new THREE.Color().setHSL(hue, 0.9, 0.6)
-    }, [snarePitch])
-
-    return (
-        <mesh
-            ref={meshRef}
-            position={[-3, 0, -2]}
-            onPointerDown={(e) => {
-                e.stopPropagation()
-                gestures.onStart(e.clientX, e.clientY, e.point)
-            }}
-        >
-            <icosahedronGeometry args={[0.8, 2]} />
-            <MeshWobbleMaterial
-                color={color}
-                speed={1}
-                factor={0.2}
-                emissive={color}
-                emissiveIntensity={0}
-                metalness={0.8}
-                roughness={0.2}
-            />
-        </mesh>
-    )
-}
-
-/**
- * HiHat — Частицы по спирали
- */
-function HiHatParticles() {
-    const pointsRef = useRef<THREE.Points>(null!)
-    const bridge = useAudioVisualBridge()
-    const hihatPitch = useDrumStore(s => s.hihat.pitch)
-    const drumStore = useDrumStore()
-    const particleCount = useDrumStore(s => s.hihat.steps * 10)
-
-    const { positions, colors } = useMemo(() => {
-        const positions = new Float32Array(particleCount * 3)
-        const colors = new Float32Array(particleCount * 3)
-
-        for (let i = 0; i < particleCount; i++) {
-            const t = i / particleCount
-            // Спираль Архимеда
-            const angle = t * Math.PI * 4
-            const radius = 2 + t * 1
-
-            positions[i * 3] = Math.cos(angle) * radius
-            positions[i * 3 + 1] = t * 2 - 1 // вертикальное распределение
-            positions[i * 3 + 2] = Math.sin(angle) * radius
-
-            // Цвет от желтого до белого
-            const semitones = THREE.MathUtils.mapLinear(hihatPitch, 0, 1, -12, 12)
-            const hue = THREE.MathUtils.mapLinear(semitones, -12, 12, 0.15, 0.18)
-            const color = new THREE.Color().setHSL(hue, 0.7, 0.7 + t * 0.3)
-            colors[i * 3] = color.r
-            colors[i * 3 + 1] = color.g
-            colors[i * 3 + 2] = color.b
-        }
-
-        return { positions, colors }
-    }, [particleCount, hihatPitch])
-
-    useFrame((state) => {
-        if (!pointsRef.current) return
-        const hihatTrigger = bridge.getPulse('hihat')
-
-        // Вращение спирали
-        pointsRef.current.rotation.y += 0.005
-
-        // Масштаб при trigger
-        const scale = 1.0 + hihatTrigger * 0.2
-        pointsRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.3)
-
-        // Обновляем размер точек
-        const material = pointsRef.current.material as THREE.PointsMaterial
-        material.size = 0.05 + hihatTrigger * 0.05
-    })
-
-    return (
-        <points ref={pointsRef} position={[3, 0, -2]}>
-            <bufferGeometry>
-                <bufferAttribute
-                    attach="attributes-position"
-                    count={particleCount}
-                    array={positions}
-                    itemSize={3}
+        <group position={[0, 1, 0]}>
+            <mesh ref={meshRef}>
+                <sphereGeometry args={[1.2, 64, 64]} />
+                <shaderMaterial
+                    vertexShader={audioReactiveVertexShader}
+                    fragmentShader={fresnelFragmentShader}
+                    uniforms={uniforms}
                 />
-                <bufferAttribute
-                    attach="attributes-color"
-                    count={particleCount}
-                    array={colors}
-                    itemSize={3}
-                />
-            </bufferGeometry>
-            <pointsMaterial
-                size={0.05}
-                vertexColors
-                transparent
-                opacity={0.8}
-                sizeAttenuation
-                blending={THREE.AdditiveBlending}
-            />
-        </points>
-    )
-}
-
-/**
- * Bjorklund Pattern Ring — Визуализация эвклидовых ритмов
- */
-interface BjorklundRingProps {
-    instrument: 'kick' | 'snare' | 'hihat'
-    position: [number, number, number]
-    color: THREE.Color
-}
-
-function BjorklundRing({ instrument, position, color }: BjorklundRingProps) {
-    const groupRef = useRef<THREE.Group>(null!)
-    const steps = useDrumStore(s => s[instrument].steps)
-    const pulses = useDrumStore(s => s[instrument].pulses)
-    const currentStep = useVisualStore(s => s.triggers[instrument])
-
-    // Генерируем Bjorklund pattern (упрощенная версия)
-    const pattern = useMemo(() => {
-        const result: boolean[] = Array(steps).fill(false)
-        const interval = steps / pulses
-        for (let i = 0; i < pulses; i++) {
-            result[Math.floor(i * interval)] = true
-        }
-        return result
-    }, [steps, pulses])
-
-    useFrame((state) => {
-        if (!groupRef.current) return
-        groupRef.current.rotation.z = state.clock.elapsedTime * 0.2
-    })
-
-    return (
-        <group ref={groupRef} position={position}>
-            {pattern.map((active, i) => {
-                const angle = (i / steps) * Math.PI * 2
-                const radius = 1.2
-                const x = Math.cos(angle) * radius
-                const y = Math.sin(angle) * radius
-
-                return (
-                    <mesh key={i} position={[x, y, 0]}>
-                        <circleGeometry args={[0.08, 16]} />
-                        <meshBasicMaterial
-                            color={active ? color : new THREE.Color('#222')}
-                            transparent
-                            opacity={active ? (currentStep > 0 ? 1 : 0.6) : 0.3}
-                        />
-                    </mesh>
-                )
-            })}
-
-            {/* Ring outline */}
-            <mesh rotation={[0, 0, 0]}>
-                <ringGeometry args={[1.1, 1.3, 64]} />
-                <meshBasicMaterial
-                    color={color}
-                    transparent
-                    opacity={0.2}
+            </mesh>
+            {/* Glass Shell */}
+            <mesh>
+                <sphereGeometry args={[1.4, 64, 64]} />
+                <MeshTransmissionMaterial
+                    backside
+                    samples={4}
+                    thickness={0.5}
+                    chromaticAberration={0.5}
+                    anisotropy={0.5}
+                    distortion={0.5}
+                    distortionScale={0.5}
+                    temporalDistortion={0.2}
+                    color="#ffcccc"
+                    transmission={1}
+                    roughness={0.1}
                 />
             </mesh>
         </group>
     )
 }
 
-const KickControls = () => {
-    const kick = useDrumStore(s => s.kick)
-    const setParams = useDrumStore(s => s.setParams)
-    const triggerKick = useDrumStore(s => s.triggerKick)
-    const controls = SPATIAL_LAYOUT.drums.controls
+function SnareDrum() {
+    const meshRef = useRef<THREE.Mesh>(null!)
+    const bridge = useAudioVisualBridge()
+
+    useFrame(() => {
+        if (!meshRef.current) return
+        const trigger = bridge.getPulse('snare')
+        const scale = 1.0 + trigger * 0.4
+        meshRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.25)
+        meshRef.current.rotation.x += 0.02
+        meshRef.current.rotation.z += 0.01
+    })
 
     return (
-        <>
-            <Knob3D
-                position={controls.kickPitch}
-                value={kick.pitch}
-                min={0} max={1}
-                label="Kick Pitch"
-                onChange={(v) => setParams('kick', { pitch: v })}
-                color="#ff4444"
-                size={0.8}
+        <mesh ref={meshRef} position={[-3.5, 1, 1]}>
+            <tetrahedronGeometry args={[0.8, 2]} />
+            <MeshWobbleMaterial
+                color="#4466ff"
+                emissive="#1122aa"
+                emissiveIntensity={0.5}
+                factor={0.4}
+                speed={2}
+                metalness={0.8}
+                roughness={0.1}
             />
-            <Knob3D
-                position={controls.kickDecay}
-                value={kick.decay}
-                min={0} max={1}
-                label="Kick Decay"
-                onChange={(v) => setParams('kick', { decay: v })}
-                color="#ff4444"
-                size={0.8}
-            />
-            <Knob3D
-                position={controls.kickVolume}
-                value={THREE.MathUtils.mapLinear(kick.volume, -60, 0, 0, 1)}
-                min={0} max={1}
-                label="Kick Vol"
-                onChange={(v) => setParams('kick', { volume: THREE.MathUtils.mapLinear(v, 0, 1, -60, 0) })}
-                color="#ff4444"
-                size={0.8}
-            />
-            <Button3D
-                position={[controls.kickMute[0], controls.kickMute[1] - 0.7, controls.kickMute[2]]}
-                label="TRIG"
-                active={false}
-                onClick={triggerKick}
-                color="#ff4444"
-                size={0.5}
-            />
-            <Knob3D
-                position={controls.kickSteps}
-                value={kick.steps / 32}
-                min={0} max={1} step={1 / 32}
-                label="Kick Steps"
-                onChange={(v) => setParams('kick', { steps: Math.round(v * 32) })}
-                color="#ff4444"
-                size={0.7}
-            />
-            <Knob3D
-                position={controls.kickPulses}
-                value={kick.pulses / 32}
-                min={0} max={1} step={1 / 32}
-                label="Kick Pulses"
-                onChange={(v) => setParams('kick', { pulses: Math.round(v * 32) })}
-                color="#ff4444"
-                size={0.7}
-            />
-        </>
+        </mesh>
     )
 }
 
-/**
- * Main DrumMachine3D Component
- */
-export function DrumMachine3D() {
+function HiHatParticles() {
+    const groupRef = useRef<THREE.Group>(null!)
     const bridge = useAudioVisualBridge()
 
-    // Register with Bridge
-    useEffect(() => {
-        bridge.register('drumMachine3D', () => { })
-        return () => bridge.unregister('drumMachine3D')
-    }, [bridge])
+    useFrame((state) => {
+        if (!groupRef.current) return
+        const trigger = bridge.getPulse('hihat')
+        groupRef.current.rotation.y += 0.02 + trigger * 0.1
+        groupRef.current.scale.setScalar(1 + trigger * 0.2)
+    })
 
     return (
-        <group>
-            <KickDrum />
-            <SnareDrum />
-            <HiHatParticles />
+        <group ref={groupRef} position={[3.5, 1, 1]}>
+            {Array.from({ length: 40 }).map((_, i) => (
+                <mesh key={i} position={[Math.cos(i / 40 * Math.PI * 2) * 1.2, (Math.random() - 0.5) * 0.5, Math.sin(i / 40 * Math.PI * 2) * 1.2]}>
+                    <boxGeometry args={[0.05, 0.05, 0.05]} />
+                    <meshStandardMaterial color="#ffff44" emissive="#ffff00" emissiveIntensity={0.8} />
+                </mesh>
+            ))}
+        </group>
+    )
+}
 
-            <BjorklundRing
-                instrument="kick"
-                position={[0, -2.5, 0]}
-                color={new THREE.Color('#ff4444')}
+// --- Interactive Bjorklund Rings ---
+
+function InteractiveRing({ instrument, radius, color, yPos }: { instrument: 'kick' | 'snare' | 'hihat', radius: number, color: string, yPos: number }) {
+    const steps = useDrumStore(s => s[instrument].steps)
+    const pulses = useDrumStore(s => s[instrument].pulses)
+    const currentStep = useVisualStore(s => s.triggers[instrument])
+
+    const [isHovered, setIsHovered] = useState(false)
+    const groupRef = useRef<THREE.Group>(null!)
+
+    // Pattern generation
+    const pattern = useMemo(() => {
+        const res = Array(steps).fill(false)
+        if (pulses > 0) {
+            const bucket = steps
+            let count = 0
+            for (let i = 0; i < steps; i++) {
+                count += pulses
+                if (count >= bucket) { count -= bucket; res[i] = true }
+            }
+        }
+        return res
+    }, [steps, pulses])
+
+    useFrame((state) => {
+        if (groupRef.current) {
+            groupRef.current.rotation.y = state.clock.elapsedTime * 0.05 * (yPos === 0 ? 1 : yPos === -0.5 ? -1 : 0.5)
+            // Pulse on hit
+            if (currentStep !== -1) {
+                // Subtle user feedback could go here
+            }
+        }
+    })
+
+    return (
+        <group ref={groupRef} position={[0, yPos, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[radius, radius + 0.05, 64]} />
+                <meshBasicMaterial
+                    color={color}
+                    transparent
+                    opacity={0.1}
+                    side={THREE.DoubleSide}
+                />
+            </mesh>
+
+            {/* Active Steps */}
+            {pattern.map((active, i) => {
+                const angle = (i / steps) * Math.PI * 2
+                const arcLength = (Math.PI * 2) / steps * 0.5
+                return (
+                    <mesh key={i} rotation={[-Math.PI / 2, 0, angle]}>
+                        <ringGeometry args={[radius, radius + 0.1, 32, 1, 0, arcLength]} />
+                        <meshBasicMaterial
+                            color={color}
+                            transparent opacity={active ? ((Math.abs(currentStep - i) < 0.5) ? 1 : 0.6) : 0.1}
+                            side={THREE.DoubleSide}
+                        />
+                    </mesh>
+                )
+            })}
+        </group>
+    )
+}
+
+// --- Control Console ---
+
+function ChannelStrip({ instrument, xPos, color, label }: { instrument: 'kick' | 'snare' | 'hihat', xPos: number, color: string, label: string }) {
+    const state = useDrumStore(s => s[instrument])
+    const setParams = useDrumStore(s => s.setParams)
+    const play = useDrumStore(s => s[`trigger${label}` as 'triggerKick' | 'triggerSnare' | 'triggerHihat'])
+
+    return (
+        <group position={[xPos, 0, 0]}>
+            {/* Backplate */}
+            <RoundedBox args={[2.8, 0.2, 3]} radius={0.1} position={[0, -0.1, 0]}>
+                <meshStandardMaterial color="#1a1a1a" roughness={0.5} metalness={0.5} />
+            </RoundedBox>
+
+            {/* Label */}
+            <Text position={[0, 0.15, -1.2]} fontSize={0.25} color={color} anchorX="center" fontWeight="bold">{label.toUpperCase()}</Text>
+
+            {/* Knobs Row 1 */}
+            <Knob3D
+                position={[-0.8, 0.3, -0.4]}
+                value={state.pitch} min={0} max={1}
+                label="PITCH" color={color} size={0.6}
+                onChange={(v) => setParams(instrument, { pitch: v })}
             />
-            <BjorklundRing
-                instrument="snare"
-                position={[-3, -2.5, -2]}
-                color={new THREE.Color('#4444ff')}
-            />
-            <BjorklundRing
-                instrument="hihat"
-                position={[3, -2.5, -2]}
-                color={new THREE.Color('#ffff44')}
+            <Knob3D
+                position={[0.8, 0.3, -0.4]}
+                value={state.decay} min={0.1} max={1}
+                label="DECAY" color={color} size={0.6}
+                onChange={(v) => setParams(instrument, { decay: v })}
             />
 
-            <KickControls />
+            {/* Knobs Row 2 (Sequencer) */}
+            <Knob3D
+                position={[-0.8, 0.3, 0.6]}
+                value={state.steps / 32} min={0} max={1} step={1 / 32}
+                label="STEPS" color={color} size={0.6}
+                onChange={(v) => setParams(instrument, { steps: Math.max(1, Math.round(v * 32)) })}
+            />
+            <Knob3D
+                position={[0.8, 0.3, 0.6]}
+                value={state.pulses / 32} min={0} max={1} step={1 / 32}
+                label="PULSES" color={color} size={0.6}
+                onChange={(v) => setParams(instrument, { pulses: Math.round(v * 32) })}
+            />
 
-            <ambientLight intensity={0.3} />
-            <pointLight position={[0, 5, 5]} intensity={1} color="#ff4444" />
-            <pointLight position={[-5, 0, 0]} intensity={0.5} color="#4444ff" />
+            {/* Trig Button */}
+            <Button3D
+                position={[0, 0.2, 1.3]}
+                label="TRIG" color={color} size={0.6}
+                active={false}
+                onClick={() => (play as any)()}
+            />
+        </group>
+    )
+}
+
+function ControlConsole() {
+    return (
+        <group position={[0, -3.5, 4]} rotation={[-Math.PI / 6, 0, 0]}>
+            {/* Desk Base */}
+            <RoundedBox args={[11, 0.1, 4.5]} radius={0.2} position={[0, -0.3, 0]}>
+                <meshStandardMaterial color="#050505" roughness={0.2} metalness={0.8} />
+            </RoundedBox>
+
+            <ChannelStrip instrument="snare" xPos={-3.5} color="#4466ff" label="Snare" />
+            <ChannelStrip instrument="kick" xPos={0} color="#ff2244" label="Kick" />
+            <ChannelStrip instrument="hihat" xPos={3.5} color="#ffff44" label="HiHat" />
+        </group>
+    )
+}
+
+export function DrumMachine3D() {
+    return (
+        <group position={SPATIAL_LAYOUT.drums.position}>
+            {/* Visuals suspended above */}
+            <group position={[0, 2, 0]}>
+                <KickDrum />
+                <SnareDrum />
+                <HiHatParticles />
+
+                {/* Holographic Pattern Rings - Stacked vertically around kick */}
+                <InteractiveRing instrument="kick" radius={2.0} color="#ff2244" yPos={0} />
+                <InteractiveRing instrument="snare" radius={2.5} color="#4466ff" yPos={0.2} />
+                <InteractiveRing instrument="hihat" radius={3.0} color="#ffff44" yPos={0.4} />
+            </group>
+
+            {/* Physical Controls below */}
+            <ControlConsole />
+
+            <Text position={[0, 5, -2]} fontSize={0.5} color="#ffffff" anchorX="center">
+                GENERATIVE DRUM LAB
+            </Text>
         </group>
     )
 }

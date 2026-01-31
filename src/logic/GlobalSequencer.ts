@@ -143,17 +143,17 @@ export function startSequencerLoop() {
         }
 
 
-        // 5. HARM SYNTH (ВРЕМЕННО ОТКЛЮЧЕН - нужно исправить HarmState interface)
-        // if (harm.active && harmSynth && totalStep % harm.loopLength === 0) {
-        //     try {
-        //         const rootNote = harmony.root + '2'
-        //         const rootMidi = Tone.Frequency(rootNote).toMidi()
-        //         harmSynth.triggerNote(rootMidi, '2n', time, 0.7)
-        //         console.log('  🔮 HARM triggered')
-        //     } catch (e) {
-        //         console.error('Harm trigger failed:', e)
-        //     }
-        // }
+        // 5. HARM SYNTH
+        if (harm.isPlaying && harmSynth && totalStep % 32 === 0) {
+            try {
+                const rootNote = harmony.root + '2'
+                const rootMidi = Tone.Frequency(rootNote).toMidi()
+                harmSynth.triggerNote(rootNote, '2n', time, 0.7)
+                console.log('  🔮 HARM triggered')
+            } catch (e) {
+                console.error('Harm trigger failed:', e)
+            }
+        }
 
         // Sync UI step counter
         Tone.Draw.schedule(() => {

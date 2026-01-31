@@ -217,7 +217,7 @@ class HarmVoice {
 
 export class HarmSynth {
     private voices: Map<string, HarmVoice> = new Map()
-    private maxVoices = 8
+    private maxVoices = 4
     private voicePool: HarmVoice[] = []
 
     // Global Routing Nodes
@@ -281,7 +281,7 @@ export class HarmSynth {
             this.delay = new Tone.FeedbackDelay('8n', 0.5)
             this.reverb = new Tone.Reverb(2)
 
-            this.outputGain = new Tone.Volume(0).toDestination()
+            this.outputGain = new Tone.Volume(0)
 
             // Main routing: voices -> directBus -> filter1 -> filter2 -> output
             this.directBus.chain(this.filter1, this.filter2, this.outputGain)

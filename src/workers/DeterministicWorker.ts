@@ -14,7 +14,7 @@ let pyodide: PyodideInterface | null = null
 async function initPython() {
     console.log('Worker: Initializing Pyodide...')
     pyodide = await loadPyodide({
-        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/'
+        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.3/full/'
     })
 
     // Install music-related packages if needed (simulated for now)

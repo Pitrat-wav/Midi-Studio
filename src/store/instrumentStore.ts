@@ -611,3 +611,75 @@ export const useLfoStore = create<LfoState>((set) => ({
     setLfo: (params) => set((state) => ({ ...state, ...params })),
     updateValue: (currentValue) => set({ currentValue })
 }))
+
+// Sampler Store
+interface SampleItem {
+    name: string
+    path: string
+    category: string
+}
+
+interface SamplerState {
+    url: string
+    slices: number
+    activeSlice: number
+    playbackRate: number
+    volume: number // dB
+    isPlaying: boolean
+    grid: boolean[] // 16 step sequencer
+    texture: string
+    availableSamples: SampleItem[]
+    currentSampleIndex: number
+    setParam: (params: Partial<SamplerState>) => void
+    toggleStep: (index: number) => void
+    togglePlay: () => void
+    nextSample: () => void
+    prevSample: () => void
+}
+
+import sampleManifestData from '../data/sampleManifest.json'
+
+export const useSamplerStore = create<SamplerState>((set, get) => ({
+    url: sampleManifestData.length > 0 ? sampleManifestData[0].path : 'https://tonejs.github.io/audio/berklee/gong_1.mp3',
+    slices: 8,
+    activeSlice: -1,
+    playbackRate: 1,
+    volume: 0,
+    isPlaying: false,
+    grid: Array(16).fill(false),
+    texture: 'default',
+    availableSamples: sampleManifestData,
+    currentSampleIndex: 0,
+
+    setParam: (params) => set((state) => ({ ...state, ...params })),
+
+    toggleStep: (index) => set((state) => {
+        const newGrid = [...state.grid]
+        newGrid[index] = !newGrid[index]
+        return { grid: newGrid }
+    }),
+
+    togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+
+    nextSample: () => {
+        const { availableSamples, currentSampleIndex } = get()
+        if (availableSamples.length === 0) return
+
+        const nextIndex = (currentSampleIndex + 1) % availableSamples.length
+        set({
+            currentSampleIndex: nextIndex,
+            url: availableSamples[nextIndex].path
+        })
+    },
+
+    prevSample: () => {
+        const { availableSamples, currentSampleIndex } = get()
+        if (availableSamples.length === 0) return
+
+        const prevIndex = (currentSampleIndex - 1 + availableSamples.length) % availableSamples.length
+        set({
+            currentSampleIndex: prevIndex,
+            url: availableSamples[prevIndex].path
+        })
+    }
+}))

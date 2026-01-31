@@ -119,23 +119,10 @@ export function DroneEngine3D() {
 
     return (
         <group position={layout}>
-            {/* The Nebula */}
-            <NebulaField
-                intensity={drone.intensity}
-                grit={drone.grit}
-                chaos={drone.chaos}
-            />
-
-            {/* Pulsating core */}
-            <mesh>
-                <sphereGeometry args={[1, 32, 32]} />
-                <meshStandardMaterial
-                    color="#4400ff"
-                    emissive="#8800ff"
-                    emissiveIntensity={0.5 + drone.intensity * 2}
-                    transparent
-                    opacity={0.3}
-                />
+            {/* Simple Core Indicator instead of Beam */}
+            <mesh position={[0, 0, 0]}>
+                <sphereGeometry args={[0.5, 16, 16]} />
+                <meshStandardMaterial color="#8800ff" emissive="#4400ff" emissiveIntensity={0.5} wireframe />
             </mesh>
 
             {/* Controls */}

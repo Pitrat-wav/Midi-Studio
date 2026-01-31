@@ -1,5 +1,40 @@
 # Журнал изменений (Changelog)
 
+## [2026-01-31] - 3D Studio Restoration & Buchla Integration
+- **FIX**: Resolved "Invisible Scene" bug caused by non-existent font paths in `Text` components.
+- **FIX**: Unified `focusedInstrument` state across `App.tsx` and `visualStore` to restore camera and HUD reactivity.
+- **FEAT**: Fully integrated **Buchla 259 Complex Generator** with 3D model, 2D HUD, and navigation shortcuts.
+- **FIX**: Synchronized `GlobalSequencer` keys with `audioStore` to restore instrument triggering.
+- **ENHANCE**: Updated `InstrumentNavigation` and `InstrumentSearch` to include Sampler and Buchla 259.
+- **SAFETY**: Added `NaN` protection to `AudioVisualBridge` to prevent rendering crashes from audio data glitches.
+
+## [2026-01-30] - Refining VJ Enginex & Loading UI
+- **Critical Fixes:**
+    - Resolved "Launch Studio" freeze caused by massive synchronous audio graph initialization.
+    - Fixed Pyodide version mismatch check in `DeterministicWorker` (updated to 0.29.3).
+    - Fixed `InvalidAccessError` by migrating all Instruments to manual routing (removed `.toDestination()`).
+    - Fixed React Hook ordering violation in `App.tsx`.
+- **UX Improvements:**
+    - **Click-to-Focus**: Added ability to click on any 3D instrument to automatically focus the camera on it. Clicking again returns to Overview.
+    - **Fast Approach**: Double-click on any instrument for instant focus trigger.
+    - **Global Navigation (WASD)**: WASD and Arrow keys now facilitate "Open World" flight navigation anywhere in the scene.
+    - **Camera Locking**: Camera rotation is now locked while interacting with knobs to prevent accidental view shifts.
+    - **Keyboard Shortcuts**: Restored number key (0-9) shortcuts for quick instrument switching & overview.
+    - **Visual Clarity**: Removed distracting artifacts (Yellow Beam) and refined Space Presets.
+    - **Layout Expansion**: Separated Sequencer, ML-185, and Snake into distinct 3D zones for better access.
+    - **Loading Screen**: Visual step-by-step status updates during startup.
+    - **Optimization**: Reduced `HarmSynth` default voice count to 4 for mobile performance.
+
+## v3.2.1 - Audit & Cleanup - 2026-01-31
+### Deep Architecture Audit & Final Cleanup
+- **Legacy Removal**: Удалены все устаревшие 2D-компоненты (`DrumsView`, `MixerView` и др.). Приложение теперь полностью 3D.
+- **Architectural Polish**:
+  - **Atomic Selectors**: Полный рефакторинг `MasterControl3D` для минимизации ре-рендеров.
+  - **Global HUD**: Вынос UI-слоя (BPM, Volume) в отдельный DOM-компонент, изолированный от WebGL-цикла.
+- **Verification**:
+  - **Math Integrity**: Подтверждена математическая точность движка HarmSynth (Buchla) и логики рандома Drone Engine.
+  - **Memory Safety**: Верификация жизненного цикла `AudioVisualBridge` и очистки ресурсов.
+
 ## [Версия 3.2.0] - 2026-01-31
 ### Autonomous Studio Polish & WebGL Optimization
 - **Performance**:

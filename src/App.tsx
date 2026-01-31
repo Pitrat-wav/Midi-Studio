@@ -20,6 +20,10 @@ import { FAQ } from './components/FAQ'
 import { AudioVisualBridge } from './lib/AudioVisualBridge'
 import { useCompositionManager } from './logic/CompositionManager'
 import type { InstrumentType } from './lib/SpatialLayout'
+import { InstrumentSearch } from './components/InstrumentSearch'
+import { SamplerScreen } from './components/HUD/SamplerScreen'
+import { HarmonyScreen } from './components/HUD/HarmonyScreen'
+import { Buchla259Screen } from './components/HUD/Buchla259Screen'
 import './App.css'
 
 function App() {
@@ -30,7 +34,12 @@ function App() {
     const togglePlay = useAudioStore(s => s.togglePlay)
     const setBPM = useAudioStore(s => s.setBpm)
 
-    const [focusedInstrument, setFocusedInstrument] = useState<InstrumentType | null>(null)
+    const loadingStep = useAudioStore(s => s.loadingStep)
+    const isInitializing = useAudioStore(s => s.isInitializing)
+
+    const focusedInstrument = useVisualStore(s => s.focusInstrument)
+    const setFocusedInstrument = useVisualStore(s => s.setFocusInstrument)
+
     const [showOverlay, setShowOverlay] = useState(true)
     const [showFAQ, setShowFAQ] = useState(false)
 
@@ -84,12 +93,21 @@ function App() {
                 <div className="init-content">
                     <h1>🌌 MIDI Studio Pro 3D</h1>
                     <p>Immersive Generative Music Environment</p>
-                    <button
-                        onClick={handleInit}
-                        className="init-button"
-                    >
-                        Launch Studio
-                    </button>
+
+                    {!isInitializing ? (
+                        <button
+                            onClick={handleInit}
+                            className="init-button"
+                        >
+                            Launch Studio
+                        </button>
+                    ) : (
+                        <div className="loading-status">
+                            <div className="spinner"></div>
+                            <p>{loadingStep || "Initializing..."}</p>
+                        </div>
+                    )}
+
                     <p style={{ marginTop: '1.5rem', opacity: 0.6, fontSize: '0.9rem' }}>
                         SPACE to Play/Stop • 1-7 to Navigate • ? for Help
                     </p>
@@ -105,8 +123,6 @@ function App() {
                 <KeyboardController
                     showOverlay={showOverlay}
                     onToggleOverlay={() => setShowOverlay(!showOverlay)}
-                    onSelectInstrument={setFocusedInstrument}
-                    focusedInstrument={focusedInstrument}
                     onToggleFAQ={() => setShowFAQ(!showFAQ)}
                 />
 
@@ -167,6 +183,14 @@ function App() {
                     currentInstrument={focusedInstrument}
                     onSelect={setFocusedInstrument}
                 />
+
+                {/* CMD+K Search HUD */}
+                <InstrumentSearch onSelect={setFocusedInstrument} />
+
+                {/* 2D HUDs */}
+                {focusedInstrument === 'sampler' && <SamplerScreen />}
+                {focusedInstrument === 'harmony' && <HarmonyScreen />}
+                {focusedInstrument === 'buchla' && <Buchla259Screen />}
 
                 {/* Help hint (bottom right) */}
                 {!showOverlay && (

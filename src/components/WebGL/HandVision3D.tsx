@@ -14,7 +14,7 @@ import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
 function FingerJoint({ position }: { position: THREE.Vector3 }) {
     return (
         <mesh position={position}>
-            <sphereGeometry args={[0.1, 8, 8]} />
+            <sphereGeometry args={[0.3, 16, 16]} />
             <meshBasicMaterial color="#3390ec" />
         </mesh>
     )
@@ -29,15 +29,15 @@ export function HandVision3D() {
     const pads = usePadStore.getState()
 
     // Map normalized landmarks to 3D space relative to camera
-    // Or just in front of the viewer
+    // Making it "Fullscreen Big" - covering a wider area
     const joints = useMemo(() => {
         if (!handData) return []
         return handData.map(l => {
-            // Transform 0-1 to something like -5 to 5
+            // Scale up significantly: 20x16 units (approx fullscreen at depth 10)
             return new THREE.Vector3(
-                (0.5 - l.x) * 10,
-                (0.5 - l.y) * 8,
-                -l.z * 5 // Depth
+                (0.5 - l.x) * 20, // Was 10
+                (0.5 - l.y) * 16, // Was 8
+                -l.z * 10
             )
         })
     }, [handData])

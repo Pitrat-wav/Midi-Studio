@@ -75,11 +75,36 @@ function FxModule({ position, label, wet, color, onChange }: { position: [number
 }
 
 export function MasterControl3D() {
-    const audio = useAudioStore()
-    const lfo = useLfoStore()
-    const seq = useSequencerStore()
-    const harmony = useHarmonyStore()
-    const presetStore = usePresetStore()
+    // Audio Store Selectors
+    const bpm = useAudioStore(s => s.bpm)
+    const setBpm = useAudioStore(s => s.setBpm)
+    const setMasterVolume = useAudioStore(s => s.setMasterVolume)
+    const swing = useAudioStore(s => s.swing)
+    const setSwing = useAudioStore(s => s.setSwing)
+    const setFxParam = useAudioStore(s => s.setFxParam)
+    const audioFx = useAudioStore(s => s.fx)
+    const panic = useAudioStore(s => s.panic)
+
+    // LFO Store
+    const lfoValue = useLfoStore(s => s.currentValue)
+    const lfoTarget = useLfoStore(s => s.target)
+    const lfoEnabled = useLfoStore(s => s.enabled)
+    const setLfo = useLfoStore(s => s.setLfo)
+
+    // Sequencer Store
+    const smartChordType = useSequencerStore(s => s.smartChordType)
+    const smartChordEnabled = useSequencerStore(s => s.smartChordEnabled)
+    const setSmartChordParam = useSequencerStore(s => s.setSmartChordParam)
+
+    // Harmony Store
+    const scale = useHarmonyStore(s => s.scale)
+    const root = useHarmonyStore(s => s.root)
+
+    // Preset Store
+    const presets = usePresetStore(s => s.presets)
+    const loadPreset = usePresetStore(s => s.loadPreset)
+    const saveCurrentAs = usePresetStore(s => s.saveCurrentAs)
+
     const { requestNewComp } = useCompositionManager()
     const layout = SPATIAL_LAYOUT.master.position
 
@@ -90,9 +115,9 @@ export function MasterControl3D() {
                 <Knob3D
                     label="BPM"
                     position={[-2.5, 0, 0]}
-                    value={audio.bpm}
+                    value={bpm}
                     min={60} max={200}
-                    onChange={(v) => audio.setBpm(v)}
+                    onChange={(v) => setBpm(v)}
                     color="#ffffff"
                 />
                 <Knob3D
@@ -100,16 +125,16 @@ export function MasterControl3D() {
                     position={[0, 0, 0]}
                     value={0.8} // Shared for destination or harm
                     min={0} max={1}
-                    onChange={(v) => audio.setMasterVolume(v)}
+                    onChange={(v) => setMasterVolume(v)}
                     color="#ffffff"
                     size={1.2}
                 />
                 <Knob3D
                     label="SWING"
                     position={[2.5, 0, 0]}
-                    value={audio.swing}
+                    value={swing}
                     min={0} max={1}
-                    onChange={(v) => audio.setSwing(v)}
+                    onChange={(v) => setSwing(v)}
                     color="#ffffff"
                 />
             </group>
@@ -117,16 +142,16 @@ export function MasterControl3D() {
             {/* LFO Station */}
             <LfoVisualizer
                 position={[-4.5, -0.5, 0]}
-                value={lfo.currentValue}
-                target={lfo.target}
+                value={lfoValue}
+                target={lfoTarget}
             />
 
             <group position={[-4.5, -2, 0]}>
                 <Button3D
-                    label={lfo.enabled ? "LFO ACTIVE" : "LFO OFF"}
+                    label={lfoEnabled ? "LFO ACTIVE" : "LFO OFF"}
                     position={[0, 0, 0.5]}
-                    active={lfo.enabled}
-                    onClick={() => lfo.setLfo({ enabled: !lfo.enabled })}
+                    active={lfoEnabled}
+                    onClick={() => setLfo({ enabled: !lfoEnabled })}
                     color="#00ffff"
                     size={0.6}
                 />
@@ -139,39 +164,80 @@ export function MasterControl3D() {
                     <meshStandardMaterial color="#222244" metalness={0.9} roughness={0.1} transparent opacity={0.8} />
                 </mesh>
                 <Text position={[0, 0.5, 0.1]} fontSize={0.15} color="#8888ff">SMART CHORD</Text>
-                <Text position={[0, 0, 0.1]} fontSize={0.3} color="#ffffff">{seq.smartChordType.toUpperCase()}</Text>
+                <Text position={[0, 0, 0.1]} fontSize={0.3} color="#ffffff">{smartChordType.toUpperCase()}</Text>
                 <Button3D
-                    label={seq.smartChordEnabled ? "ON" : "OFF"}
+                    label={smartChordEnabled ? "ON" : "OFF"}
                     position={[0, -0.6, 0.1]}
-                    active={seq.smartChordEnabled}
-                    onClick={() => seq.setSmartChordParam({ smartChordEnabled: !seq.smartChordEnabled })}
+                    active={smartChordEnabled}
+                    onClick={() => setSmartChordParam({ smartChordEnabled: !smartChordEnabled })}
                     color="#8888ff"
                     size={0.5}
                 />
             </group>
 
-            {/* FX RACK */}
-            <group position={[0, 0, 0]}>
+            {/* EQ RACK */}
+            <group position={[0, 1.5, 0]}>
+                <Text position={[0, 1.2, 0]} fontSize={0.2} color="#ffffff">4-BAND MASTER EQ</Text>
+                <Knob3D
+                    label="LOW"
+                    position={[-2.25, 0, 0]}
+                    value={0} // dB -12 to +12
+                    min={-12} max={12}
+                    onChange={(v) => useAudioStore.getState().setMasterEQ('low', v)}
+                    color="#3390ec"
+                    size={0.7}
+                />
+                <Knob3D
+                    label="LO-MID"
+                    position={[-0.75, 0, 0]}
+                    value={0}
+                    min={-12} max={12}
+                    onChange={(v) => useAudioStore.getState().setMasterEQ('lowMid', v)}
+                    color="#4cd964"
+                    size={0.7}
+                />
+                <Knob3D
+                    label="HI-MID"
+                    position={[0.75, 0, 0]}
+                    value={0}
+                    min={-12} max={12}
+                    onChange={(v) => useAudioStore.getState().setMasterEQ('highMid', v)}
+                    color="#ffcc33"
+                    size={0.7}
+                />
+                <Knob3D
+                    label="HIGH"
+                    position={[2.25, 0, 0]}
+                    value={0}
+                    min={-12} max={12}
+                    onChange={(v) => useAudioStore.getState().setMasterEQ('high', v)}
+                    color="#ff3b30"
+                    size={0.7}
+                />
+            </group>
+
+            {/* EFFECT RACK */}
+            <group position={[0, -1, 0]}>
                 <FxModule
                     position={[-2, 0, 0]}
                     label="REVERB"
-                    wet={audio.fx.reverb.wet}
+                    wet={audioFx.reverb.wet}
                     color="#3399ff"
-                    onChange={(v: number) => audio.setFxParam('reverb', { wet: v })}
+                    onChange={(v: number) => setFxParam('reverb', { wet: v })}
                 />
                 <FxModule
                     position={[0, 0, 0]}
                     label="DELAY"
-                    wet={audio.fx.delay.wet}
+                    wet={audioFx.delay.wet}
                     color="#33ff99"
-                    onChange={(v: number) => audio.setFxParam('delay', { wet: v })}
+                    onChange={(v: number) => setFxParam('delay', { wet: v })}
                 />
                 <FxModule
                     position={[2, 0, 0]}
                     label="DIST"
-                    wet={audio.fx.distortion.wet}
+                    wet={audioFx.distortion.wet}
                     color="#ff3333"
-                    onChange={(v: number) => audio.setFxParam('distortion', { wet: v })}
+                    onChange={(v: number) => setFxParam('distortion', { wet: v })}
                 />
             </group>
 
@@ -183,11 +249,11 @@ export function MasterControl3D() {
                         key={i}
                         label={`P${i + 1}`}
                         position={[i * 1.3 - 1.95, 0.4, 0]}
-                        active={presetStore.presets[i] !== undefined}
+                        active={presets[i] !== undefined}
                         onClick={() => {
-                            const p = presetStore.presets[i]
-                            if (p) presetStore.loadPreset(p.id)
-                            else presetStore.saveCurrentAs(`Preset ${i + 1}`)
+                            const p = presets[i]
+                            if (p) loadPreset(p.id)
+                            else saveCurrentAs(`Preset ${i + 1}`)
                         }}
                         color="#ffcc33"
                         size={0.6}
@@ -198,7 +264,7 @@ export function MasterControl3D() {
                     label="PYTHON RANDOM PRESET"
                     position={[0, -0.6, 0.5]}
                     active={false}
-                    onClick={() => requestNewComp(harmony.scale, harmony.root)}
+                    onClick={() => requestNewComp(scale, root)}
                     color="#00ff00"
                     size={0.6}
                 />
@@ -211,7 +277,7 @@ export function MasterControl3D() {
                     position={[0, 0, 0.5]}
                     active={false}
                     onClick={async () => {
-                        const bpm = audio.bpm
+                        const activeBpm = bpm
                         const drums = useDrumStore.getState()
                         const bass = useBassStore.getState()
                         const seq = useSequencerStore.getState()

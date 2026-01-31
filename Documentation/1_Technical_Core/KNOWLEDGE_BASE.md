@@ -59,6 +59,8 @@ We use a **Multi-Store approach** for performance:
 - **Master Bus**: All instruments sum into a `MasterBus` gain node.
 - **FX Rack**: A global chain of `Distortion -> FeedbackDelay -> Reverb` applied to the master output.
 - **PresetManager**: Captures and applies "Global Snapshots" across all stores, allowing instant recall of entire studio states.
+  - **Structure**: JSON blob containing `audioStore`, `instrumentStore`, and `visualStore` (camera) states.
+  - **Py-Generate**: Uses Python to algorithmically generate new presets based on harmonic rules.
 
 ## 6. Integration with Telegram
 - **Haptic Feedback**: Triggered on every knob movement and button press.
@@ -68,10 +70,22 @@ We use a **Multi-Store approach** for performance:
 - **DeterministicWorker.ts**: Runs a Python environment (Pyodide) in a separate thread.
 - **Music Generator**: Uses Python logic for Euclidean and generative pattern generation, ensuring the main UI thread stays at 60fps.
 
-## 7. Performance Guidelines
+## 7. Performance Guidelines (Updated v3.2)
 - **Transient Updates**: Avoid React re-renders in `useFrame`. Use direct mesh/material mutation via `refs`.
 - **Atomic Selectors**: Always use selectors like `useStore(s => s.prop)` to minimize component updates.
+- **HUD Isolation**: High-frequency UI (BPM, Volume text) is isolated in `GlobalHUD.tsx` to prevent Canvas re-renders.
+- **GPU Instancing**: Particle systems (Nebula) use GLSL shaders to offload CPU.
 - **Shared Uniforms**: Use the `uAudioIntensity` uniform for global audio-reactive effects.
+
+### 4. Audio Engine Architecture
+- **Manual Routing Pattern:**
+    - **Rule:** Never use `.toDestination()` inside Instrument classes (`AcidSynth`, `HarmSynth`, etc.).
+    - **Reason:** It prevents specific routing to the Global FX Chain and causes `InvalidAccessError` if we try to disconnect later.
+    - **Implementation:** Instrument classes should expose an `output` or `outputGain` node. `audioStore.ts` is responsible for connecting this node to `masterBus`.
+- **Initialization Flow:**
+    - `audioStore.initialize()` is the single source of truth.
+    - It handles: `Tone.start()` -> `Context Resume` -> `FX Chain Creation` -> `Instrument Instantiation` -> `Routing` -> `Warmup`.
+    - This requires a visual Loading UI due to the synchronous weight of creating ~200 AudioNodes.
 
 ---
 *End of Knowledge Base*

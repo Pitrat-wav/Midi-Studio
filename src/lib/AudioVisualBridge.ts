@@ -149,9 +149,9 @@ class AudioVisualBridgeClass {
                 else highSum += val
             }
 
-            const lowFreq = lowSum / lowBins
-            const midFreq = midSum / (midBins - lowBins)
-            const highFreq = highSum / (totalBins - midBins)
+            const lowFreq = (lowSum / (lowBins || 1)) || 0
+            const midFreq = (midSum / (midBins - lowBins || 1)) || 0
+            const highFreq = (highSum / (totalBins - midBins || 1)) || 0
 
             // Обновляем uniforms
             this.uniforms.uTime = Tone.now()

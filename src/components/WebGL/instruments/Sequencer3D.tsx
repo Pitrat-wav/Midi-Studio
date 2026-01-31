@@ -16,90 +16,90 @@ import { Knob3D } from '../controls/Knob3D'
 import { Button3D } from '../controls/Button3D'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
 
-function TuringMachine3D({ position, register, bits, probability }: { position: [number, number, number], register: number, bits: number, probability: number }) {
+// ML185 and Snake extracted to separate files.
+// Sequencer3D now acts as the Turing Machine / Hub.
+
+function NeuralRingVisual({ position, register, bits, probability }: { position: [number, number, number], register: number, bits: number, probability: number }) {
     const groupRef = useRef<THREE.Group>(null!)
+    const activeMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+        color: "#00ffff", emissive: "#00ffff", emissiveIntensity: 2,
+        metalness: 0.8, roughness: 0.1, transmission: 0.2
+    }), [])
+    const inactiveMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+        color: "#112233", emissive: "#000000",
+        metalness: 0.5, roughness: 0.4, transmission: 0.1
+    }), [])
 
     useFrame((state) => {
-        if (!groupRef.current) return
-        groupRef.current.rotation.y = state.clock.getElapsedTime() * 0.5
+        if (groupRef.current) {
+            groupRef.current.rotation.y += 0.002
+            // Pulse scale based on probability
+            const s = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.05
+            groupRef.current.scale.set(s, s, s)
+        }
     })
 
     return (
         <group position={position} ref={groupRef}>
+            {/* Nucleus */}
+            <mesh position={[0, 0, 0]}>
+                <icosahedronGeometry args={[0.5, 1]} />
+                <meshStandardMaterial
+                    color="#ff00ff"
+                    emissive="#ff00ff"
+                    emissiveIntensity={probability * 2}
+                    wireframe
+                />
+            </mesh>
+
+            {/* Neural Nodes */}
             {Array.from({ length: 16 }).map((_, i) => {
                 const angle = (i / 16) * Math.PI * 2
-                const radius = 1.2
+                const nextAngle = ((i + 1) / 16) * Math.PI * 2
+                const radius = 2.0
+
                 const x = Math.cos(angle) * radius
                 const z = Math.sin(angle) * radius
+
+                const nx = Math.cos(nextAngle) * radius
+                const nz = Math.sin(nextAngle) * radius
+
                 const isActive = (register >> i) & 1
 
                 return (
-                    <mesh key={i} position={[x, 0, z]}>
-                        <boxGeometry args={[0.2, 0.2, 0.2]} />
-                        <meshStandardMaterial
-                            color={isActive ? "#00ffff" : "#112222"}
-                            emissive={isActive ? "#00ffff" : "#000000"}
-                            emissiveIntensity={2}
-                        />
-                    </mesh>
-                )
-            })}
-            <Text position={[0, -0.5, 0]} fontSize={0.2} color="#00ffff" rotation={[Math.PI / 2, 0, 0]}>TURING MACHINE</Text>
-        </group>
-    )
-}
-
-function ML185_3D({ position, stages, currentIndex }: { position: [number, number, number], stages: Stage[], currentIndex: number }) {
-    return (
-        <group position={position}>
-            {stages.map((stage, i) => {
-                const angle = (i / 8) * Math.PI * 2
-                const radius = 2
-                const x = Math.cos(angle) * radius
-                const z = Math.sin(angle) * radius
-                const isActive = i === currentIndex
-
-                return (
-                    <group key={i} position={[x, 0, z]} rotation={[0, -angle, 0]}>
-                        <mesh>
-                            <cylinderGeometry args={[0.3, 0.1, 0.5, 6]} />
-                            <meshStandardMaterial
-                                color={isActive ? "#ffcc33" : "#333333"}
-                                emissive={isActive ? "#ff9900" : "#000000"}
-                                emissiveIntensity={isActive ? 2 : 0}
-                            />
+                    <group key={i}>
+                        {/* Node */}
+                        <mesh position={[x, 0, z]}>
+                            <sphereGeometry args={[0.15, 16, 16]} />
+                            <primitive object={isActive ? activeMaterial : inactiveMaterial} />
                         </mesh>
-                        <Text position={[0, 0.5, 0]} fontSize={0.15} color="#ffffff">{stage.pitch}</Text>
+
+                        {/* Synapse Connection (Line to next) */}
+                        <Line
+                            points={[[x, 0, z], [nx, 0, nz]]}
+                            color={isActive ? "#00ffff" : "#112233"}
+                            lineWidth={isActive ? 2 : 0.5}
+                            transparent
+                            opacity={isActive ? 0.8 : 0.2}
+                        />
+
+                        {/* Energy Beam to Center (if active) */}
+                        {isActive ? (
+                            <Line
+                                points={[[x, 0, z], [0, 0, 0]]}
+                                color="#ff00ff"
+                                lineWidth={1}
+                                transparent
+                                opacity={0.3}
+                            />
+                        ) : null}
                     </group>
                 )
             })}
-            <Text position={[0, -0.2, 0]} fontSize={0.25} color="#ffcc33" rotation={[-Math.PI / 2, 0, 0]}>ML-185 STEP SEQ</Text>
-        </group>
-    )
-}
 
-function SnakeGrid3D({ position, grid, currentIndex }: { position: [number, number, number], grid: SnakeCell[], currentIndex: number }) {
-    return (
-        <group position={position}>
-            {grid.map((cell, i) => {
-                const x = (i % 4) - 1.5
-                const z = Math.floor(i / 4) - 1.5
-                const isActive = i === currentIndex
-
-                return (
-                    <mesh key={i} position={[x, 0, z]}>
-                        <boxGeometry args={[0.8, 0.05, 0.8]} />
-                        <meshStandardMaterial
-                            color={isActive ? "#ff00ff" : cell.active ? "#440044" : "#111111"}
-                            emissive={isActive ? "#ff00ff" : "#000000"}
-                            emissiveIntensity={isActive ? 3 : 0}
-                            transparent
-                            opacity={0.8}
-                        />
-                    </mesh>
-                )
-            })}
-            <Text position={[0, 0.5, 0]} fontSize={0.2} color="#ff00ff">MDD SNAKE</Text>
+            <Text position={[0, -1, 0]} fontSize={0.2} color="#00ffff" rotation={[Math.PI / 2, 0, 0]}>
+                NEURAL SEQUENCER
+            </Text>
         </group>
     )
 }
@@ -135,37 +135,12 @@ export function Sequencer3D() {
                 />
             </group>
 
-            {/* ML-185 */}
-            <ML185_3D
-                position={[-4, 0, 0]}
-                stages={seq.stages}
-                currentIndex={seq.currentStageIndex}
-            />
-
-            {/* Turing Machine */}
-            <TuringMachine3D
+            {/* Turing Machine as Neural Ring */}
+            <NeuralRingVisual
                 position={[0, 2, -2]}
                 register={seq.turingRegister}
                 bits={seq.turingBits}
                 probability={seq.turingProbability}
-            />
-
-            <group position={[0, 1.5, -2]}>
-                <Knob3D
-                    label="Entropy"
-                    position={[-1, 0, 1]}
-                    value={seq.turingProbability}
-                    min={0} max={1}
-                    onChange={(v) => seq.setTuringParam({ turingProbability: v })}
-                    color="#00ffff"
-                />
-            </group>
-
-            {/* MDD Snake */}
-            <SnakeGrid3D
-                position={[4, 0, 0]}
-                grid={seq.snakeGrid}
-                currentIndex={seq.currentSnakeIndex}
             />
 
             <Text

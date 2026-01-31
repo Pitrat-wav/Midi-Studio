@@ -2,128 +2,103 @@
  * AcidSynth3D — 3D Visualization for Acid Bass Synth
  * 
  * Visual Metaphor:
- * - Deformable plane reacting to cutoff/resonance
- * - Vertex displacement based on filter frequency
- * - Fresnel glow for resonance peaks
+ * - "Liquid Metal" Surface (Mercury/Chrome)
+ * - Ripples and Distortion based on Resonance/Cutoff
+ * - Generative MeshDistortMaterial
  * 
  * Interactive Controls:
- * - Cutoff, Resonance, Slide, Distortion knobs
- * - Density, Type, Morph pattern controls
+ * - Drag Surface to Modulate
+ * - Touch Interaction
  */
 
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Text } from '@react-three/drei'
+import { Text, MeshDistortMaterial } from '@react-three/drei'
 import * as THREE from 'three'
 import { useBassStore } from '../../../store/instrumentStore'
 import { useVisualStore } from '../../../store/visualStore'
 import { Knob3D } from '../controls/Knob3D'
 import { Button3D } from '../controls/Button3D'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
-import { audioReactiveVertexShader, fresnelFragmentShader } from '../../../shaders/audioReactive.glsl'
 import { useGestureStore } from '../../../logic/GestureManager'
 
 export function AcidSynth3D() {
     const meshRef = useRef<THREE.Mesh>(null!)
+    const matRef = useRef<any>(null!) // Ref to MeshDistortMaterial (it's properly typed usually but any for safety here)
+
     const isPlaying = useBassStore(s => s.isPlaying)
     const setParams = useBassStore(s => s.setParams)
     const togglePlay = useBassStore(s => s.togglePlay)
 
-    const audioIntensity = useVisualStore(s => s.globalAudioIntensity)
     const gestures = useGestureStore()
-    const controls = SPATIAL_LAYOUT.bass.controls
+    // controls usually defined in SPATIAL_LAYOUT.bass.controls - simplified here
 
-    // Initial values for uniforms
-    const initialCutoff = useBassStore.getState().cutoff
-    const initialRes = useBassStore.getState().resonance
-
-    // Shader uniforms
-    const uniforms = useMemo(() => ({
-        uTime: { value: 0 },
-        uAudioIntensity: { value: 0 },
-        uCutoff: { value: initialCutoff },
-        uResonance: { value: initialRes },
-        uLowFreq: { value: 0 },
-        uMidFreq: { value: 0 },
-        uHighFreq: { value: 0 },
-        uBPM: { value: 120 },
-        uBeat: { value: 0 },
-        uGlowColor: { value: new THREE.Color('#3390ec') },
-        uBaseColor: { value: new THREE.Color('#1a5a8a') },
-        uResonanceExp: { value: 2.0 },
-        uPitch: { value: 0.5 }
-    }), [])
-
-    // Update uniforms & Gestures
     useFrame((state) => {
         if (!meshRef.current) return
 
-        // Read current store state without subscribing to re-renders
+        // Read current store state
         const bassState = useBassStore.getState()
 
-        uniforms.uTime.value = state.clock.elapsedTime
-        uniforms.uAudioIntensity.value = audioIntensity
-        uniforms.uCutoff.value = bassState.cutoff
-        uniforms.uResonance.value = bassState.resonance
-        uniforms.uResonanceExp.value = 1.0 + (bassState.resonance / 20) * 4 // 1-5 range
+        // Modulate Liquid Metal
+        if (matRef.current) {
+            // Resonance (0.1 - 20) -> Distort (0 - 1.0)
+            const targetDistort = THREE.MathUtils.mapLinear(bassState.resonance, 0, 20, 0, 0.8)
+            matRef.current.distort = THREE.MathUtils.lerp(matRef.current.distort, targetDistort, 0.05)
 
-        // Map pitch (note frequency) to 0-1
-        const freq = bassState.lastNoteFrequency || 440
-        uniforms.uPitch.value = THREE.MathUtils.mapLinear(Math.log2(freq), 5, 10, 0, 1)
+            // Cutoff (50 - 10000) -> Speed (1 - 10)
+            const targetSpeed = THREE.MathUtils.mapLinear(Math.log2(bassState.cutoff), 5, 13, 1, 8)
+            matRef.current.speed = THREE.MathUtils.lerp(matRef.current.speed, targetSpeed, 0.05)
+        }
 
         // Direct Modulation via Gesture
-        if (gestures.activeGesture === 'drag' && gestures.targetPosition) {
+        if (gestures.activeGesture === 'drag' && gestures.targetPosition && gestures.targetPosition.distanceTo(meshRef.current.position) < 3) {
             const dy = gestures.currentPos.y - gestures.startPos.y
             const dx = gestures.currentPos.x - gestures.startPos.x
 
             // Map Y drag to Cutoff (inverted)
-            const newCutoff = THREE.MathUtils.clamp(bassState.cutoff - dy * 20, 50, 10000)
-            const newRes = THREE.MathUtils.clamp(bassState.resonance + dx * 0.1, 0.1, 20)
+            // Map X drag to Resonance
+            const newCutoff = THREE.MathUtils.clamp(useBassStore.getState().cutoff - dy * 50, 50, 10000)
+            const newRes = THREE.MathUtils.clamp(useBassStore.getState().resonance + dx * 0.5, 0.1, 20)
 
             setParams({ cutoff: newCutoff, resonance: newRes })
         }
 
         // Gentle rotation
-        meshRef.current.rotation.z += 0.001
+        meshRef.current.rotation.z = state.clock.elapsedTime * 0.1
     })
 
     return (
         <group position={SPATIAL_LAYOUT.bass.position}>
-            {/* Main Deformable Plane */}
+            {/* Liquid Metal Surface */}
             <mesh
                 ref={meshRef}
+                rotation={[-Math.PI / 2, 0, 0]}
                 onPointerDown={(e) => {
                     e.stopPropagation()
                     gestures.onStart(e.clientX, e.clientY, e.point)
                 }}
             >
-                <planeGeometry args={[4, 4, 64, 64]} />
-                <shaderMaterial
-                    vertexShader={audioReactiveVertexShader}
-                    fragmentShader={fresnelFragmentShader}
-                    uniforms={uniforms}
-                    wireframe={false}
-                />
-            </mesh>
-
-            {/* Wireframe Overlay */}
-            <mesh position={[0, 0, 0.01]}>
-                <planeGeometry args={[4, 4, 32, 32]} />
-                <meshBasicMaterial
+                <planeGeometry args={[5, 5, 128, 128]} />
+                <MeshDistortMaterial
+                    ref={matRef}
                     color="#3390ec"
-                    wireframe
-                    transparent
-                    opacity={0.3}
+                    emissive="#001133"
+                    emissiveIntensity={0.2}
+                    metalness={0.9}
+                    roughness={0.1}
+                    clearcoat={1}
+                    clearcoatRoughness={0.1}
+                    distort={0.4}
+                    speed={2}
                 />
             </mesh>
 
-            {/* Remove Old Knobs - Replaced by direct manipulation */}
-            <Text position={[0, 2.5, 0]} fontSize={0.2} color="#3390ec">
-                TOUCH SURFACE TO MODULATE
+            <Text position={[0, 3, 0]} fontSize={0.2} color="#3390ec" anchorX="center">
+                ACID LIQUID: TOUCH TO MORPH
             </Text>
 
             <Button3D
-                position={[0, -2.5, 0.5]}
+                position={[0, -3.5, 0.5]}
                 label={isPlaying ? "STOP" : "PLAY"}
                 active={isPlaying}
                 onClick={() => togglePlay()}
@@ -132,8 +107,8 @@ export function AcidSynth3D() {
             />
 
             {/* Lighting */}
-            <pointLight position={[0, 3, 3]} intensity={2} color="#3390ec" />
-            <pointLight position={[0, -3, 3]} intensity={1} color="#5ab3ff" />
+            <pointLight position={[0, 4, 3]} intensity={3} color="#3390ec" />
+            <pointLight position={[0, -4, 3]} intensity={2} color="#5ab3ff" />
         </group>
     )
 }

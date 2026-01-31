@@ -11,7 +11,7 @@ export class DrumMachine {
     output: Tone.Volume
 
     constructor() {
-        this.output = new Tone.Volume(0).toDestination()
+        this.output = new Tone.Volume(0)
         this.comp = new Tone.Compressor(-24, 4).connect(this.output)
 
         this.kick = new Tone.MembraneSynth({

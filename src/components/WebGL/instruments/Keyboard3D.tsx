@@ -95,7 +95,7 @@ function Key3D({ note, octave, position, width, height, color, onTrigger }: {
 }
 
 export function Keyboard3D() {
-    const audio = useAudioStore()
+    // Removed useAudioStore hook to prevent re-renders
     const layout = useMemo(() => {
         const keys = []
         let currentX = -6
@@ -124,8 +124,9 @@ export function Keyboard3D() {
     }, [])
 
     const handleTrigger = (note: string, oct: number, velocity: number) => {
-        if (audio.leadSynth) {
-            audio.leadSynth.triggerNote(`${note}${oct}`, '16n', Tone.now(), velocity)
+        const leadSynth = useAudioStore.getState().leadSynth
+        if (leadSynth) {
+            leadSynth.triggerNote(`${note}${oct}`, '16n', Tone.now(), velocity)
         }
     }
 
