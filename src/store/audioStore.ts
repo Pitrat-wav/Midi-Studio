@@ -99,7 +99,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
             // Generate initial Bass Pattern
             const bassStore = useBassStore.getState()
-            if (bassStore.pattern.length === 0) {
+            if (!bassStore.pattern || bassStore.pattern.length === 0) {
                 const initialPattern = generateBassPattern(bassStore.density, bassStore.type, 'C', 'minor', 2, bassStore.seedA)
                 bassStore.setPattern(initialPattern)
             }

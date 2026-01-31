@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useVisualStore } from '../store/visualStore'
 
 interface KnobProps {
     label?: string
@@ -14,6 +15,7 @@ interface KnobProps {
 }
 
 export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue, onChange, size = 64, showLabel = true, color }: KnobProps) {
+    const setInteraction = useVisualStore(s => s.setInteraction)
     const activeColor = color || 'var(--tg-theme-button-color)'
     const [isDragging, setIsDragging] = useState(false)
     const startY = useRef(0)
@@ -47,6 +49,7 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
 
             if (finalValue !== value) {
                 onChange(finalValue)
+                setInteraction(label || 'knob', 1.0)
                 if (window.Telegram?.WebApp?.HapticFeedback) {
                     window.Telegram.WebApp.HapticFeedback.selectionChanged()
                 }

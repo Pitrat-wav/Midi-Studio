@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { ChordType } from '../logic/Scaler'
 import { SnakePattern } from '../logic/GridWalker'
 import { BassStep } from '../logic/StingGenerator'
+import { bjorklund } from '../logic/bjorklund'
 
 // No changes here, just closing the thought. See audioStore.ts fix above.
 export type ScaleType = 'major' | 'minor' | 'dorian' | 'phrygian' | 'lydian' | 'mixolydian' | 'aeolian' | 'locrian' | 'pentatonic' | 'chromatic'
@@ -52,18 +53,18 @@ export const useDrumStore = create<DrumState>((set) => ({
     kit: '808',
     isPlaying: false,
     activePatterns: {
-        kick: Array(16).fill(false),
-        snare: Array(16).fill(false),
-        hihat: Array(16).fill(false),
-        hihatOpen: Array(16).fill(false),
-        clap: Array(16).fill(false),
-        ride: Array(16).fill(false)
+        kick: bjorklund(16, 4).map(v => v === 1),
+        snare: bjorklund(16, 0).map(v => v === 1),
+        hihat: bjorklund(16, 8).map(v => v === 1),
+        hihatOpen: bjorklund(16, 0).map(v => v === 1),
+        clap: bjorklund(16, 0).map(v => v === 1),
+        ride: bjorklund(16, 0).map(v => v === 1)
     },
     setParams: (drum, params) => set((state) => {
         const newState = { ...state, [drum]: { ...state[drum], ...params } }
         // Pre-calculate pattern if pulses or steps changed
         if (params.pulses !== undefined || params.steps !== undefined) {
-            const pattern = bjorklund(newState[drum].steps, newState[drum].pulses)
+            const pattern = bjorklund(newState[drum].steps, newState[drum].pulses).map(v => v === 1)
             newState.activePatterns = { ...newState.activePatterns, [drum]: pattern }
         }
         return newState
@@ -72,7 +73,6 @@ export const useDrumStore = create<DrumState>((set) => ({
     togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying }))
 }))
 
-import { bjorklund } from '../logic/bjorklund'
 
 // Pad Store
 interface PadState {
@@ -556,8 +556,15 @@ export const HARM_PRESETS: HarmPreset[] = [
     }))
 ]
 
+// Debug: Check if HARM_PRESETS initialized correctly
+if (!HARM_PRESETS || HARM_PRESETS.length === 0) {
+    console.error('HARM_PRESETS is empty or undefined!', HARM_PRESETS)
+} else {
+    console.log('HARM_PRESETS initialized with', HARM_PRESETS.length, 'presets')
+}
+
 export const useHarmStore = create<HarmState>((set) => ({
-    ...HARM_PRESETS[0],
+    ...(HARM_PRESETS[0] || BASE_PRESET),
     grid: Array.from({ length: 16 }, (_, i) => ({
         note: 48 + (i % 12),
         velocity: 0.8,

@@ -28,14 +28,16 @@ export function generateBassPattern(
 
     // 1. Scale mapping based on 'type'
     let scaleNotes: string[] = []
-    const fullScale = Scale.get(`${root} ${scale}`).notes
+    const scaleObj = Scale.get(`${root} ${scale}`)
+    const fullScale = scaleObj ? scaleObj.notes : []
 
     if (type < 0.3) {
         scaleNotes = fullScale.filter((_, i) => [0, 2, 4].includes(i))
     } else if (type < 0.7) {
         scaleNotes = fullScale
     } else {
-        scaleNotes = Scale.get(`${root} chromatic`).notes
+        const chromaticScale = Scale.get(`${root} chromatic`)
+        scaleNotes = chromaticScale?.notes || []
     }
 
     if (scaleNotes.length === 0) scaleNotes = [root || 'C']

@@ -19,27 +19,28 @@ export function useMidiExport() {
         setIsExporting(true)
 
         try {
+            // Generate patterns with safety checks
             const patterns = {
-                kick: bjorklund(drums.kick.steps, drums.kick.pulses),
-                snare: bjorklund(drums.snare.steps, drums.snare.pulses),
-                hihat: bjorklund(drums.hihat.steps, drums.hihat.pulses),
-                hihatOpen: bjorklund(drums.hihatOpen.steps, drums.hihatOpen.pulses),
-                clap: bjorklund(drums.clap.steps, drums.clap.pulses)
+                kick: drums.kick ? bjorklund(drums.kick.steps || 16, drums.kick.pulses || 0) : [],
+                snare: drums.snare ? bjorklund(drums.snare.steps || 16, drums.snare.pulses || 0) : [],
+                hihat: drums.hihat ? bjorklund(drums.hihat.steps || 16, drums.hihat.pulses || 0) : [],
+                hihatOpen: drums.hihatOpen ? bjorklund(drums.hihatOpen.steps || 16, drums.hihatOpen.pulses || 0) : [],
+                clap: drums.clap ? bjorklund(drums.clap.steps || 16, drums.clap.pulses || 0) : []
             }
 
             const midiData = exportToMidi(
                 bpm,
                 patterns,
-                bass.pattern,
-                seq.stages,
-                seq.snakeGrid,
+                bass.pattern || [],
+                seq.stages || [],
+                seq.snakeGrid || [],
                 seq.snakePattern,
                 { notes: [harmony.root + '3'], active: pad.active },
-                harm.grid,
+                harm.grid || [],
                 target,
                 { enabled: seq.smartChordEnabled, type: seq.smartChordType },
-                seq.turingRegister,
-                seq.turingBits
+                seq.turingRegister || 0,
+                seq.turingBits || 8
             )
             const base64Midi = btoa(String.fromCharCode(...midiData))
 

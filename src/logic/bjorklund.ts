@@ -53,6 +53,7 @@ export function bjorklund(steps: number, pulses: number): number[] {
  * Rotates an array by 'steps'.
  */
 export function rotateArray<T>(arr: T[], steps: number): T[] {
+    if (!arr || arr.length === 0) return arr || []
     const n = arr.length
     const offset = ((steps % n) + n) % n
     return [...arr.slice(n - offset), ...arr.slice(0, n - offset)]

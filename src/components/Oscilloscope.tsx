@@ -20,6 +20,10 @@ export function Oscilloscope() {
         const draw = () => {
             animationFrame = requestAnimationFrame(draw)
             const values = analyzer.getValue() as Float32Array
+            if (!values || !values.length) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height)
+                return
+            }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height)
             ctx.beginPath()

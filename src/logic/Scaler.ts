@@ -8,7 +8,7 @@ export class Scaler {
      */
     public static getScaleDegree(midi: number, root: string, scaleType: string): number | null {
         const scale = Scale.get(`${root} ${scaleType}`)
-        if (!scale || !scale.notes.length) return null
+        if (!scale || !scale.notes || !scale.notes.length) return null
 
         const noteName = Note.pitchClass(Note.fromMidi(midi))
         const degree = scale.notes.indexOf(noteName)
@@ -21,7 +21,7 @@ export class Scaler {
      */
     public static generateChord(midi: number, root: string, scaleType: string, type: ChordType = 'triad'): number[] {
         const scale = Scale.get(`${root} ${scaleType}`)
-        if (!scale || !scale.notes.length) return [midi]
+        if (!scale || !scale.notes || !scale.notes.length) return [midi]
 
         const degree = this.getScaleDegree(midi, root, scaleType)
         if (degree === null) {
@@ -71,7 +71,7 @@ export class Scaler {
      */
     public static snapToScale(midi: number, root: string, scaleType: string): number {
         const scale = Scale.get(`${root} ${scaleType}`)
-        if (!scale || !scale.notes.length) return midi
+        if (!scale || !scale.notes || !scale.notes.length) return midi
 
         const noteMidi = midi % 12
         const scaleMidis = scale.notes.map(n => Note.midi(n + '0')! % 12)

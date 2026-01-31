@@ -4,9 +4,9 @@ import { ScaleType } from '../store/instrumentStore'
 export function generatePadProgression(root: string, scaleType: ScaleType, complexity: number): string[][] {
     const scaleName = `${root} ${scaleType}`
     const scale = Scale.get(scaleName)
-    const notes = scale.notes
+    const notes = scale ? scale.notes : []
 
-    if (notes.length < 5) return [[root + '3', root + '4']]
+    if (!notes || notes.length < 5) return [[root + '3', root + '4']]
 
     // Basic progression degrees: I, IV, V, I (can be more complex based on complexity)
     const progressionDegrees = [0, 3, 4, 0]

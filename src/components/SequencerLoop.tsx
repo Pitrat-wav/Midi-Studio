@@ -10,6 +10,7 @@ import { useHarmonyStore, usePadStore, useLfoStore } from '../store/instrumentSt
 import { generatePadProgression } from '../logic/PadGenerator'
 import { Modulator } from '../logic/Modulator'
 import { TuringMachine } from '../logic/TuringMachine'
+import { useVisualStore } from '../store/visualStore'
 
 export function SequencerLoop() {
     const bassSynth = useAudioStore(s => s.bassSynth)
@@ -63,7 +64,7 @@ export function SequencerLoop() {
                             .filter(m => m !== undefined && m !== null && !isNaN(m))
                             .map(m => Tone.Frequency(m, 'midi').toNote())
 
-                        if (noteNames.length > 0) {
+                        if (noteNames && noteNames.length > 0) {
                             leadSynth.triggerNote(noteNames, dur, time, vel)
                         }
 
@@ -119,12 +120,35 @@ export function SequencerLoop() {
             // 1. Drums (Euclidean) - Using Pre-calculated Patterns
             if (currentDrums.isPlaying && drumMachine) {
                 const patterns = currentDrums.activePatterns
-                if (!currentDrums.kick.muted && patterns.kick[step]) drumMachine.triggerDrum('kick', time)
-                if (!currentDrums.snare.muted && patterns.snare[step]) drumMachine.triggerDrum('snare', time)
-                if (!currentDrums.hihat.muted && patterns.hihat[step]) drumMachine.triggerDrum('hihat', time)
-                if (!currentDrums.hihatOpen.muted && patterns.hihatOpen[step]) drumMachine.triggerDrum('hihatOpen', time)
-                if (!currentDrums.clap.muted && patterns.clap[step]) drumMachine.triggerDrum('clap', time)
-                if (!currentDrums.ride.muted && patterns.ride[step]) drumMachine.triggerDrum('ride', time)
+                const visual = useVisualStore.getState()
+                const stepIdx = step % 16
+
+                if (patterns) {
+                    if (!currentDrums.kick?.muted && patterns.kick?.[stepIdx]) {
+                        drumMachine.triggerDrum('kick', time)
+                        Tone.Draw.schedule(() => visual.triggerPulse('kick'), time)
+                    }
+                    if (!currentDrums.snare?.muted && patterns.snare?.[stepIdx]) {
+                        drumMachine.triggerDrum('snare', time)
+                        Tone.Draw.schedule(() => visual.triggerPulse('snare'), time)
+                    }
+                    if (!currentDrums.hihat?.muted && patterns.hihat?.[stepIdx]) {
+                        drumMachine.triggerDrum('hihat', time)
+                        Tone.Draw.schedule(() => visual.triggerPulse('hihat'), time)
+                    }
+                    if (!currentDrums.hihatOpen?.muted && patterns.hihatOpen?.[stepIdx]) {
+                        drumMachine.triggerDrum('hihatOpen', time)
+                        Tone.Draw.schedule(() => visual.triggerPulse('hihat'), time)
+                    }
+                    if (!currentDrums.clap?.muted && patterns.clap?.[stepIdx]) {
+                        drumMachine.triggerDrum('clap', time)
+                        Tone.Draw.schedule(() => visual.triggerPulse('clap'), time)
+                    }
+                    if (!currentDrums.ride?.muted && patterns.ride?.[stepIdx]) {
+                        drumMachine.triggerDrum('ride', time)
+                        Tone.Draw.schedule(() => visual.triggerPulse('hihat'), time)
+                    }
+                }
             }
 
             // Metronome
@@ -133,8 +157,8 @@ export function SequencerLoop() {
             }
 
             // 2. Bass
-            const bassStep = currentBass.pattern[step]
-            const prevBassStep = currentBass.pattern[(step + 15) % 16]
+            const bassStep = currentBass.pattern?.[step]
+            const prevBassStep = currentBass.pattern?.[(step + 15) % 16]
             if (currentBass.isPlaying && bassStep && bassStep.active) {
                 if (currentBass.activeInstrument === 'acid' && bassSynth) {
                     const isContinuing = prevBassStep?.active && prevBassStep?.slide
@@ -145,7 +169,7 @@ export function SequencerLoop() {
             }
 
             // 3a. ML-185
-            const stage = currentSeq.stages[currentSeq.currentStageIndex]
+            const stage = currentSeq.stages?.[currentSeq.currentStageIndex]
             if (currentSeq.isStagesPlaying && stage) {
                 try {
                     if (stagePulseRef.current === 0) {
@@ -168,16 +192,19 @@ export function SequencerLoop() {
                             }
                         }
                     } else if (stage.gateMode === 2) {
-                        const pulseStep = stagePulseRef.current % Math.max(1, stage.length)
-                        if (pulseStep === 0 && Math.random() < stage.probability) {
-                            triggerLeadNotes(stage.pitch, '32n', stage.velocity * 0.8)
+                        const stageLength = stage.length || 1
+                        const pulseStep = stagePulseRef.current % Math.max(1, stageLength)
+                        if (pulseStep === 0 && Math.random() < (stage.probability ?? 1)) {
+                            triggerLeadNotes(stage.pitch || 60, '32n', (stage.velocity || 0.8) * 0.8)
                         }
                     }
                 } catch (e) {
                     console.warn('ML-185 tick failed', e)
                 }
                 stagePulseRef.current++
-                if (stagePulseRef.current >= stage.length * stage.pulseCount) {
+                const stageLength = stage.length || 1
+                const stagePulses = stage.pulseCount || 1
+                if (stagePulseRef.current >= stageLength * stagePulses) {
                     stagePulseRef.current = 0
                     useSequencerStore.getState().setCurrentStageIndex((currentSeq.currentStageIndex + 1) % 8)
                 }
@@ -221,7 +248,7 @@ export function SequencerLoop() {
 
                     if (leadSynth) {
                         const scaleScale = Scale.get(`${currentHarmony.root} ${currentHarmony.scale}`)
-                        const scaleNotes = scaleScale.notes
+                        const scaleNotes = scaleScale ? scaleScale.notes : []
                         if (scaleNotes && scaleNotes.length > 0) {
                             const noteCount = scaleNotes.length * 3
                             const noteIdx = Math.floor(normValue * noteCount)
@@ -242,26 +269,27 @@ export function SequencerLoop() {
             // 3d. Harm Sequencer
             if (harmSynth) {
                 const triggerHarmNotes = (midi: number, vel: number, dur = '16n') => {
-                    const notesToPlay = [midi, ...(currentHarm.chordOffsets.map(o => midi + o))]
+                    const offsets = currentHarm.chordOffsets || []
+                    const notesToPlay = [midi, ...(offsets.map(o => midi + o))]
                     notesToPlay.forEach(m => {
                         harmSynth.triggerNote(Tone.Frequency(m, 'midi').toNote(), dur, time, vel)
                     })
                 }
 
-                if (currentHarm.isSequencerEnabled && currentHarm.isPlaying) {
+                if (currentHarm.isSequencerEnabled && currentHarm.isPlaying && currentHarm.grid) {
                     const step16 = totalStep % 16
                     const cell = currentHarm.grid[step16]
-                    if (cell.active && Math.random() < cell.probability) {
+                    if (cell && cell.active && Math.random() < (cell.probability ?? 1)) {
                         triggerHarmNotes(cell.note, cell.velocity)
                     }
                     useHarmStore.getState().setParam({ currentStep: step16 })
                 }
 
-                if (currentHarm.isDroneEnabled && currentHarm.isPlaying) {
+                if (currentHarm.isDroneEnabled && currentHarm.isPlaying && currentHarm.droneGrid && currentHarm.droneGrid.length > 0) {
                     if (totalStep % 32 === 0) {
                         const droneStep = Math.floor(totalStep / 32) % currentHarm.droneGrid.length
                         const cell = currentHarm.droneGrid[droneStep]
-                        if (cell.active) triggerHarmNotes(cell.note, cell.velocity * 0.7, '2n')
+                        if (cell && cell.active) triggerHarmNotes(cell.note, cell.velocity * 0.7, '2n')
                         useHarmStore.getState().setParam({ currentDroneStep: droneStep })
                     }
                 }
@@ -270,8 +298,10 @@ export function SequencerLoop() {
             // 4. Pads
             if (currentPads.active && padSynth && totalStep % 32 === 0) {
                 const progression = generatePadProgression(currentHarmony.root, currentHarmony.scale, currentPads.complexity)
-                const chordIdx = Math.floor((totalStep / 32) % progression.length)
-                padSynth.triggerChord(progression[chordIdx], '2n', time)
+                if (progression && progression.length > 0) {
+                    const chordIdx = Math.floor((totalStep / 32) % progression.length)
+                    padSynth.triggerChord(progression[chordIdx], '2n', time)
+                }
             }
 
             // Sync UI

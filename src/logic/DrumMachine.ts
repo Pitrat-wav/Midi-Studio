@@ -44,7 +44,6 @@ export class DrumMachine {
         }).connect(this.comp)
 
         this.ride = new Tone.MetalSynth({
-            frequency: 300,
             envelope: { attack: 0.001, decay: 1.0, release: 0.2 },
             harmonicity: 5.1,
             modulationIndex: 32,

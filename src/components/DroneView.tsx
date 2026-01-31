@@ -7,7 +7,8 @@ import { Power, Ghost, Zap, Activity, Skull, Wind } from 'lucide-react'
 
 export function DroneView() {
     const droneStore = useDroneStore()
-    const droneEngine = useAudioStore(s => s.droneEngine)
+    // const droneEngine = useAudioStore(s => s.droneEngine)
+    const droneEngine = null // Temporarily disabled
     const isPlaying = useAudioStore(s => s.isPlaying)
 
     useEffect(() => {

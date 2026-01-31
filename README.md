@@ -1,53 +1,36 @@
-# 🎹 Telegram MIDI Studio Pro
+# Telegram MIDI Studio Pro — WebGL Immersive 3D UX
 
-Музыкальная экосистема для генеративного творчества внутри Telegram. Создавайте сложные паттерны, синтезируйте аналоговый звук и экспортируйте MIDI-файлы — всё это в одном Mini App.
+This is a complete redesign of the Telegram MIDI Studio, transforming it from a 2D interface into a fully immersive, generative 3D environment.
 
-![Version](https://img.shields.io/badge/version-2.3.0-blue)
-![TMA](https://img.shields.io/badge/Telegram-Mini_App-3390ec)
-![ToneJS](https://img.shields.io/badge/Engine-Tone.js-red)
+## 🚀 Key Features (WebGL UX Fork)
 
-## 🌟 Ключевые особенности
+### 1. Immersive 3D Navigation
+- **Radial Selector**: Control instruments through a spatial radial menu.
+- **Camera Transitions**: Smooth transitions between instruments using camera focus.
+- **Quick Switch**: Instant access to any instrument via the bottom HUD or keyboard shortcuts (0-5).
 
-### 🎹 Синтез и Звук
-- **Acid Synth**: Аутентичный звук 303 с Distortion и резонансным фильтром.
-- **FM Bass Machine**: Глубокие металлические басы на основе частотной модуляции.
-- **HarmPoly Engine**: 8-голосный полифонический синтезатор с независимой маршрутизацией FX для каждого осциллятора.
-- **Ambient Pads**: Генератор атмосферных подкладов.
+### 2. Generative 3D Instruments
+- **DrumMachine3D**: Interactive 3D shapes representing Kick, Snare, and HiHat with Euclidean (Bjorklund) rhythm rings.
+- **AcidSynth3D**: A deformable 3D plane that reacts to filter cutoff, resonance, and audio energy.
+- **PadsSynth3D**: A floating particle cloud that changes density and color based on ambient parameters.
 
-### 🧠 Алгоритмический Секвенсинг
-- **Smart Chord (Schwarzonator)**: Умная гармонизация — превращает одну ноту в сложные аккорды на основе выбранного лада.
-- **Turing Machine**: Мелодии, рождающиеся из хаоса и вероятности.
-- **MDD Snake**: Секвенсор-змейка для нелинейных мелодических линий.
-- **Bjorklund Rhythms**: Математически безупречные эвклидовы барабаны (808/909 киты).
+### 3. Integrated 3D Controls
+- **3D Knobs & Sliders**: Grab and rotate controls directly in world space using ray-casting.
+- **Haptic Feedback**: Integrated with Telegram WebApp Haptic Feedback API for a tactile feel.
+- **Floating HUD**: Parameter values appear above controls during interaction.
 
-### 🛠 Профессиональный UX
-- **Global Harmony**: Переключайте тональность (Root) и лад (Scale) для всей студии одним движением.
-- **MIDI Export**: Записывайте и отправляйте файлы MIDI напрямую в чат.
-- **Premium UI**: Современный стеклянный интерфейс с поддержкой темной/светлой тем и мобильных Safe Areas.
+## 🎸 How to Use
+- **Launch**: Click "Launch Studio" to start the audio engine.
+- **Navigate**: Use the bottom menu or keys `1` (Drums), `2` (Bass), `3` (Synth), `4` (Pads), `0` (Overview).
+- **Interact**: Click and drag vertically on any knob to change its value. Click buttons to toggle.
+- **Controls**: Press `H` to toggle the transport overlay (Play/Stop/BPM).
 
-## 🚀 Быстрый старт
-
-1. Нажмите **"Запустить студию"** на главном экране.
-2. Автоматически включится демо-паттерн.
-3. Используйте вкладки внизу для переключения между инструментами.
-4. В разделе **Harmony** выберите лад (например, Phrygian или Dorian).
-
-## 📂 Структура документации (.agent/)
-
-Для глубокого понимания проекта изучите файлы в папке `.agent`:
-- [🏗 SYSTEM.md](./.agent/SYSTEM.md) — Музыкальная архитектура и потоки данных.
-- [⚛️ FRONTEND.md](./.agent/FRONTEND.md) — UI компоненты и React-логика.
-- [🔊 AUDIO_LOGIC.md](./.agent/AUDIO_LOGIC.md) — Алгоритмы генерации и синтеза.
-- [🎨 DESIGN_SYSTEM.md](./.agent/DESIGN_SYSTEM.md) — Визуальный стиль и мобильная оптимизация.
-
-## 🛠 Технологии
-
-- **Framework**: React 18 + Vite + TypeScript.
-- **Audio Core**: Tone.js.
-- **State Management**: Zustand.
-- **Animation**: Framer Motion.
-- **Icons**: Lucide React.
-- **Styles**: Vanilla CSS (Custom Properties).
+## 🛠 Tech Stack
+- **React + Vite**
+- **Three.js + React Three Fiber**
+- **Tone.js** (Audio Engine)
+- **Zustand** (State Management)
+- **GLSL Shaders** (Custom audio-reactive materials)
 
 ---
-Разработано специально для музыкантов и энтузиастов Telegram Mini Apps.
+*Created as an experimental 3D UI fork for Telegram Mini Apps.*

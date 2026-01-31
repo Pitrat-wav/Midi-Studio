@@ -1,0 +1,222 @@
+/* App.css — 3D-Only Mode Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #000000;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+.app-3d {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Init Screen */
+.init-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.init-content {
+    text-align: center;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.init-content h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(45deg, #3390ec, #ff3b30);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.init-content p {
+    font-size: 1.2rem;
+    color: #888;
+    margin-bottom: 2rem;
+}
+
+.init-button {
+    padding: 1rem 3rem;
+    font-size: 1.2rem;
+    background: linear-gradient(45deg, #3390ec, #5ab3ff);
+    border: none;
+    border-radius: 50px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(51, 144, 236, 0.4);
+}
+
+.init-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(51, 144, 236, 0.6);
+}
+
+.init-button:active {
+    transform: translateY(0);
+}
+
+/* Control Overlay */
+.control-overlay {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 1rem 2rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 100;
+    animation: slideDown 0.3s ease-out;
+}
+
+.transport-controls {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.play-button {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(45deg, #3390ec, #5ab3ff);
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(51, 144, 236, 0.4);
+}
+
+.play-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(51, 144, 236, 0.6);
+}
+
+.play-button.playing {
+    background: linear-gradient(45deg, #ff3b30, #ff6b60);
+    box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4);
+}
+
+.bpm-control {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.bpm-control label {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.bpm-control input[type="range"] {
+    width: 150px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.bpm-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3390ec;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(51, 144, 236, 0.5);
+}
+
+.bpm-control span {
+    font-weight: bold;
+    min-width: 40px;
+    text-align: right;
+}
+
+.overlay-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.overlay-toggle:hover {
+    color: #fff;
+}
+
+/* Help Hint */
+.help-hint {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(10, 10, 10, 0.6);
+    backdrop-filter: blur(10px);
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.9rem;
+    color: #888;
+    z-index: 100;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.help-hint kbd {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-family: monospace;
+    color: #fff;
+    margin: 0 0.2rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}

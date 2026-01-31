@@ -1,25 +1,70 @@
 import { useDrumStore } from '../store/instrumentStore'
-import { Knob } from './Knob'
-import { useBassStore, useHarmonyStore } from '../store/instrumentStore'
-import { generateBassPattern } from '../logic/StingGenerator'
-import { Dices } from 'lucide-react'
-import { useAudioStore, AudioState } from '../store/audioStore'
-import { bjorklund } from '../logic/bjorklund'
-
+import { useAudioStore } from '../store/audioStore'
 import { useMidiExport } from '../hooks/useMidiExport'
-import { Send, Play, Square, VolumeX, Volume2 } from 'lucide-react'
+import { useVisualStore } from '../store/visualStore'
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls, PerspectiveCamera, Float, Html } from '@react-three/drei'
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
+import { GenerativeGrid3D } from './WebGL/GenerativeGrid3D'
+import { DrumPad3D } from './WebGL/DrumPad3D'
+import { GenerativeKnob3D } from './WebGL/GenerativeKnob3D'
+import { Play, Square, Send } from 'lucide-react'
+import { Knob } from './Knob'
+import { useState, useEffect } from 'react'
 
 export function DrumsView() {
-    const { kick, snare, hihat, hihatOpen, clap, ride, kit, setParams, setKit, isPlaying, togglePlay } = useDrumStore()
-    const { drumMachine } = useAudioStore()
+    console.log('🥁 DrumsView WebGL v4.0')
+    const drumStore = useDrumStore()
+    const [canRenderWebGL, setCanRenderWebGL] = useState(false)
+
+    // CRITICAL: Extract data with optional chaining FIRST
+    const activePatterns = drumStore?.activePatterns
+    const kick = activePatterns?.kick
+    const snare = activePatterns?.snare
+    const hihat = activePatterns?.hihat
+    const hihatOpen = activePatterns?.hihatOpen
+    const clap = activePatterns?.clap
+    const ride = activePatterns?.ride
+
+    // Check if data is ready for WebGL rendering
+    const isDataReady = kick && snare && hihat &&
+        Array.isArray(kick) && kick.length > 0 &&
+        Array.isArray(snare) && snare.length > 0 &&
+        Array.isArray(hihat) && hihat.length > 0
+
+    // Only enable WebGL when data has been ready for 100ms
+    useEffect(() => {
+        if (isDataReady) {
+            const timer = setTimeout(() => {
+                console.log('✅ Data stable, enabling WebGL')
+                setCanRenderWebGL(true)
+            }, 100)
+            return () => clearTimeout(timer)
+        } else {
+            setCanRenderWebGL(false)
+        }
+    }, [isDataReady])
+
+    // If data not ready, show loading
+    if (!isDataReady || !drumStore || !canRenderWebGL) { // Modified to include canRenderWebGL
+        return (
+            <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
+                <h2>🥁 Loading Drums...</h2>
+                <p style={{ opacity: 0.6 }}>Initializing WebGL environment</p>
+            </div>
+        )
+    }
+
+    const { isPlaying, togglePlay, setParams, kit, setKit } = drumStore
+    const { currentStep, drumMachine } = useAudioStore()
     const { exportMidi, isExporting } = useMidiExport()
+    const triggers = useVisualStore(s => s.triggers)
 
     const updateDrum = (drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride', params: any) => {
         setParams(drum, params)
         if (drumMachine) {
-            const d = useDrumStore.getState()[drum]
+            const d = drumStore[drum]
             const finalParams = { ...d, ...params }
-            // Update Synths
             if (params.pitch !== undefined || params.decay !== undefined) {
                 drumMachine.setDrumParams(drum, finalParams.pitch, finalParams.decay)
             }
@@ -29,184 +74,222 @@ export function DrumsView() {
         }
     }
 
-    const handleKitChange = (newKit: '808' | '909') => {
-        setKit(newKit)
-        if (drumMachine) drumMachine.setKit(newKit)
+    const handleDrumTrigger = (drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride') => {
+        if (drumMachine) {
+            drumMachine.triggerDrum(drum)
+        }
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('medium')
+        }
     }
 
     const DRUMS = [
-        { id: 'kick' as const, label: 'KICK' },
-        { id: 'snare' as const, label: 'SNARE' },
-        { id: 'hihat' as const, label: 'HI-HAT' },
-        { id: 'hihatOpen' as const, label: 'OPEN HAT' },
-        { id: 'clap' as const, label: 'CLAP' },
-        { id: 'ride' as const, label: 'RIDE' }
+        { id: 'kick' as const, label: 'KICK', color: '#ff3b30', pos: [-1.2, 1, 0] },
+        { id: 'snare' as const, label: 'SNARE', color: '#3390ec', pos: [0, 1, 0] },
+        { id: 'hihat' as const, label: 'HI-HAT', color: '#f7ba2a', pos: [1.2, 1, 0] },
+        { id: 'clap' as const, label: 'CLAP', color: '#9b59b6', pos: [0, -0.2, 0] }
     ]
 
-    const currentStep = useAudioStore(s => s.currentStep)
-
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-l)' }}>
-            <section className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-l)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-s)' }}>
-                        <h3>Драм-машина</h3>
-                        <button
-                            onClick={togglePlay}
-                            className="icon-button"
-                            style={{
-                                width: '36px', height: '36px',
-                                background: isPlaying ? 'var(--tg-theme-button-color)' : 'rgba(128,128,128,0.15)',
-                                color: isPlaying ? 'white' : 'var(--tg-theme-text-color)',
-                                border: 'none',
-                                padding: 0,
-                                borderRadius: 'var(--radius-m)'
-                            }}
-                        >
-                            {isPlaying ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-                        </button>
-                        <div style={{ width: '1px', height: '24px', background: 'var(--glass-border)', margin: '0 var(--space-xs)' }} />
-                        <button
-                            onClick={() => exportMidi('drums')}
-                            disabled={isExporting}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                padding: '8px 12px',
-                                borderRadius: 'var(--radius-m)',
-                                background: 'transparent',
-                                border: '1px solid var(--tg-theme-link-color)',
-                                color: 'var(--tg-theme-link-color)',
-                                fontSize: '11px',
-                                fontWeight: '700',
-                                opacity: isExporting ? 0.5 : 1,
-                                minHeight: '36px'
-                            }}
-                        >
-                            <Send size={12} />
-                            {isExporting ? '...' : 'MIDI'}
-                        </button>
-                    </div>
-                    <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.05)', padding: '4px', borderRadius: '10px' }}>
-                        {(['808', '909'] as const).map(k => (
-                            <button
-                                key={k}
-                                onClick={() => handleKitChange(k)}
-                                style={{
-                                    padding: '6px 14px',
-                                    fontSize: '12px',
-                                    fontWeight: '800',
-                                    borderRadius: '8px',
-                                    background: kit === k ? 'var(--tg-theme-button-color)' : 'transparent',
-                                    color: kit === k ? 'white' : 'inherit',
-                                    border: 'none',
-                                    minHeight: '32px'
-                                }}
-                            >{k}</button>
-                        ))}
-                    </div>
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-l)',
+            paddingBottom: '80px'
+        }}>
+            {/* MASTER CONTROLS */}
+            <section className="card" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: 'var(--space-m)'
+            }}>
+                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>🥁 WEBGL DRUMS v4</h2>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                        onClick={togglePlay}
+                        style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '50%',
+                            background: isPlaying ? '#ff3b30' : '#34c759',
+                            border: 'none',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        {isPlaying ? <Square size={20} fill="white" /> : <Play size={20} fill="white" />}
+                    </button>
+                    <button
+                        onClick={() => exportMidi('drums')}
+                        disabled={isExporting}
+                        style={{
+                            padding: '0 20px',
+                            height: '48px',
+                            borderRadius: '24px',
+                            background: 'var(--tg-theme-button-color)',
+                            border: 'none',
+                            color: 'var(--tg-theme-button-text-color)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '600'
+                        }}
+                    >
+                        <Send size={16} />
+                        MIDI
+                    </button>
                 </div>
+            </section>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-m)' }}>
+            {/* 3D DRUM PADS */}
+            <section style={{
+                width: '100%',
+                height: '500px',
+                borderRadius: 'var(--border-radius-large)',
+                overflow: 'hidden',
+                background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
+            }}>
+                <Canvas shadows gl={{ alpha: true, antialias: true }}>
+                    <PerspectiveCamera makeDefault position={[0, 0, 5]} />
+                    <OrbitControls
+                        enableZoom={false}
+                        enablePan={false}
+                        maxPolarAngle={Math.PI / 2}
+                        minPolarAngle={Math.PI / 4}
+                    />
+
+                    <ambientLight intensity={0.4} />
+                    <pointLight position={[10, 10, 10]} intensity={1} />
+                    <pointLight position={[-10, -10, -10]} intensity={0.5} color="#3390ec" />
+
+                    <EffectComposer>
+                        <Bloom
+                            intensity={1.5}
+                            luminanceThreshold={0.2}
+                            luminanceSmoothing={0.9}
+                            height={300}
+                        />
+                        <Vignette eskil={false} offset={0.1} darkness={1.1} />
+                    </EffectComposer>
+
                     {DRUMS.map(d => {
-                        const current = { kick, snare, hihat, hihatOpen, clap, ride }[d.id]
-                        return (
-                            <div key={d.id} style={{
-                                display: 'flex',
-                                gap: 'var(--space-s)',
-                                alignItems: 'center',
-                                background: 'var(--tg-theme-bg-color)',
-                                padding: 'var(--space-s) var(--space-m)',
-                                borderRadius: 'var(--radius-m)',
-                                border: '1px solid var(--glass-border)',
-                                flexWrap: 'nowrap',
-                                overflowX: 'auto'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-s)', minWidth: '94px' }}>
-                                    <div style={{ fontWeight: '800', fontSize: '10px', color: 'var(--tg-theme-hint-color)', width: '60px' }}>{d.label}</div>
-                                    <button
-                                        onClick={() => updateDrum(d.id, { muted: !current.muted })}
-                                        style={{
-                                            border: 'none',
-                                            background: current.muted ? 'var(--tg-theme-destructive-text-color)' : 'rgba(0,0,0,0.06)',
-                                            color: current.muted ? 'white' : 'var(--tg-theme-text-color)',
-                                            borderRadius: '8px',
-                                            width: '32px',
-                                            height: '32px',
-                                            padding: 0,
-                                            flexShrink: 0
-                                        }}
-                                    >
-                                        {current.muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                                    </button>
-                                </div>
-                                <div style={{ display: 'flex', gap: 'var(--space-m)', alignItems: 'center' }}>
-                                    <Knob
-                                        label="Пульс"
-                                        value={useDrumStore.getState()[d.id].pulses}
-                                        min={0} max={16} step={1}
-                                        onChange={(v) => updateDrum(d.id, { pulses: v })}
-                                        size={38}
-                                    />
-                                    <Knob
-                                        label="Decay"
-                                        value={useDrumStore.getState()[d.id].decay}
-                                        min={0} max={1} step={0.01}
-                                        onChange={(v) => updateDrum(d.id, { decay: v })}
-                                        size={38}
-                                    />
-                                    <Knob
-                                        label="Vol"
-                                        value={useDrumStore.getState()[d.id].volume}
-                                        min={-60} max={0} step={1}
-                                        onChange={(v) => updateDrum(d.id, { volume: v })}
-                                        size={38}
-                                    />
-                                </div>
-                            </div>
-                        )
-                    })}
-                </div>
+                        const current = drumStore[d.id]
+                        if (!current) return null
 
-                {/* Pattern Visualizer */}
-                <div style={{
-                    marginTop: 'var(--space-l)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 'var(--space-s)',
-                    padding: 'var(--space-m)',
-                    background: 'rgba(0,0,0,0.03)',
-                    borderRadius: 'var(--radius-m)'
-                }}>
-                    {[
-                        { id: 'kick' as const, name: 'KICK' },
-                        { id: 'snare' as const, name: 'SNARE' },
-                        { id: 'hihat' as const, name: 'HI-HAT' },
-                        { id: 'hihatOpen' as const, name: 'OPEN' },
-                        { id: 'clap' as const, name: 'CLAP' },
-                        { id: 'ride' as const, name: 'RIDE' }
-                    ].map((d, idx) => {
-                        const pattern = useDrumStore.getState().activePatterns[d.id]
                         return (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-s)' }}>
-                                <div style={{ fontSize: '8px', fontWeight: '900', opacity: 0.4, width: '32px', flexShrink: 0 }}>{d.name}</div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(16, 1fr)', gap: '3px', flex: 1 }}>
-                                    {pattern.map((active, i) => (
-                                        <div key={i} style={{
-                                            height: '8px',
-                                            borderRadius: '2px',
-                                            background: active ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)',
-                                            opacity: active ? 1 : 0.3,
-                                            border: (currentStep === i) ? '1px solid white' : 'none',
-                                            boxShadow: (currentStep === i) ? '0 0 6px var(--tg-theme-button-color)' : 'none',
-                                            transition: 'all 0.1s ease'
-                                        }} />
-                                    ))}
-                                </div>
-                            </div>
+                            <group key={d.id} position={d.pos as any}>
+                                <DrumPad3D
+                                    id={d.id}
+                                    position={[0, 0, 0]}
+                                    color={d.color}
+                                    label={d.label}
+                                    onClick={() => handleDrumTrigger(d.id)}
+                                />
+                                <GenerativeKnob3D
+                                    value={current.pulses}
+                                    min={0} max={16}
+                                    label={`${d.id}-pulses`}
+                                    position={[0.6, -0.6, 0.1]}
+                                    color={d.color}
+                                    onChange={(v) => updateDrum(d.id, { pulses: Math.round(v) })}
+                                />
+                                <GenerativeKnob3D
+                                    value={current.decay}
+                                    min={0} max={1}
+                                    label={`${d.id}-decay`}
+                                    position={[-0.6, -0.6, 0.1]}
+                                    color={d.color}
+                                    onChange={(v) => updateDrum(d.id, { decay: v })}
+                                />
+                                <Html position={[0, -1, 0]} center>
+                                    <div style={{
+                                        color: 'white',
+                                        fontSize: '10px',
+                                        fontWeight: '900',
+                                        letterSpacing: '2px',
+                                        opacity: 0.6
+                                    }}>{d.label}</div>
+                                </Html>
+                            </group>
                         )
                     })}
+                </Canvas>
+            </section>
+
+            {/* PATTERN GRIDS */}
+            <section style={{
+                width: '100%',
+                height: '400px',
+                borderRadius: 'var(--border-radius-large)',
+                overflow: 'hidden',
+                background: 'rgba(0,0,0,0.02)'
+            }}>
+                <Canvas gl={{ alpha: true }}>
+                    <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+                    <OrbitControls enableZoom={false} enablePan={false} />
+                    <ambientLight intensity={0.6} />
+                    <pointLight position={[5, 5, 5]} intensity={0.8} />
+
+                    <group position={[0, -2.5, 0]}>
+                        <GenerativeGrid3D
+                            pattern={kick}
+                            currentStep={currentStep}
+                            color="#ff3b30"
+                            position={[0, 0.6, 0]}
+                        />
+                        <GenerativeGrid3D
+                            pattern={snare}
+                            currentStep={currentStep}
+                            color="#3390ec"
+                            position={[0, 0.3, 0]}
+                        />
+                        <GenerativeGrid3D
+                            pattern={hihat}
+                            currentStep={currentStep}
+                            color="#f7ba2a"
+                            position={[0, 0, 0]}
+                        />
+                    </group>
+
+                    <EffectComposer>
+                        <Bloom intensity={0.8} luminanceThreshold={0.3} luminanceSmoothing={0.9} height={300} />
+                        <Vignette eskil={false} offset={0.15} darkness={0.8} />
+                    </EffectComposer>
+                </Canvas>
+            </section>
+
+            {/* CONTROLS */}
+            <section className="card">
+                <h3 style={{ marginBottom: 'var(--space-m)' }}>Kit</h3>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    {(['808', '909'] as const).map(k => (
+                        <button
+                            key={k}
+                            onClick={() => setKit(k)}
+                            style={{
+                                flex: 1,
+                                padding: '15px',
+                                borderRadius: '10px',
+                                border: 'none',
+                                background: kit === k ? 'var(--tg-theme-button-color)' : 'rgba(0,0,0,0.05)',
+                                color: kit === k ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)',
+                                fontSize: '14px',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            {k}
+                        </button>
+                    ))}
                 </div>
             </section>
         </div>

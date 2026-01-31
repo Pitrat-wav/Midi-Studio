@@ -132,9 +132,11 @@ export function startSequencerLoop() {
                     harmony.scale,
                     pads.complexity
                 )
-                const chordIdx = Math.floor((totalStep / 32) % progression.length)
-                padSynth.triggerChord(progression[chordIdx], '2n', time)
-                console.log('  🎹 PADS triggered')
+                if (progression && progression.length > 0) {
+                    const chordIdx = Math.floor((totalStep / 32) % progression.length)
+                    padSynth.triggerChord(progression[chordIdx], '2n', time)
+                    console.log('  🎹 PADS triggered')
+                }
             } catch (e) {
                 console.error('Pads trigger failed:', e)
             }
