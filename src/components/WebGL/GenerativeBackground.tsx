@@ -6,7 +6,6 @@ import { useAudioStore } from '../../store/audioStore'
 import { PRESETS, useVisualStore } from '../../store/visualStore'
 import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
 import { SouthParkWorld } from './SouthParkWorld'
-import { SouthParkStage } from './SouthParkStage'
 
 export function GenerativeBackground() {
     const isPlaying = useAudioStore(s => s.isPlaying)
@@ -17,12 +16,7 @@ export function GenerativeBackground() {
 
     // Use South Park 2.5D world if that theme is active
     if (aestheticTheme === 'southpark') {
-        return (
-            <>
-                <SouthParkWorld />
-                <SouthParkStage />
-            </>
-        )
+        return <SouthParkWorld />
     }
 
     const preset = (PRESETS && Array.isArray(PRESETS) && PRESETS.length > 0)

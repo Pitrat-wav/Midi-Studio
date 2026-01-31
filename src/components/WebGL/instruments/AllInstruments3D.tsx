@@ -3,6 +3,8 @@
  * 
  * Manages all instrument visualizations in 3D space
  * according to SpatialLayout configuration.
+ * 
+ * South Park Mode: Replaces 3D meshes with character billboards
  */
 
 import { DrumMachine3D } from './DrumMachine3D'
@@ -18,6 +20,8 @@ import { ML1853D } from './ML1853D'
 import { SnakeGrid3D } from './SnakeGrid3D'
 import { Sampler3D } from './Sampler3D'
 import { Buchla3D } from './Buchla3D'
+import { CharacterSprite } from '../CharacterSprite'
+import { SPATIAL_LAYOUT, type InstrumentType as SpatialInstrumentType } from '../../../lib/SpatialLayout'
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 import * as THREE from 'three'
@@ -59,23 +63,82 @@ function InstrumentGroup({ instrument, children }: { instrument: InstrumentType,
     )
 }
 
+// South Park character mapping configuration
+const SOUTHPARK_CHARACTERS: Record<string, { texture: string; audioChannel: 'kick' | 'snare' | 'bass' | 'lead' | 'pads' | 'hihat' | 'drone'; scale: number; reactivity: number }> = {
+    'drums': { texture: '/assets/visuals/sp_cartman.png', audioChannel: 'kick', scale: 10, reactivity: 0.8 },
+    'bass': { texture: '/assets/visuals/sp_kenny.png', audioChannel: 'bass', scale: 6, reactivity: 0.6 },
+    'harmony': { texture: '/assets/visuals/sp_kyle.png', audioChannel: 'lead', scale: 6, reactivity: 0.6 },
+    'pads': { texture: '/assets/visuals/sp_stan.png', audioChannel: 'pads', scale: 5, reactivity: 0.5 },
+    'drone': { texture: '/assets/visuals/sp_butters.png', audioChannel: 'drone', scale: 4, reactivity: 0.4 }
+}
+
+// Wrapper that conditionally renders character sprite OR 3D mesh
+function SouthParkInstrument({ instrument, children }: { instrument: InstrumentType; children: React.ReactNode }) {
+    const aestheticTheme = useVisualStore(s => s.aestheticTheme)
+
+    // If South Park theme is active AND this instrument has a character mapping
+    if (aestheticTheme === 'southpark' && SOUTHPARK_CHARACTERS[instrument]) {
+        const char = SOUTHPARK_CHARACTERS[instrument]
+        const layout = SPATIAL_LAYOUT[instrument as SpatialInstrumentType]
+
+        if (!layout) return <>{children}</>
+
+        return (
+            <CharacterSprite
+                texturePath={char.texture}
+                position={layout.position}
+                scale={char.scale}
+                audioChannel={char.audioChannel}
+                reactivity={char.reactivity}
+                enableSquash={true}
+            />
+        )
+    }
+
+    // Default: render normal 3D mesh
+    return <>{children}</>
+}
+
 export function AllInstruments3D() {
     return (
         <group>
-            {/* Core Instruments */}
-            <InstrumentGroup instrument="drums"><DrumMachine3D /></InstrumentGroup>
-            <InstrumentGroup instrument="bass"><AcidSynth3D /></InstrumentGroup>
-            <InstrumentGroup instrument="pads"><PadsSynth3D /></InstrumentGroup>
+            {/* Core Instruments with South Park character fallback */}
+            <InstrumentGroup instrument="drums">
+                <SouthParkInstrument instrument="drums">
+                    <DrumMachine3D />
+                </SouthParkInstrument>
+            </InstrumentGroup>
+
+            <InstrumentGroup instrument="bass">
+                <SouthParkInstrument instrument="bass">
+                    <AcidSynth3D />
+                </SouthParkInstrument>
+            </InstrumentGroup>
+
+            <InstrumentGroup instrument="pads">
+                <SouthParkInstrument instrument="pads">
+                    <PadsSynth3D />
+                </SouthParkInstrument>
+            </InstrumentGroup>
 
             {/* Restored Instruments */}
-            <InstrumentGroup instrument="harmony"><HarmSynth3D /></InstrumentGroup>
+            <InstrumentGroup instrument="harmony">
+                <SouthParkInstrument instrument="harmony">
+                    <HarmSynth3D />
+                </SouthParkInstrument>
+            </InstrumentGroup>
 
             {/* Sequencer Cluster - Separated */}
             <InstrumentGroup instrument="sequencer"><Sequencer3D /></InstrumentGroup>
             <InstrumentGroup instrument="ml185"><ML1853D /></InstrumentGroup>
             <InstrumentGroup instrument="snake"><SnakeGrid3D /></InstrumentGroup>
 
-            <InstrumentGroup instrument="drone"><DroneEngine3D /></InstrumentGroup>
+            <InstrumentGroup instrument="drone">
+                <SouthParkInstrument instrument="drone">
+                    <DroneEngine3D />
+                </SouthParkInstrument>
+            </InstrumentGroup>
+
             <InstrumentGroup instrument="master"><MasterControl3D /></InstrumentGroup>
             <InstrumentGroup instrument="mixer"><Mixer3D /></InstrumentGroup>
             <InstrumentGroup instrument="keyboard"><Keyboard3D /></InstrumentGroup>

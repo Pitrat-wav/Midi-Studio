@@ -140,8 +140,7 @@ export function SouthParkWorld() {
                 <CrowdSprite key={`crowd-${i}`} position={pos} index={i} />
             ))}
 
-            {/* Layer 1: Main Character Stage (handled by SouthParkStage component) */}
-            {/* This will be integrated in the next phase */}
+            {/* Main Characters rendered via AllInstruments3D */}
 
             {/* Foreground snow particles */}
             <group position={[0, 0, DEPTH.FOREGROUND]}>
