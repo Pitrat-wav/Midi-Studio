@@ -41,6 +41,7 @@ interface DrumState {
     activePatterns: { kick: boolean[], snare: boolean[], hihat: boolean[], hihatOpen: boolean[], clap: boolean[], ride: boolean[] }
     isPlaying: boolean
     togglePlay: () => void
+    toggleStep: (drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride', index: number) => void
     triggerKick: () => void
     triggerSnare: () => void
     triggerHiHat: () => void
@@ -74,6 +75,13 @@ export const useDrumStore = create<DrumState>((set) => ({
     }),
     setKit: (kit) => set({ kit }),
     togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+    toggleStep: (drum, index) => set((state) => {
+        const pattern = [...state.activePatterns[drum]]
+        pattern[index] = !pattern[index]
+        return {
+            activePatterns: { ...state.activePatterns, [drum]: pattern }
+        }
+    }),
     triggerKick: () => { /* Logic is handled by AudioVisualBridge on MIDI event or directly by local triggers */ },
     triggerSnare: () => { },
     triggerHiHat: () => { }
