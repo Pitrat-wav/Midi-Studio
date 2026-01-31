@@ -33,11 +33,11 @@ Guides for the end user and general synthesis tips.
 - [Extended FAQ](./5_User_Reference/FAQ_EXTENDED.md)
 
 ---
-**Latest Updates (v3.4.1):**
-- Complete 2D HUD system for all instruments (Sequencer, Drone, Master)
-- Unique visual identities with custom color schemes
-- Live animations: Turing Machine binary display, orbital rings, wave bars
-- Ambient Pads HUD with wave visualization (v3.4.0)
-- Critical postprocessing stability fix - PIXEL theme now stable
+**Latest Updates (v3.4.2):**
+- 🎸 NEW: South Park Rock Band theme - epic rock aesthetics!
+- 🎨 Enhanced Whisk UI with 2x2 grid and visual feedback
+- ✨ Active themes now scale and glow
+- 🔧 Fixed theme application to backgrounds and materials
+- Complete 2D HUD system for all instruments (v3.4.1)
 
-*Last updated: 2026-01-31 21:40 UTC+5*
+*Last updated: 2026-01-31 21:50 UTC+5*
