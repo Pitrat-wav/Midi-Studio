@@ -1,5 +1,32 @@
 # Журнал изменений (Changelog)
 
+## v3.5.0 - Authentic South Park Theme Implementation - [2026-01-31]
+- **ПОЛНАЯ ПЕРЕРАБОТКА**: South Park тема теперь выглядит как настоящий South Park!
+    - 🌤️ **Небо**: Светло-голубой (#87CEEB) вместо темного фона
+    - 🏔️ **Пейзаж**: Зеленые горы с белым снегом (из специального background image)
+    - 🌲 **3D деревья**: 6 анимированных сосен с flat shading
+    - ❄️ **Снежные элементы**: 5 snowballs разного размера на земле
+    - 🎨 **Flat/Cartoon материалы**: No metalness, full roughness для мультяшного вида
+- **НОВЫЙ BACKGROUND**: Специальная сцена `SouthParkBackground.tsx`
+    - Горизонтальная plane с South Park landscape текстурой
+    - 3D слои: background plane + 3D trees + snow elements + ground plane
+    - Яркое ambient освещение (1.2) для cartoon look
+    - Directional lights: золотой (#FFD700) и зеленый (#228B22)
+- **УЛУЧШЕННАЯ КНОПКА**: 🏔️ SOUTH PARK ROCK ❄️
+    - Градиент: зеленый → золотой → голубой (#228B22 → #FFD700 → #87CEEB)
+    - Зеленая ramka и shadow
+    - Эмодзи: горы и снежинка вместо гитар
+- **ЦВЕТОВАЯ ПАЛИТРА** (по референсам пользователя):
+    - Sky: #87CEEB
+    - Mountains: #228B22 (forest green)
+    - Snow: #FFFFFF/#F5F5F5
+    - Lights: #FFD700 (gold), #228B22 (green)
+- **ТЕХНИЧЕСКИЕ ДЕТАЛИ**:
+    - Flat shading на всех 3D элементах
+    - Низкое кол-во звезд (800) для не-космической сцены
+    - Минимальный haze (0.003)
+    - Cartoon-style cone trees с 3 слоями foliage
+
 ## v3.4.2 - South Park Rock Theme & Enhanced Whisk UI - [2026-01-31]
 - **НОВАЯ ТЕМА**: "South Park Rock Band" - эпическая рок-группа в стиле South Park!
     - 🎸 Красно-синий градиент с rock-эстетикой

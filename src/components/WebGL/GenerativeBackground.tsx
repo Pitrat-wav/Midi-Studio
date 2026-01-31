@@ -9,12 +9,19 @@ import * as THREE from 'three'
 import { useAudioStore } from '../../store/audioStore'
 import { PRESETS, useVisualStore } from '../../store/visualStore'
 import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
+import { SouthParkBackground } from './SouthParkBackground'
 
 export function GenerativeBackground() {
     const isPlaying = useAudioStore(s => s.isPlaying)
     const presetIndex = useVisualStore(s => s.backgroundPreset)
+    const aestheticTheme = useVisualStore(s => s.aestheticTheme)
     const bridge = useAudioVisualBridge()
     const meshRef = useRef<THREE.Mesh>(null!)
+
+    // Use South Park background if that theme is active
+    if (aestheticTheme === 'southpark') {
+        return <SouthParkBackground />
+    }
 
     const preset = (PRESETS && Array.isArray(PRESETS) && PRESETS.length > 0)
         ? PRESETS[presetIndex % PRESETS.length]

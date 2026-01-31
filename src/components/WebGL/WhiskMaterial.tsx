@@ -67,11 +67,11 @@ export function WhiskMaterial({
             case 'southpark':
                 return {
                     color: "#ffffff",
-                    emissive: "#ff4444",
-                    metalness: 0.6,
-                    roughness: 0.4,
-                    distort: 0.3,
-                    speed: 1.5,
+                    emissive: "#FFD700",
+                    metalness: 0,
+                    roughness: 1.0,
+                    distort: 0,
+                    speed: 0,
                     mapUrl: '/assets/visuals/south_park_rock.png'
                 }
             default:

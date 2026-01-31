@@ -292,10 +292,10 @@ function WhiskUI() {
                 }}
                 style={{
                     background: isSouthParkActive
-                        ? 'linear-gradient(135deg, #ff4444 0%, #4444ff 50%, #ff4444 100%)'
+                        ? 'linear-gradient(135deg, #228B22 0%, #FFD700 50%, #87CEEB 100%)'
                         : 'rgba(0,0,0,0.5)',
-                    color: isSouthParkActive ? '#ffffff' : '#ff4444',
-                    border: `2px solid ${isSouthParkActive ? '#ff4444' : 'rgba(255, 68, 68, 0.3)'}`,
+                    color: isSouthParkActive ? '#000000' : '#87CEEB',
+                    border: `2px solid ${isSouthParkActive ? '#228B22' : 'rgba(135, 206, 235, 0.3)'}`,
                     padding: '12px 16px',
                     borderRadius: '12px',
                     cursor: 'pointer',
@@ -303,13 +303,13 @@ function WhiskUI() {
                     fontFamily: 'monospace',
                     transition: 'all 0.2s ease',
                     fontWeight: 'bold',
-                    boxShadow: isSouthParkActive ? '0 0 25px rgba(255, 68, 68, 0.6)' : 'none',
+                    boxShadow: isSouthParkActive ? '0 0 25px rgba(34, 139, 34, 0.6)' : 'none',
                     transform: isSouthParkActive ? 'scale(1.05)' : 'scale(1)',
-                    textShadow: isSouthParkActive ? '0 0 10px rgba(255, 255, 255, 0.8)' : 'none',
+                    textShadow: isSouthParkActive ? '0 0 10px rgba(255, 215, 0, 0.8)' : 'none',
                     letterSpacing: '1px'
                 }}
             >
-                🎸 SOUTH PARK ROCK 🎸
+                🏔️ SOUTH PARK ROCK ❄️
             </button>
 
             <div style={{
