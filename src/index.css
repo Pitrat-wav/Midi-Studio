@@ -1,3 +1,6 @@
+/* Import South Park comic font */
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&display=swap');
+
 :root {
   --tg-theme-bg-color: transparent;
   --tg-theme-text-color: #ffffff;
@@ -37,6 +40,56 @@
   --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.08);
 
   --vh: 1vh;
+}
+
+/* South Park Theme Overrides */
+body.southpark-theme {
+  --tg-theme-bg-color: #42B4E6;
+  --tg-theme-text-color: #000000;
+  --tg-theme-hint-color: rgba(0, 0, 0, 0.6);
+  --tg-theme-link-color: #F26A1B;
+  --tg-theme-button-color: #F26A1B;
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-secondary-bg-color: rgba(255, 255, 255, 0.9);
+  --tg-theme-header-bg-color: rgba(240, 240, 240, 0.95);
+  --tg-theme-accent-text-color: #E9E330;
+  --tg-theme-section-bg-color: rgba(255, 255, 255, 0.85);
+
+  /* Construction paper style */
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(0, 0, 0, 0.2);
+  --glass-blur: 0px;
+
+  --shadow-soft: 0 3px 6px rgba(0, 0, 0, 0.2);
+  --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.3);
+
+  background: #42B4E6;
+  font-family: 'Bangers', 'Permanent Marker', cursive, sans-serif;
+}
+
+body.southpark-theme .card {
+  background: var(--glass-bg);
+  backdrop-filter: none;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
+  clip-path: polygon(0% 5px, 5px 5px, 5px 0%,
+      calc(100% - 5px) 0%, calc(100% - 5px) 5px, 100% 5px,
+      100% calc(100% - 5px), calc(100% - 5px) calc(100% - 5px), calc(100% - 5px) 100%,
+      5px 100%, 5px calc(100% - 5px), 0% calc(100% - 5px));
+}
+
+body.southpark-theme button {
+  border: 2px solid #000000;
+  font-family: 'Bangers', cursive;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+}
+
+body.southpark-theme button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
 }
 
 @media (prefers-color-scheme: dark) {

@@ -46,9 +46,22 @@ function App() {
 
     const focusedInstrument = useVisualStore(s => s.focusInstrument)
     const setFocusedInstrument = useVisualStore(s => s.setFocusInstrument)
+    const aestheticTheme = useVisualStore(s => s.aestheticTheme)
 
     const [showOverlay, setShowOverlay] = useState(true)
     const [showFAQ, setShowFAQ] = useState(false)
+
+    // Toggle South Park theme class on body
+    useEffect(() => {
+        if (aestheticTheme === 'southpark') {
+            document.body.classList.add('southpark-theme')
+        } else {
+            document.body.classList.remove('southpark-theme')
+        }
+        return () => {
+            document.body.classList.remove('southpark-theme')
+        }
+    }, [aestheticTheme])
 
     // Pyodide Bridge
     useCompositionManager()

@@ -1,7 +1,3 @@
-/**
- * GenerativeBackground — Animated 3D background with Presets
- */
-
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Stars, Float, MeshDistortMaterial, Sparkles } from '@react-three/drei'
@@ -9,7 +5,8 @@ import * as THREE from 'three'
 import { useAudioStore } from '../../store/audioStore'
 import { PRESETS, useVisualStore } from '../../store/visualStore'
 import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
-import { SouthParkBackground } from './SouthParkBackground'
+import { SouthParkWorld } from './SouthParkWorld'
+import { SouthParkStage } from './SouthParkStage'
 
 export function GenerativeBackground() {
     const isPlaying = useAudioStore(s => s.isPlaying)
@@ -18,9 +15,14 @@ export function GenerativeBackground() {
     const bridge = useAudioVisualBridge()
     const meshRef = useRef<THREE.Mesh>(null!)
 
-    // Use South Park background if that theme is active
+    // Use South Park 2.5D world if that theme is active
     if (aestheticTheme === 'southpark') {
-        return <SouthParkBackground />
+        return (
+            <>
+                <SouthParkWorld />
+                <SouthParkStage />
+            </>
+        )
     }
 
     const preset = (PRESETS && Array.isArray(PRESETS) && PRESETS.length > 0)

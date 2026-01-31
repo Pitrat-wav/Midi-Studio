@@ -1,131 +1,66 @@
 /**
- * SouthParkStage — Renders the character cutouts for the South Park theme.
- * Characters react to specific audio channels.
+ * SouthParkStage.tsx
+ * Main character stage - Characters AS instruments
+ * Cartman=Drums, Kenny=Bass, Kyle/Stan=Synth, Butters=Drone
  */
 
-import { useRef, useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
-import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
-
-interface CharacterProps {
-    texturePath: string
-    position: [number, number, number]
-    scale?: number
-    channel: 'kick' | 'bass' | 'lead' | 'pads' | 'snare' | 'hihat'
-    reactivity?: number
-    baseBounce?: number
-}
-
-function CharacterCutout({
-    texturePath,
-    position,
-    scale = 3,
-    channel,
-    reactivity = 0.5,
-    baseBounce = 0.5
-}: CharacterProps) {
-    const meshRef = useRef<THREE.Mesh>(null!)
-    const bridge = useAudioVisualBridge()
-
-    const texture = useMemo(() => {
-        const loader = new THREE.TextureLoader()
-        return loader.load(texturePath)
-    }, [texturePath])
-
-    useFrame((state) => {
-        if (!meshRef.current) return
-
-        // Get audio data for this channel
-        const pulse = bridge.getPulse(channel)
-
-        // Bounce animation
-        // Initial y position is position[1]
-        // Add sinus bounce + audio pulse
-        const t = state.clock.getElapsedTime()
-
-        // Idle breathing animation
-        const idleY = Math.sin(t * 2 + position[0]) * 0.1
-
-        // Audio reaction
-        const jumpY = pulse * reactivity * 2
-
-        meshRef.current.position.y = position[1] + idleY + jumpY
-
-        // Sqash and stretch
-        const stretch = 1 + pulse * 0.2
-        const squash = 1 - pulse * 0.1
-        meshRef.current.scale.set(scale * squash, scale * stretch, scale)
-    })
-
-    return (
-        <mesh ref={meshRef} position={position}>
-            <planeGeometry args={[1, 1]} /> // Aspect ratio will be handled by scale/texture
-            <meshBasicMaterial
-                map={texture}
-                transparent
-                side={THREE.DoubleSide}
-                toneMapped={false}
-            />
-        </mesh>
-    )
-}
+import { CharacterSprite } from './CharacterSprite'
 
 export function SouthParkStage() {
+    // Character depth layer - in front of crowd, behind foreground
+    const STAGE_Z = -5
+
     return (
         <group>
-            {/* Eric Cartman - Drums (Center Back) */}
-            {/* Texture is square-ish, slightly wide */}
-            <CharacterCutout
+            {/* DRUMS: Eric Cartman (Center, largest) */}
+            <CharacterSprite
                 texturePath="/assets/visuals/sp_cartman.png"
-                position={[0, -2, -10]}
-                scale={8}
-                channel="kick"
+                position={[0, -6, STAGE_Z]}
+                scale={10}
+                audioChannel="kick"
                 reactivity={0.8}
+                enableSquash={true}
             />
 
-            {/* Stan Marsh - Bass (Front Left) */}
-            <CharacterCutout
-                texturePath="/assets/visuals/sp_stan.png"
-                position={[-6, -4, -6]}
-                scale={6}
-                channel="bass"
-            />
-
-            {/* Kyle Broflovski - Lead Guitar (Front Right) */}
-            <CharacterCutout
-                texturePath="/assets/visuals/sp_kyle.png"
-                position={[6, -4, -6]}
-                scale={6}
-                channel="lead"
-            />
-
-            {/* Kenny McCormick - Pads/Synth (Far Right) */}
-            <CharacterCutout
+            {/* BASS: Kenny McCormick (Left) */}
+            <CharacterSprite
                 texturePath="/assets/visuals/sp_kenny.png"
-                position={[10, -5, -8]}
-                scale={5}
-                channel="pads"
+                position={[-8, -7, STAGE_Z - 1]}
+                scale={6}
+                audioChannel="bass"
+                reactivity={0.6}
+                enableSquash={true}
             />
 
-            {/* Butters - Percussion (Far Left) */}
-            <CharacterCutout
+            {/* SYNTH/LEAD: Kyle Broflovski (Right) */}
+            <CharacterSprite
+                texturePath="/assets/visuals/sp_kyle.png"
+                position={[6, -7, STAGE_Z - 1]}
+                scale={6}
+                audioChannel="lead"
+                reactivity={0.6}
+                enableSquash={true}
+            />
+
+            {/* PADS/HARMONY: Stan Marsh (Far Right) */}
+            <CharacterSprite
+                texturePath="/assets/visuals/sp_stan.png"
+                position={[10, -7.5, STAGE_Z - 2]}
+                scale={5}
+                audioChannel="pads"
+                reactivity={0.5}
+                enableSquash={true}
+            />
+
+            {/* DRONE: Butters (Far Left back) */}
+            <CharacterSprite
                 texturePath="/assets/visuals/sp_butters.png"
-                position={[-10, -5, -8]}
-                scale={5}
-                channel="hihat"
-                reactivity={1.2} // High reactivity for fast percussion
+                position={[-12, -7.5, STAGE_Z - 2]}
+                scale={4}
+                audioChannel="drone"
+                reactivity={0.4}
+                enableSquash={true}
             />
-
-            {/* Shadows for characters */}
-            <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -5.9, 0]}>
-                {[0, -6, 6, 10, -10].map((x, i) => (
-                    <mesh key={i} position={[x, -i === 0 ? -10 : -6, 0]}> {/* Approximate Z overlap fix */}
-                        <circleGeometry args={[2.5, 32]} />
-                        <meshBasicMaterial color="#000000" opacity={0.3} transparent />
-                    </mesh>
-                ))}
-            </group>
         </group>
     )
 }
