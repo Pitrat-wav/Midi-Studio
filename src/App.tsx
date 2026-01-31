@@ -24,6 +24,7 @@ import { InstrumentSearch } from './components/InstrumentSearch'
 import { SamplerScreen } from './components/HUD/SamplerScreen'
 import { HarmonyScreen } from './components/HUD/HarmonyScreen'
 import { Buchla259Screen } from './components/HUD/Buchla259Screen'
+import { DrumsScreen } from './components/HUD/DrumsScreen'
 import './App.css'
 
 function App() {
@@ -188,6 +189,7 @@ function App() {
                 <InstrumentSearch onSelect={setFocusedInstrument} />
 
                 {/* 2D HUDs */}
+                {focusedInstrument === 'drums' && <DrumsScreen />}
                 {focusedInstrument === 'sampler' && <SamplerScreen />}
                 {focusedInstrument === 'harmony' && <HarmonyScreen />}
                 {focusedInstrument === 'buchla' && <Buchla259Screen />}
