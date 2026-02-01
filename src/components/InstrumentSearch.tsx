@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { SPATIAL_LAYOUT, InstrumentType } from '../lib/SpatialLayout'
+import { useVisualStore } from '../store/visualStore'
 
 interface InstrumentSearchProps {
     onSelect: (instrument: InstrumentType) => void
@@ -40,7 +41,8 @@ export function InstrumentSearch({ onSelect }: InstrumentSearchProps) {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             // Toggle Search: Cmd+K or /
-            if ((e.metaKey && e.key === 'k') || (e.key === '/' && !isOpen)) {
+            const appView = useVisualStore.getState().appView
+            if ((e.metaKey && e.key === 'k') || (e.key === '/' && !isOpen && appView !== 'VISUALIZER')) {
                 e.preventDefault()
                 setIsOpen(prev => !prev)
                 setQuery('')

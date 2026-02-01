@@ -50,4 +50,3 @@ export function CyberTunnel() {
     )
 }
 
-const time = 0 // Placeholder for scope, useFrame handles it

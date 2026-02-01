@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+
 export const PRESETS = [
     { name: 'DEEP VOID', color: '#000000', stars: 1500, haze: 0, light1: '#ffffff', light2: '#111111' },
     { name: 'ORION NEBULA', color: '#0a0010', stars: 4000, haze: 0.02, light1: '#ff00cc', light2: '#3300ff' },
@@ -12,6 +13,50 @@ export const PRESETS = [
     { name: 'WHISK: CYBER', color: '#001a1a', stars: 3000, haze: 0.015, light1: '#00ff88', light2: '#ffcc00', texture: '/assets/visuals/whisk_preset_2.png' },
     { name: 'WHISK: PIXEL', color: '#332255', stars: 1000, haze: 0.005, light1: '#ff00ff', light2: '#ffff00', texture: '/assets/visuals/whisk_preset_3.png' },
     { name: 'SOUTH PARK ROCK', color: '#87CEEB', stars: 800, haze: 0.003, light1: '#FFD700', light2: '#228B22', texture: '/assets/visuals/south_park_rock.png' }
+]
+
+export const VISUALIZER_REGISTRY = [
+    { name: 'Feedback Vortex', icon: '🌀', id: 0, tags: 'abstract, feedback, trippy' },
+    { name: 'Quantum Particles', icon: '✨', id: 1, tags: 'particles, space, glow' },
+    { name: 'Fractal Mirror', icon: '💎', id: 2, tags: 'fractal, crystal, geometry' },
+    { name: 'Neon Weave', icon: '🕸️', id: 3, tags: 'grid, synthwave, lines' },
+    { name: 'Plasma Orb', icon: '🔮', id: 4, tags: 'sphere, organic, glow' },
+    { name: 'Liquid Mercury', icon: '💧', id: 5, tags: 'fluid, metal, distort' },
+    { name: 'Gravity Well', icon: '🕳️', id: 6, tags: 'particles, physics, blackhole' },
+    { name: 'Cyber Tunnel', icon: '🚇', id: 7, tags: 'tunnel, speed, neon' },
+    { name: 'Kaleido Sphere', icon: '💠', id: 8, tags: 'kaleidoscope, sphere, complex' },
+
+    // 30 NEW VISUALIZERS
+    { name: 'Aura Field', icon: '🌫️', id: 9, tags: 'fog, soft, ambient' },
+    { name: 'Circuit City', icon: '🌃', id: 10, tags: 'grid, data, urban' },
+    { name: 'Voxel Waves', icon: '🧱', id: 11, tags: 'minecraft, voxels, terrain' },
+    { name: 'String Theory', icon: '🎻', id: 12, tags: 'lines, vibrates, strings' },
+    { name: 'Metablob', icon: '🦠', id: 13, tags: 'organic, blobs, blobs' },
+    { name: 'Prism Portal', icon: '🌈', id: 14, tags: 'rainbow, refraction, glass' },
+    { name: 'Data Rain', icon: '🔢', id: 15, tags: 'matrix, code, data' },
+    { name: 'Nebula Cloud', icon: '☁️', id: 16, tags: 'clouds, space, gas' },
+    { name: 'Hexagon Grid', icon: '⬢', id: 17, tags: 'hex, geometry, honey' },
+    { name: 'Lidar Scan', icon: '📡', id: 18, tags: 'points, laser, scan' },
+    { name: 'Hypercube', icon: '🧊', id: 19, tags: '4d, cube, geometry' },
+    { name: 'Glitch World', icon: '📟', id: 20, tags: 'glitch, error, digital' },
+    { name: 'Spiral Galaxy', icon: '🌌', id: 21, tags: 'stars, spin, galaxy' },
+    { name: 'Crystal Cave', icon: '🌋', id: 22, tags: 'rocks, reflections, sharp' },
+    { name: 'Growth Tendrils', icon: '🌿', id: 23, tags: 'organic, growth, life' },
+    { name: 'Geometric Chaos', icon: '💥', id: 24, tags: 'cubes, explode, chaos' },
+    { name: 'Solar Flare', icon: '☀️', id: 25, tags: 'sun, fire, rays' },
+    { name: 'Depth Rings', icon: '⭕', id: 26, tags: 'rings, distance, pulse' },
+    { name: 'Frequency 360', icon: '📊', id: 27, tags: 'bars, spectrum, round' },
+    { name: 'Triangle Rain', icon: '🔺', id: 28, tags: 'flat, geometry, fall' },
+    { name: 'Vector Field', icon: '↗️', id: 29, tags: 'arrows, flow, math' },
+    { name: 'Electric Storm', icon: '⚡', id: 30, tags: 'lightning, bolts, flash' },
+    { name: 'Fluid Glass', icon: '🧪', id: 31, tags: 'liquid, morph, clear' },
+    { name: 'Speed Warp', icon: '🌠', id: 32, tags: 'stars, fast, jump' },
+    { name: 'Abstract Solid', icon: '🗿', id: 33, tags: 'sculpture, morph, solid' },
+    { name: 'Laser Grid', icon: '🕹️', id: 34, tags: '80s, synthwave, neon' },
+    { name: 'Double Helix', icon: '🧬', id: 35, tags: 'dna, spiral, complex' },
+    { name: 'Pulsar Star', icon: '🔔', id: 36, tags: 'pulse, rings, center' },
+    { name: 'Fractal Forest', icon: '🌲', id: 37, tags: 'recursive, tree, growth' },
+    { name: 'Glass Shards', icon: '🪟', id: 38, tags: 'broken, pieces, floating' }
 ]
 
 export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'
@@ -42,16 +87,12 @@ export interface PoseLandmark {
 }
 
 interface VisualState {
-    // Current "Energy" levels for different parts of the scene (0-1)
-    // Current "Energy" levels
+    energyCode: string // Unique code for session
     energy: Record<string, number>
-    // High-frequency triggers
     triggers: Record<string, number>
-    // Interaction state
     activeParam: string | null
     interactionEnergy: number
 
-    // NEW: WebGL-specific data
     fftData: Float32Array | null
     globalAudioIntensity: number
     performanceMode: PerformanceMode
@@ -70,8 +111,8 @@ interface VisualState {
     appView: AppView
     visualizerIndex: number
     visualModifier: { x: number, y: number }
-    visualSpeed: number // 0-2 (multiplier for uTime)
-    visualDetail: number // 0-1 (iterations/feedback strength)
+    visualSpeed: number
+    visualDetail: number
     setVisualizerIndex: (index: number) => void
     cycleVisualizer: (dir: number) => void
     setVisualModifier: (x: number, y: number) => void
@@ -80,13 +121,11 @@ interface VisualState {
     setAppView: (view: AppView) => void
     cycleView: () => void
 
-    // Actions
     updateEnergy: (instrument: string, value: number) => void
     triggerPulse: (type: string, intensity?: number) => void
     setInteraction: (param: string | null, value: number) => void
     decay: () => void
 
-    // NEW: WebGL actions
     setFFTData: (data: Float32Array) => void
     setAudioIntensity: (intensity: number) => void
     setPerformanceMode: (mode: PerformanceMode) => void
@@ -103,7 +142,6 @@ interface VisualState {
     micEnabled: boolean
     toggleMic: () => void
 
-    // Background
     backgroundPreset: number
     aestheticTheme: AestheticTheme
     setBackgroundPreset: (index: number) => void
@@ -112,6 +150,7 @@ interface VisualState {
 }
 
 export const useVisualStore = create<VisualState>((set) => ({
+    energyCode: Math.random().toString(36).substring(7),
     energy: {
         drums: 0, bass: 0, harmony: 0, sequencer: 0, pads: 0,
         ml185: 0, snake: 0, drone: 0, master: 0, mixer: 0, keyboard: 0,
@@ -125,11 +164,10 @@ export const useVisualStore = create<VisualState>((set) => ({
     activeParam: null,
     interactionEnergy: 0,
 
-    // NEW: WebGL defaults
     fftData: null,
     globalAudioIntensity: 0,
-    performanceMode: 'high', // Default to high quality
-    viewMode: '3D', // Default to 3D mode
+    performanceMode: 'high',
+    viewMode: '3D',
     webglEnabled: true,
     handTrackingEnabled: false,
     handData: null,
@@ -162,26 +200,18 @@ export const useVisualStore = create<VisualState>((set) => ({
         interactionEnergy: value
     }),
 
-    // NEW: WebGL actions
     setFFTData: (data) => set({ fftData: data }),
-
     setAudioIntensity: (intensity) => set({ globalAudioIntensity: intensity }),
-
     setPerformanceMode: (mode) => set({ performanceMode: mode }),
-
     setConditions: (conditions) => set((state) => ({
         conditions: { ...state.conditions, ...conditions }
     })),
-
     setViewMode: (mode) => set({ viewMode: mode }),
-
     toggleWebGL: () => set((state) => ({ webglEnabled: !state.webglEnabled })),
-
     setHandTrackingEnabled: (enabled) => set({ handTrackingEnabled: enabled }),
     setHandData: (data) => set({ handData: data }),
     setPoseTrackingEnabled: (enabled) => set({ poseTrackingEnabled: enabled }),
     setPoseData: (data) => set({ poseData: data }),
-
     setFocusInstrument: (instrument) => set({ focusInstrument: instrument }),
 
     appView: '3D',
@@ -191,7 +221,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     visualDetail: 0.5,
     setVisualizerIndex: (index: number) => set({ visualizerIndex: index }),
     cycleVisualizer: (dir) => set((state) => {
-        const next = (state.visualizerIndex + dir + 9) % 9
+        const next = (state.visualizerIndex + dir + VISUALIZER_REGISTRY.length) % VISUALIZER_REGISTRY.length
         return { visualizerIndex: next }
     }),
     setVisualModifier: (x, y) => set({ visualModifier: { x, y } }),
@@ -213,7 +243,6 @@ export const useVisualStore = create<VisualState>((set) => ({
         return { appView: views[nextIndex] }
     }),
 
-    // Background Presets
     backgroundPreset: 0,
     aestheticTheme: 'none',
     setBackgroundPreset: (index) => set({
@@ -251,7 +280,6 @@ export const useVisualStore = create<VisualState>((set) => ({
     toggleMic: () => set((state) => ({ micEnabled: !state.micEnabled })),
 
     decay: () => set((state) => {
-        // Slow decay for energy, fast for triggers
         const d = (val: number, rate: number) => Math.max(0, (val || 0) - rate)
         return {
             energy: {
@@ -278,8 +306,8 @@ export const useVisualStore = create<VisualState>((set) => ({
             interactionEnergy: d(state.interactionEnergy, 0.05),
             globalAudioIntensity: d(state.globalAudioIntensity, 0.1),
             visualModifier: {
-                x: state.visualModifier.x * 0.95,
-                y: state.visualModifier.y * 0.95
+                x: (state.visualModifier?.x || 0) * 0.95,
+                y: (state.visualModifier?.y || 0) * 0.95
             }
         }
     })

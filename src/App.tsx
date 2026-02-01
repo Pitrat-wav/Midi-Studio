@@ -21,6 +21,7 @@ import { AudioVisualBridge } from './lib/AudioVisualBridge'
 import { useCompositionManager } from './logic/CompositionManager'
 import type { InstrumentType } from './lib/SpatialLayout'
 import { InstrumentSearch } from './components/InstrumentSearch'
+import { VisualizerSearch } from './components/VisualizerSearch'
 import { SamplerScreen } from './components/HUD/SamplerScreen'
 import { AIPanel } from './components/HUD/AIPanel'
 import { HarmonyScreen } from './components/HUD/HarmonyScreen'
@@ -109,9 +110,9 @@ function App() {
     useEffect(() => {
         GamepadManager.init()
         launchControlXL.init()
-        GraphEngine.init(edges) // Initialize graph with current edges
+        GraphEngine.init() // Initialize graph without direct edges arg
         return () => GraphEngine.dispose()
-    }, [edges])
+    }, [])
 
     // Initialize AudioVisualBridge when audio engine is ready
     useEffect(() => {
@@ -264,6 +265,7 @@ function App() {
 
                 {/* CMD+K Search HUD */}
                 <InstrumentSearch onSelect={setFocusedInstrument} />
+                <VisualizerSearch />
 
                 {/* Instrument Navigation Bar (Holographic Quick-Bar) */}
                 <InstrumentNavigation
