@@ -1,0 +1,220 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.sampler-screen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+}
+
+.cmi-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 900px;
+    height: 650px;
+    background: #0a0a0a;
+    border: 15px solid #d1d1d1;
+    border-radius: 10px;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 255, 102, 0.1);
+    z-index: 1000;
+    overflow: hidden;
+    font-family: 'Press Start 2P', cursive, monospace;
+    display: flex;
+    flex-direction: column;
+}
+
+.cmi-screen {
+    flex: 1;
+    background: #001a11;
+    position: relative;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    border: 4px solid #333;
+    margin: 5px;
+    box-shadow: inset 0 0 30px #000;
+}
+
+.cmi-screen::after {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 10;
+    background-size: 100% 4px, 3px 100%;
+    pointer-events: none;
+}
+
+.cmi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #00ff66;
+    border-bottom: 2px solid #004422;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    letter-spacing: 2px;
+}
+
+.cmi-close {
+    cursor: pointer;
+    background: #004422;
+    padding: 5px 10px;
+    border-radius: 3px;
+    transition: background 0.2s;
+}
+
+.cmi-close:hover {
+    background: #00ff66;
+    color: #000;
+}
+
+.cmi-main-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 15px;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Page R Grid */
+.pager-grid-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+}
+
+.pager-grid {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 4px;
+    background: #002211;
+    padding: 10px;
+    border: 2px solid #004422;
+    height: 280px;
+}
+
+.cmi-vector-canvas {
+    width: 100%;
+    height: 100px;
+    background: #001108;
+    border: 1px solid #004422;
+}
+
+.cmi-status-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #00ff66;
+    padding: 5px 0;
+}
+
+/* Sidebar Panels */
+.cmi-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.cmi-panel {
+    border: 1px solid #004422;
+    padding: 8px;
+    background: rgba(0, 68, 34, 0.05);
+}
+
+.cmi-nav-btns {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.cmi-nav-btns button {
+    flex: 1;
+    font-size: 8px;
+    padding: 4px;
+    background: #004422;
+    color: #00ff66;
+    border: 1px solid #00ff66;
+    cursor: pointer;
+}
+
+.cmi-nav-btns button:hover {
+    background: #00ff66;
+    color: #000;
+}
+
+.cmi-sample-list {
+    font-size: 9px;
+    max-height: 80px;
+    overflow-y: auto;
+    color: #00aa44;
+}
+
+.cmi-control-row {
+    margin-top: 5px;
+}
+
+.cmi-control-row label {
+    font-size: 8px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.cmi-control-row input[type="range"] {
+    height: 12px;
+}
+
+.cmi-footer {
+    border-top: 1px solid #004422;
+    margin-top: 10px;
+    font-size: 9px;
+}
+
+/* Flicker Animation */
+@keyframes cmi-flicker {
+    0% {
+        opacity: 0.98;
+    }
+
+    5% {
+        opacity: 0.95;
+    }
+
+    10% {
+        opacity: 0.99;
+    }
+
+    15% {
+        opacity: 0.97;
+    }
+
+    20% {
+        opacity: 0.99;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.cmi-screen {
+    animation: cmi-flicker 0.15s infinite;
+}

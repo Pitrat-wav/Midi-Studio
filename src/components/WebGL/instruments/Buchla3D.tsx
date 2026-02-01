@@ -5,8 +5,9 @@ import * as THREE from 'three'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
 import { useVisualStore } from '../../../store/visualStore'
 
-export function Buchla3D() {
-    const { position } = SPATIAL_LAYOUT.buchla
+export function Buchla3D({ position: propsPos }: { position?: [number, number, number] } = {}) {
+    const { position: layoutPos } = SPATIAL_LAYOUT.buchla
+    const position = propsPos || layoutPos
     const setFocus = useVisualStore(s => s.setFocusInstrument)
     const focused = useVisualStore(s => s.focusInstrument === 'buchla')
 

@@ -72,31 +72,35 @@ const SOUTHPARK_CHARACTERS: Record<string, { texture: string; audioChannel: 'kic
     'drone': { texture: '/assets/visuals/sp_butters.png', audioChannel: 'drone', scale: 4, reactivity: 0.4 }
 }
 
-// Wrapper that conditionally renders character sprite OR 3D mesh
+// Wrapper that renders 3D gear AND conditionally character sprite
 function SouthParkInstrument({ instrument, children }: { instrument: InstrumentType; children: React.ReactNode }) {
     const aestheticTheme = useVisualStore(s => s.aestheticTheme)
+    const char = SOUTHPARK_CHARACTERS[instrument]
+    const layout = SPATIAL_LAYOUT[instrument as SpatialInstrumentType]
 
-    // If South Park theme is active AND this instrument has a character mapping
-    if (aestheticTheme === 'southpark' && SOUTHPARK_CHARACTERS[instrument]) {
-        const char = SOUTHPARK_CHARACTERS[instrument]
-        const layout = SPATIAL_LAYOUT[instrument as SpatialInstrumentType]
+    return (
+        <group>
+            {/* Always render the 3D instrument gear */}
+            {children}
 
-        if (!layout) return <>{children}</>
-
-        return (
-            <CharacterSprite
-                texturePath={char.texture}
-                position={layout.position}
-                scale={char.scale}
-                audioChannel={char.audioChannel}
-                reactivity={char.reactivity}
-                enableSquash={true}
-            />
-        )
-    }
-
-    // Default: render normal 3D mesh
-    return <>{children}</>
+            {/* Conditionally render character standing nearby in South Park theme */}
+            {aestheticTheme === 'southpark' && char && layout && (
+                <CharacterSprite
+                    texturePath={char.texture}
+                    // Offset character: Z+2 (front), X+3 (side) so they don't block the gear
+                    position={[
+                        layout.position[0] + (instrument === 'drums' ? 5 : 3),
+                        layout.position[1],
+                        layout.position[2] + 2
+                    ]}
+                    scale={char.scale}
+                    audioChannel={char.audioChannel}
+                    reactivity={char.reactivity}
+                    enableSquash={true}
+                />
+            )}
+        </group>
+    )
 }
 
 export function AllInstruments3D() {
@@ -143,8 +147,8 @@ export function AllInstruments3D() {
             <InstrumentGroup instrument="mixer"><Mixer3D /></InstrumentGroup>
             <InstrumentGroup instrument="keyboard"><Keyboard3D /></InstrumentGroup>
 
-            <InstrumentGroup instrument="sampler"><Sampler3D /></InstrumentGroup>
-            <InstrumentGroup instrument="buchla"><Buchla3D /></InstrumentGroup>
+            <InstrumentGroup instrument="sampler"><Sampler3D position={SPATIAL_LAYOUT.sampler.position} /></InstrumentGroup>
+            <InstrumentGroup instrument="buchla"><Buchla3D position={SPATIAL_LAYOUT.buchla.position} /></InstrumentGroup>
 
             {/* Global Lighting - Reactive */}
             <ReactiveLights />

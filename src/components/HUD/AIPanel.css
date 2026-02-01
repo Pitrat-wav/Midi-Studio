@@ -1,0 +1,218 @@
+.ai-panel-container {
+    position: fixed;
+    right: 20px;
+    bottom: 120px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.ai-toggle-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(15, 15, 15, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #3390ec;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.ai-toggle-btn:hover {
+    background: rgba(15, 15, 15, 0.9);
+    border-color: #3390ec;
+    transform: scale(1.1);
+}
+
+.ai-toggle-btn.active {
+    background: #3390ec;
+    color: white;
+}
+
+.ai-panel {
+    width: 320px;
+    background: rgba(15, 15, 15, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    color: white;
+    font-family: 'Inter', sans-serif;
+}
+
+.ai-panel header {
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-panel h3 {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #3390ec;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-panel header button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+}
+
+.ai-content {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ai-content textarea {
+    width: 100%;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: white;
+    padding: 10px;
+    font-size: 13px;
+    resize: none;
+    outline: none;
+}
+
+.ai-content textarea:focus {
+    border-color: #3390ec;
+}
+
+.generate-btn {
+    background: #3390ec;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+.generate-btn:disabled {
+    background: #444;
+    cursor: not-allowed;
+}
+
+.ai-error {
+    background: rgba(255, 59, 48, 0.1);
+    color: #ff3b30;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.preview-container {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    text-align: center;
+}
+
+.preview-container p {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 0 0 8px 0;
+}
+
+.preview-container img {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.apply-hint {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #00ffcc;
+    font-style: italic;
+}
+
+.key-setup {
+    font-size: 12px;
+}
+
+.key-setup .input-row {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.key-setup input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: white;
+    padding: 8px;
+    font-size: 12px;
+}
+
+.key-setup button {
+    background: #3390ec;
+    color: white;
+    border: none;
+    padding: 0 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.key-setup small {
+    display: block;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.key-setup a {
+    color: #3390ec;
+    text-decoration: none;
+}
+
+.settings-btn {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    cursor: pointer;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.settings-btn:hover {
+    color: white;
+    border-color: white;
+}

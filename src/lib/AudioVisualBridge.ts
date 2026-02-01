@@ -186,6 +186,22 @@ class AudioVisualBridgeClass {
     }
 
     /**
+     * Get the latest FFT data (frequency spectrum)
+     */
+    getFFTData(): Float32Array | null {
+        if (!this.analyser) return null
+        return this.analyser.getValue() as Float32Array
+    }
+
+    /**
+     * Get the latest waveform data (time domain)
+     */
+    getWaveformData(): Float32Array | null {
+        if (!this.waveformAnalyser) return null
+        return this.waveformAnalyser.getValue() as Float32Array
+    }
+
+    /**
      * Регистрация визуального объекта для получения аудио-данных
      */
     register(id: string, callback: VisualCallback) {

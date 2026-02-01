@@ -6,6 +6,7 @@ import { useAudioStore } from '../../store/audioStore'
 import { PRESETS, useVisualStore } from '../../store/visualStore'
 import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
 import { SouthParkWorld } from './SouthParkWorld'
+import { PlanetField } from './PlanetField'
 
 export function GenerativeBackground() {
     const isPlaying = useAudioStore(s => s.isPlaying)
@@ -63,6 +64,9 @@ export function GenerativeBackground() {
                 fade
                 speed={isPlaying ? 0.5 : 0.1} // Slower star movement
             />
+
+            {/* Decorative Planets */}
+            <PlanetField mode="cosmic" />
 
             {/* Dynamic Lights */}
             <ambientLight intensity={0.2} />

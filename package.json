@@ -8,9 +8,11 @@
         "build": "tsc && vite build",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "preview": "vite preview",
-        "scan-samples": "node scripts/scan-samples.js"
+        "scan-samples": "node scripts/scan-samples.js",
+        "sync-docs": "./scripts/sync_to_drive.sh"
     },
     "dependencies": {
+        "@huggingface/inference": "^4.13.11",
         "@mediapipe/tasks-vision": "^0.10.32",
         "@react-three/drei": "^9.122.0",
         "@react-three/fiber": "^8.18.0",
@@ -24,6 +26,7 @@
         "pyodide": "^0.29.3",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "replicate": "^1.4.0",
         "three": "^0.182.0",
         "tone": "^14.7.77",
         "zustand": "^4.5.1"

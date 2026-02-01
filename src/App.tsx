@@ -22,6 +22,7 @@ import { useCompositionManager } from './logic/CompositionManager'
 import type { InstrumentType } from './lib/SpatialLayout'
 import { InstrumentSearch } from './components/InstrumentSearch'
 import { SamplerScreen } from './components/HUD/SamplerScreen'
+import { AIPanel } from './components/HUD/AIPanel'
 import { HarmonyScreen } from './components/HUD/HarmonyScreen'
 import { Buchla259Screen } from './components/HUD/Buchla259Screen'
 import { DrumsScreen } from './components/HUD/DrumsScreen'
@@ -222,6 +223,9 @@ function App() {
                 {(focusedInstrument === 'sequencer' || focusedInstrument === 'ml185') && <SequencerScreen />}
                 {focusedInstrument === 'drone' && <DroneScreen />}
                 {focusedInstrument === 'master' && <MasterScreen />}
+
+                {/* AI Generation Tools */}
+                <AIPanel />
 
                 {/* Help hint (bottom right) */}
                 {!showOverlay && (

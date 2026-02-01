@@ -9,6 +9,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useVisualStore } from '../../store/visualStore'
 import { CharacterSprite } from './CharacterSprite'
+import { PlanetField } from './PlanetField'
 
 // Parallax depth constants
 const DEPTH = {
@@ -19,19 +20,21 @@ const DEPTH = {
     FOREGROUND: 5
 }
 
-// Parallax layer component
+// Parallax layer component with optional paper grain
 function ParallaxLayer({
     texturePath,
     position,
     size,
     parallaxFactor = 0.1,
-    opacity = 1
+    opacity = 1,
+    useGrain = true
 }: {
     texturePath: string
     position: [number, number, number]
     size: [number, number]
     parallaxFactor?: number
     opacity?: number
+    useGrain?: boolean
 }) {
     const meshRef = useRef<THREE.Mesh>(null!)
 
@@ -42,27 +45,82 @@ function ParallaxLayer({
         return tex
     }, [texturePath])
 
-    useFrame(({ camera }) => {
+    const grainTexture = useMemo(() => {
+        const tex = new THREE.TextureLoader().load('/assets/visuals/sp_paper_grain.png')
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+        tex.repeat.set(size[0] / 10, size[1] / 10)
+        return tex
+    }, [size])
+
+    useFrame(({ camera, clock }) => {
         if (!meshRef.current) return
-        // Parallax effect based on camera position
-        meshRef.current.position.x = position[0] + camera.position.x * parallaxFactor
+        // Parallax effect with slight stop-motion quantization
+        const t = Math.floor(clock.getElapsedTime() * 12) / 12
+        meshRef.current.position.x = position[0] + (camera.position.x * parallaxFactor) + Math.sin(t * 2) * 0.01
     })
 
     return (
-        <mesh ref={meshRef} position={position}>
-            <planeGeometry args={size} />
-            <meshBasicMaterial
-                map={texture}
-                transparent
-                opacity={opacity}
-                side={THREE.DoubleSide}
-                toneMapped={false}
-            />
+        <group position={position}>
+            <mesh ref={meshRef}>
+                <planeGeometry args={size} />
+                <meshBasicMaterial
+                    map={texture}
+                    transparent
+                    opacity={opacity}
+                    side={THREE.DoubleSide}
+                    toneMapped={false}
+                />
+                {useGrain && (
+                    <mesh position={[0, 0, 0.01]}>
+                        <planeGeometry args={size} />
+                        <meshBasicMaterial
+                            map={grainTexture}
+                            transparent
+                            opacity={0.1}
+                            blending={THREE.MultiplyBlending}
+                            toneMapped={false}
+                        />
+                    </mesh>
+                )}
+            </mesh>
+        </group>
+    )
+}
+
+// Moving Cloud component
+function MovingCloud({ index }: { index: number }) {
+    const meshRef = useRef<THREE.Mesh>(null!)
+    const seed = useMemo(() => Math.random(), [])
+    const speed = 0.5 + seed * 1
+    const xOffset = (seed - 0.5) * 100
+
+    const texture = useMemo(() => {
+        const tex = new THREE.TextureLoader().load('/assets/visuals/sp_clouds.png')
+        // Assume 2x2 grid for 4 clouds
+        tex.repeat.set(0.5, 0.5)
+        tex.offset.x = (index % 2) * 0.5
+        tex.offset.y = Math.floor(index / 2) * 0.5
+        return tex
+    }, [index])
+
+    useFrame(({ clock }) => {
+        if (!meshRef.current) return
+        const t = clock.getElapsedTime()
+        const x = ((t * speed + xOffset) % 120) - 60
+        // Stop-motion quantization
+        meshRef.current.position.x = Math.floor(x * 12) / 12
+        meshRef.current.position.y = 15 + Math.sin(Math.floor(t * 8) / 8 + seed * 10) * 0.5
+    })
+
+    return (
+        <mesh ref={meshRef} position={[0, 15, DEPTH.MOUNTAINS + 5]}>
+            <planeGeometry args={[12, 6]} />
+            <meshBasicMaterial map={texture} transparent toneMapped={false} />
         </mesh>
     )
 }
 
-// Crowd sprite component
+// ... CrowdSprite remains same ...
 function CrowdSprite({ position, index }: { position: [number, number, number]; index: number }) {
     return (
         <CharacterSprite
@@ -81,14 +139,13 @@ export function SouthParkWorld() {
 
     if (theme !== 'southpark') return null
 
-    // Generate random crowd positions
     const crowdPositions = useMemo(() => {
         const positions: [number, number, number][] = []
         for (let i = 0; i < 30; i++) {
             positions.push([
-                (Math.random() - 0.5) * 40, // X: -20 to 20
-                -8 + Math.random() * 2, // Y: -8 to -6 (ground level)
-                -8 + Math.random() * 4 // Z: -10 to -6 (behind main chars)
+                (Math.random() - 0.5) * 60,
+                -8 + Math.random() * 2,
+                -8 + Math.random() * 4
             ])
         }
         return positions
@@ -96,13 +153,17 @@ export function SouthParkWorld() {
 
     return (
         <group>
-            {/* Sky - Solid South Park Blue */}
             <color attach="background" args={['#42B4E6']} />
-
-            {/* Ambient light only (no PBR) */}
             <ambientLight intensity={1.5} />
 
-            {/* Layer 4: Mountains (Furthest, slowest parallax) */}
+            {/* Cartoon Planets in the Sky */}
+            <PlanetField mode="cartoon" />
+
+            {/* Clouds */}
+            {Array.from({ length: 6 }).map((_, i) => (
+                <MovingCloud key={`cloud-${i}`} index={i % 4} />
+            ))}
+
             <ParallaxLayer
                 texturePath="/assets/visuals/sp_mountains.png"
                 position={[0, 0, DEPTH.MOUNTAINS]}
@@ -110,7 +171,6 @@ export function SouthParkWorld() {
                 parallaxFactor={0.05}
             />
 
-            {/* Layer 3: Town Buildings */}
             <ParallaxLayer
                 texturePath="/assets/visuals/sp_town.png"
                 position={[0, -5, DEPTH.BUILDINGS]}
@@ -118,46 +178,56 @@ export function SouthParkWorld() {
                 parallaxFactor={0.15}
             />
 
-            {/* Layer 2: Road/Ground */}
-            <mesh position={[0, -10, DEPTH.ROAD]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[200, 100]} />
-                <meshBasicMaterial color="#ffffff" toneMapped={false} />
-            </mesh>
+            {/* Ground with grain */}
+            <group position={[0, -10, DEPTH.ROAD]} rotation={[-Math.PI / 2, 0, 0]}>
+                <mesh>
+                    <planeGeometry args={[300, 100]} />
+                    <meshBasicMaterial color="#ffffff" toneMapped={false} />
+                </mesh>
+                <mesh position={[0, 0, 0.01]}>
+                    <planeGeometry args={[300, 100]} />
+                    <meshBasicMaterial color="#444444" transparent opacity={0.3} toneMapped={false} />
+                </mesh>
+            </group>
 
-            {/* Road stripe */}
-            <mesh position={[0, -9.9, DEPTH.ROAD]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[200, 20]} />
-                <meshBasicMaterial color="#444444" toneMapped={false} />
-            </mesh>
-
-            <mesh position={[0, -9.85, DEPTH.ROAD]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[200, 0.5]} />
-                <meshBasicMaterial color="#FFD700" toneMapped={false} />
-            </mesh>
-
-            {/* Layer 1.5: Crowd (Background characters) */}
+            {/* Crowd */}
             {crowdPositions.map((pos, i) => (
                 <CrowdSprite key={`crowd-${i}`} position={pos} index={i} />
             ))}
 
-            {/* Main Characters rendered via AllInstruments3D */}
+            {/* Snow particles with quantization */}
+            <SnowField />
+        </group>
+    )
+}
 
-            {/* Foreground snow particles */}
-            <group position={[0, 0, DEPTH.FOREGROUND]}>
-                {Array.from({ length: 10 }).map((_, i) => (
-                    <mesh
-                        key={`snow-${i}`}
-                        position={[
-                            (Math.random() - 0.5) * 50,
-                            Math.random() * 20 - 5,
-                            Math.random() * 10
-                        ]}
-                    >
-                        <sphereGeometry args={[0.2, 8, 8]} />
-                        <meshBasicMaterial color="#ffffff" toneMapped={false} />
-                    </mesh>
-                ))}
-            </group>
+function SnowField() {
+    const snowRef = useRef<THREE.Group>(null!)
+    useFrame(({ clock }) => {
+        if (!snowRef.current) return
+        const t = Math.floor(clock.getElapsedTime() * 12) / 12
+        snowRef.current.children.forEach((child, i) => {
+            child.position.y -= 0.05
+            if (child.position.y < -10) child.position.y = 20
+            child.position.x += Math.sin(t + i) * 0.02
+        })
+    })
+
+    return (
+        <group ref={snowRef} position={[0, 0, DEPTH.FOREGROUND]}>
+            {Array.from({ length: 20 }).map((_, i) => (
+                <mesh
+                    key={`snow-${i}`}
+                    position={[
+                        (Math.random() - 0.5) * 50,
+                        Math.random() * 30 - 5,
+                        Math.random() * 10
+                    ]}
+                >
+                    <sphereGeometry args={[0.15, 6, 6]} />
+                    <meshBasicMaterial color="#ffffff" toneMapped={false} />
+                </mesh>
+            ))}
         </group>
     )
 }

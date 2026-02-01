@@ -156,7 +156,8 @@ export const useVisualStore = create<VisualState>((set) => ({
         aestheticTheme: (index >= 0 && PRESETS && PRESETS[index]) ? (
             PRESETS[index].name?.includes('COSMIC') ? 'cosmic' :
                 PRESETS[index].name?.includes('CYBER') ? 'cyber' :
-                    PRESETS[index].name?.includes('PIXEL') ? 'pixel' : 'none'
+                    PRESETS[index].name?.includes('PIXEL') ? 'pixel' :
+                        PRESETS[index].name?.includes('SOUTH PARK') ? 'southpark' : 'none'
         ) : 'none'
     }),
     setAestheticTheme: (theme) => set({ aestheticTheme: theme }),
@@ -170,7 +171,8 @@ export const useVisualStore = create<VisualState>((set) => ({
             aestheticTheme:
                 nextName.includes('COSMIC') ? 'cosmic' :
                     nextName.includes('CYBER') ? 'cyber' :
-                        nextName.includes('PIXEL') ? 'pixel' : 'none'
+                        nextName.includes('PIXEL') ? 'pixel' :
+                            nextName.includes('SOUTH PARK') ? 'southpark' : 'none'
         }
     }),
 

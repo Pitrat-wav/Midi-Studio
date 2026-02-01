@@ -80,10 +80,10 @@ export const SPATIAL_LAYOUT: Record<InstrumentType, InstrumentLayout> = {
         controls: {}
     },
 
-    // NEW: Sampler (Left Elevated)
-    sampler: { // Left Elevated
-        position: [-10, 5, -5], // Suspended near the left wing
-        cameraPreset: { position: [-10, 8, 2], lookAt: [-10, 5, -5], fov: 60 },
+    // NEW: Sampler (Right Elevated - Near Harmony)
+    sampler: {
+        position: [24, 6, -5], // Moved from left to right wing near Harmony
+        cameraPreset: { position: [24, 8, 2], lookAt: [24, 6, -5], fov: 60 },
         controls: {}
     },
     buchla: { // Right Wing

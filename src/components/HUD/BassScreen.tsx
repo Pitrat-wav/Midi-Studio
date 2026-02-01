@@ -1,6 +1,7 @@
 import React from 'react'
 import { useBassStore, useHarmonyStore, ROOTS, SCALES } from '../../store/instrumentStore'
 import { useVisualStore } from '../../store/visualStore'
+import './BassScreen.css'
 
 export const BassScreen: React.FC = () => {
     const store = useBassStore()
@@ -15,224 +16,152 @@ export const BassScreen: React.FC = () => {
     }
 
     return (
-        <div className="bass-screen hud-window">
-            <div className="hud-header">
-                <h2>LIQUID BASS CORE</h2>
-                <div className="hud-header-actions">
-                    <button className="hud-close" onClick={() => setFocusedInstrument(null)}>✕</button>
-                </div>
-            </div>
-
-            <div className="liquid-container">
-                {/* Global Harmony Controls */}
-                <div className="liquid-grid" style={{ marginBottom: '10px' }}>
-                    <div className="liquid-group">
-                        <label>ROOT NOTE</label>
-                        <select
-                            value={harmony.root}
-                            onChange={(e) => harmony.setRoot(e.target.value)}
-                            style={{ background: '#000', color: '#3390ec', border: '1px solid #3390ec', width: '100%', padding: '5px' }}
-                        >
-                            {ROOTS.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
+        <div className="magazine-hud">
+            <div className="magazine-container">
+                {/* Hero Section */}
+                <header className="magazine-hero">
+                    <div>
+                        <div className="magazine-subtitle">The Premium Audio Series</div>
+                        <h1 className="magazine-title">Pure Bass</h1>
                     </div>
-                    <div className="liquid-group">
-                        <label>SCALE</label>
-                        <select
-                            value={harmony.scale}
-                            onChange={(e) => harmony.setScale(e.target.value as any)}
-                            style={{ background: '#000', color: '#3390ec', border: '1px solid #3390ec', width: '100%', padding: '5px' }}
-                        >
-                            {SCALES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
-                        </select>
-                    </div>
-                </div>
+                    <button className="magazine-button" onClick={() => setFocusedInstrument(null)}>Close [✕]</button>
+                </header>
 
-                <div className="instrument-selector">
-                    <button
-                        className={`inst-tab ${store.activeInstrument === 'acid' ? 'active' : ''}`}
-                        onClick={() => store.setInstrument('acid')}
-                    >
-                        ACID (LIQUID)
-                    </button>
-                    <button
-                        className={`inst-tab ${store.activeInstrument === 'fm' ? 'active' : ''}`}
-                        onClick={() => store.setInstrument('fm')}
-                    >
-                        FM (METALLIC)
-                    </button>
-                </div>
-
-                {store.activeInstrument === 'acid' ? (
-                    <div className="liquid-grid">
-                        <div className="liquid-group">
-                            <label>CUTOFF</label>
-                            <input
-                                type="range" min="50" max="10000" step="1"
-                                value={store.cutoff}
-                                onChange={(e) => store.setParams({ cutoff: parseFloat(e.target.value) })}
-                            />
-                            <span className="val">{Math.round(store.cutoff)}</span>
-                        </div>
-                        <div className="liquid-group">
-                            <label>RESONANCE</label>
-                            <input
-                                type="range" min="0.1" max="20" step="0.1"
-                                value={store.resonance}
-                                onChange={(e) => store.setParams({ resonance: parseFloat(e.target.value) })}
-                            />
-                            <span className="val">{store.resonance.toFixed(1)}</span>
-                        </div>
-                        <div className="liquid-group">
-                            <label>MORPH</label>
-                            <input
-                                type="range" min="0" max="1" step="0.01"
-                                value={store.morph}
-                                onChange={(e) => store.setParams({ morph: parseFloat(e.target.value) })}
-                            />
-                            <span className="val">{Math.round(store.morph * 100)}</span>
-                        </div>
-                        <div className="liquid-group">
-                            <label>DISTORTION</label>
-                            <input
-                                type="range" min="0" max="1" step="0.01"
-                                value={store.distortion}
-                                onChange={(e) => store.setParams({ distortion: parseFloat(e.target.value) })}
-                            />
-                            <span className="val">{Math.round(store.distortion * 100)}</span>
-                        </div>
-
-                        <div className="liquid-group">
-                            <label>MELODY</label>
-                            <input
-                                type="range" min="0" max="1" step="0.01"
-                                value={store.type}
-                                onChange={(e) => store.setParams({ type: parseFloat(e.target.value) })}
-                            />
-                        </div>
-                        <div className="liquid-group">
-                            <label>SLIDE-PROB</label>
-                            <input
-                                type="range" min="0" max="1" step="0.01"
-                                value={store.slide}
-                                onChange={(e) => store.setParams({ slide: parseFloat(e.target.value) })}
-                            />
-                        </div>
-
-                        <div className="liquid-group">
-                            <label>SEED A</label>
-                            <input
-                                type="range" min="0" max="1" step="0.01"
-                                value={store.seedA}
-                                onChange={(e) => store.setParams({ seedA: parseFloat(e.target.value) })}
-                            />
-                        </div>
-                        <div className="liquid-group">
-                            <label>SEED B</label>
-                            <input
-                                type="range" min="0" max="1" step="0.01"
-                                value={store.seedB}
-                                onChange={(e) => store.setParams({ seedB: parseFloat(e.target.value) })}
-                            />
-                        </div>
-
-                        <div className="liquid-group" style={{ gridColumn: 'span 2' }}>
-                            <label>DENSITY</label>
-                            <input
-                                type="range" min="0" max="1" step="0.01"
-                                value={store.density}
-                                onChange={(e) => store.setDensity(parseFloat(e.target.value))}
-                            />
-                            <span className="val">{Math.round(store.density * 100)}</span>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="liquid-grid">
-                        <div className="liquid-group">
-                            <label>HARMONICITY</label>
-                            <input
-                                type="range" min="0.5" max="8" step="0.1"
-                                value={store.fmHarmonicity}
-                                onChange={(e) => store.setParams({ fmHarmonicity: parseFloat(e.target.value) })}
-                            />
-                        </div>
-                        <div className="liquid-group">
-                            <label>MOD INDEX</label>
-                            <input
-                                type="range" min="0" max="20" step="0.1"
-                                value={store.fmModIndex}
-                                onChange={(e) => store.setParams({ fmModIndex: parseFloat(e.target.value) })}
-                            />
-                        </div>
-                        <div className="liquid-group">
-                            <label>ATTACK</label>
-                            <input
-                                type="range" min="0.001" max="0.5" step="0.001"
-                                value={store.fmAttack}
-                                onChange={(e) => store.setParams({ fmAttack: parseFloat(e.target.value) })}
-                            />
-                        </div>
-                        <div className="liquid-group">
-                            <label>DECAY</label>
-                            <input
-                                type="range" min="0.01" max="2" step="0.01"
-                                value={store.fmDecay}
-                                onChange={(e) => store.setParams({ fmDecay: parseFloat(e.target.value) })}
-                            />
-                        </div>
-                        <div className="liquid-group" style={{ gridColumn: 'span 2' }}>
-                            <label>FM RHYTHM MODE</label>
-                            <div className="hud-header-actions" style={{ marginTop: '5px' }}>
-                                {(['offbeat', 'galloping', 'syncopated', 'random'] as const).map(m => (
-                                    <button
-                                        key={m}
-                                        className={`inst-tab ${store.fmMode === m ? 'active' : ''}`}
-                                        onClick={() => store.setParams({ fmMode: m })}
-                                        style={{ fontSize: '0.65rem' }}
-                                    >
-                                        {m.toUpperCase()}
-                                    </button>
-                                ))}
+                <div className="magazine-layout">
+                    {/* Left Column: Core Selection & Stats */}
+                    <aside className="magazine-column-left">
+                        <div className="parameter-display">
+                            <div className="parameter-label">Engine Selection</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <button
+                                    className={`magazine-button ${store.activeInstrument === 'acid' ? 'active' : ''}`}
+                                    onClick={() => store.setInstrument('acid')}
+                                >
+                                    ACID LIQUID
+                                </button>
+                                <button
+                                    className={`magazine-button ${store.activeInstrument === 'fm' ? 'active' : ''}`}
+                                    onClick={() => store.setInstrument('fm')}
+                                >
+                                    FM METALLIC
+                                </button>
                             </div>
                         </div>
-                    </div>
-                )}
 
-                {/* Sequencer Patterns */}
-                <div style={{ padding: '10px 0' }}>
-                    <label style={{ fontSize: '0.6rem', color: '#88d0ff', marginBottom: '5px', display: 'block' }}>SEQUENCER (CLICK: STEP | SHIFT: ACCENT | ALT: SLIDE)</label>
-                    <div className="pattern-mini" style={{ height: '30px', gap: '4px' }}>
-                        {store.pattern.map((step, i) => (
-                            <div
-                                key={i}
-                                className={`pt-cell ${step.active ? 'active' : ''}`}
-                                onClick={(e) => {
-                                    if (e.shiftKey) toggleStepParam(i, 'accent')
-                                    else if (e.altKey) toggleStepParam(i, 'slide')
-                                    else toggleStepParam(i, 'active')
-                                }}
-                                style={{
-                                    cursor: 'pointer',
-                                    opacity: step.active ? 1 : 0.1,
-                                    borderTop: step.accent ? '4px solid gold' : '1px solid rgba(255,255,255,0.1)',
-                                    borderBottom: step.slide ? '4px solid cyan' : '1px solid rgba(255,255,255,0.1)',
-                                    background: step.active ? undefined : 'rgba(255,255,255,0.05)'
-                                } as any}
-                            />
-                        ))}
-                    </div>
+                        <div className="parameter-display">
+                            <div className="parameter-label">Global Harmony</div>
+                            <div style={{ display: 'flex', gap: '20px' }}>
+                                <div style={{ flex: 1 }}>
+                                    <div className="parameter-label" style={{ fontSize: '8px' }}>Tonal Root</div>
+                                    <select
+                                        className="magazine-button"
+                                        style={{ width: '100%', appearance: 'none', background: '#000', textAlign: 'center' }}
+                                        value={harmony.root}
+                                        onChange={(e) => harmony.setRoot(e.target.value)}
+                                    >
+                                        {ROOTS.map(r => <option key={r} value={r}>{r}</option>)}
+                                    </select>
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div className="parameter-label" style={{ fontSize: '8px' }}>Musical Scale</div>
+                                    <select
+                                        className="magazine-button"
+                                        style={{ width: '100%', appearance: 'none', background: '#000', textAlign: 'center' }}
+                                        value={harmony.scale}
+                                        onChange={(e) => harmony.setScale(e.target.value as any)}
+                                    >
+                                        {SCALES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="parameter-display" style={{ marginTop: 'auto' }}>
+                            <div className="parameter-label">Status</div>
+                            <div className="parameter-value-large" style={{ fontSize: '1rem' }}>
+                                {store.activeInstrument === 'acid' ? 'LIQUID CRYSTAL ACTIVE' : 'FERRO-FLUID METALLIC'}
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Right Column: Parameters & Sequencer */}
+                    <main className="magazine-column-right">
+                        {store.activeInstrument === 'acid' ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+                                {[
+                                    { label: 'Cutoff Frequency', value: Math.round(store.cutoff), min: 50, max: 10000, key: 'cutoff' },
+                                    { label: 'Silver Resonance', value: store.resonance.toFixed(1), min: 0.1, max: 20, key: 'resonance' },
+                                    { label: 'Morph State', value: Math.round(store.morph * 100) + '%', min: 0, max: 1, key: 'morph', step: 0.01 },
+                                    { label: 'Drive / Distort', value: Math.round(store.distortion * 100) + '%', min: 0, max: 1, key: 'distortion', step: 0.01 }
+                                ].map(p => (
+                                    <div key={p.key} className="parameter-display">
+                                        <div className="parameter-label">{p.label}</div>
+                                        <div className="parameter-value-large">{p.value}</div>
+                                        <input
+                                            type="range"
+                                            className="magazine-range"
+                                            min={p.min} max={p.max} step={p.step || 1}
+                                            value={store[p.key as keyof typeof store] as number}
+                                            onChange={(e) => store.setParams({ [p.key]: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+                                {[
+                                    { label: 'Harmonic Content', value: store.fmHarmonicity.toFixed(1), min: 0.5, max: 8, key: 'fmHarmonicity', step: 0.1 },
+                                    { label: 'Modulation Index', value: store.fmModIndex.toFixed(1), min: 0, max: 20, key: 'fmModIndex', step: 0.1 },
+                                    { label: 'Attack Profile', value: Math.round(store.fmAttack * 1000) + 'ms', min: 0.001, max: 0.5, key: 'fmAttack', step: 0.001 },
+                                    { label: 'Decay Envelope', value: Math.round(store.fmDecay * 1000) + 'ms', min: 0.01, max: 2, key: 'fmDecay', step: 0.01 }
+                                ].map(p => (
+                                    <div key={p.key} className="parameter-display">
+                                        <div className="parameter-label">{p.label}</div>
+                                        <div className="parameter-value-large">{p.value}</div>
+                                        <input
+                                            type="range"
+                                            className="magazine-range"
+                                            min={p.min} max={p.max} step={p.step || 1}
+                                            value={store[p.key as keyof typeof store] as number}
+                                            onChange={(e) => store.setParams({ [p.key]: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="parameter-display">
+                            <div className="parameter-label">Rhythmic Pattern Editorial</div>
+                            <div className="magazine-sequencer-editorial">
+                                {store.pattern.map((step, i) => (
+                                    <div
+                                        key={i}
+                                        className={`sequencer-bar ${step.active ? 'active' : ''}`}
+                                        style={{
+                                            height: step.accent ? '100%' : step.active ? '60%' : '15%',
+                                            borderTop: step.slide ? '2px solid #fff' : 'none'
+                                        }}
+                                        onClick={(e) => {
+                                            if (e.shiftKey) toggleStepParam(i, 'accent')
+                                            else if (e.altKey) toggleStepParam(i, 'slide')
+                                            else toggleStepParam(i, 'active')
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+                                <div className="parameter-label" style={{ fontSize: '8px' }}>Press SHIFT for Accent</div>
+                                <div className="parameter-label" style={{ fontSize: '8px' }}>Press ALT for Slide</div>
+                            </div>
+                        </div>
+                    </main>
                 </div>
 
-                {/* Decorative Visual Surface */}
-                <div className="morph-surface" style={{ height: '60px' }}>
-                    <div className="morph-ripple" style={{
-                        opacity: 0.3 + (store.resonance / 20) * 0.7,
-                        filter: `blur(${10 - (store.cutoff / 1000)}px)`
-                    } as any} />
-                    <span style={{ zIndex: 5, color: '#3390ec', fontWeight: 'bold', fontSize: '0.8rem', pointerEvents: 'none' }}>
-                        {store.activeInstrument.toUpperCase()} ENGINE ACTIVE
-                    </span>
-                </div>
+                <footer className="magazine-footer">
+                    <div>© 2026 PREMIUM AUDIO LABS</div>
+                    <div>ISSUE NO. 04 — BASS & LOW END FREQUENCIES</div>
+                    <div>VOL. 01 — LIQUID METAL SERIES</div>
+                </footer>
             </div>
         </div>
     )

@@ -1,5 +1,5 @@
-/* Import South Park comic font */
-@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&display=swap');
+/* Import premium fonts for Glossy Magazine look */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Inter:wght@100..900&family=Bangers&family=Permanent+Marker&display=swap');
 
 :root {
   --tg-theme-bg-color: transparent;
@@ -40,6 +40,15 @@
   --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.08);
 
   --vh: 1vh;
+
+  /* Glossy Magazine Tokens */
+  --magazine-white: #ffffff;
+  --magazine-black: #050505;
+  --magazine-accent: #3390ec;
+  --magazine-gold: #c5a059;
+  --magazine-serif: 'Cormorant Garamond', serif;
+  --magazine-sans: 'Inter', sans-serif;
+  --magazine-gloss: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.1) 100%);
 }
 
 /* South Park Theme Overrides */
@@ -184,6 +193,28 @@ button:disabled {
   padding: var(--space-m);
   border: 1px solid var(--glass-border);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Glossy Magazine HUD Base */
+.magazine-hud {
+  background: var(--magazine-black);
+  color: var(--magazine-white);
+  font-family: var(--magazine-sans);
+  padding: 40px;
+  position: relative;
+  overflow-y: auto;
+  max-height: 85vh;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 50px 100px rgba(0, 0, 0, 1);
+}
+
+.magazine-hud h1,
+.magazine-hud h2 {
+  font-family: var(--magazine-serif);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 300;
+  margin-bottom: 20px;
 }
 
 .icon-button {
