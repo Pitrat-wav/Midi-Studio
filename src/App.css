@@ -1935,3 +1935,30 @@ body {
         transform: translate(0, -50%);
     }
 }
+.gamepad-toggle-btn {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    width: 60px;
+    height: 60px;
+    background: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.gamepad-toggle-btn:hover {
+    transform: scale(1.1) translateY(-5px);
+    background: rgba(51, 144, 236, 0.2);
+    border-color: #3390ec;
+    box-shadow: 0 15px 40px rgba(51, 144, 236, 0.3);
+}

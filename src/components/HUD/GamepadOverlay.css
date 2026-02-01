@@ -1,0 +1,224 @@
+/* GamepadOverlay.css */
+
+.gamepad-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gamepad-card {
+    position: relative;
+    width: 900px;
+    max-width: 95vw;
+    background: rgba(15, 15, 15, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 40px;
+    padding: 40px;
+    box-shadow: 0 50px 100px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.gamepad-header {
+    text-align: center;
+}
+
+.gamepad-meta {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: #3390ec;
+    font-weight: 800;
+}
+
+.gamepad-header h1 {
+    font-size: 2rem;
+    margin: 10px 0;
+    font-family: 'Outfit', sans-serif;
+}
+
+.mode-indicator {
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+.mode-indicator span {
+    color: #ff3b30;
+    font-weight: bold;
+}
+
+.gamepad-content {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 40px;
+    align-items: center;
+}
+
+.gamepad-image-container {
+    position: relative;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 30px;
+    overflow: hidden;
+    padding: 20px;
+}
+
+.gamepad-image {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 0 50px rgba(51, 144, 236, 0.2));
+}
+
+.gamepad-close {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.gamepad-close:hover {
+    background: #ff3b30;
+    transform: rotate(90deg);
+}
+
+.gamepad-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.legend-section h3 {
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+    color: #3390ec;
+    text-transform: uppercase;
+}
+
+.legend-section ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.legend-section li {
+    font-size: 13px;
+    line-height: 1.4;
+    opacity: 0.8;
+}
+
+.legend-section strong {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.connection-tip {
+    background: rgba(51, 144, 236, 0.1);
+    border: 1px solid rgba(51, 144, 236, 0.2);
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 11px;
+    text-align: center;
+    color: #3390ec;
+}
+
+/* Tooltips over image (approximate positions) */
+.gamepad-tooltips {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.tooltip {
+    position: absolute;
+    background: rgba(51, 144, 236, 0.8);
+    backdrop-filter: blur(5px);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+}
+
+.t-touchpad {
+    top: 25%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.t-cross {
+    bottom: 40%;
+    right: 28%;
+}
+
+.t-circle {
+    top: 44%;
+    right: 18%;
+}
+
+.t-square {
+    top: 44%;
+    right: 38%;
+}
+
+.t-triangle {
+    top: 32%;
+    right: 28%;
+}
+
+.t-r2 {
+    top: 12%;
+    right: 20%;
+}
+
+.t-options {
+    top: 30%;
+    right: 42%;
+}
+
+.t-l1 {
+    top: 12%;
+    left: 20%;
+}
+
+.t-rStick {
+    bottom: 35%;
+    right: 40%;
+}
+
+@media (max-width: 900px) {
+    .gamepad-content {
+        grid-template-columns: 1fr;
+    }
+
+    .gamepad-card {
+        padding: 24px;
+    }
+}.t-l2 { top: 12%; left: 30%; }

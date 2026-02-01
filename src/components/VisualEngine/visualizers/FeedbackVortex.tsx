@@ -17,18 +17,23 @@ const fragmentShader = `
   uniform float uTime;
   uniform float uAudio;
   uniform vec2 uResolution;
+  uniform vec2 uModifier;
+  uniform float uShift;
+  uniform float uScale;
+  uniform float uInvert;
   varying vec2 vUv;
 
   void main() {
     vec2 uv = vUv;
     
-    // Vortex displacement
-    float dist = distance(uv, vec2(0.5));
-    float angle = uTime * 0.1 + dist * 2.0;
+    // Vortex displacement with Stick Modulation
+    vec2 center = vec2(0.5) + uModifier * 0.2;
+    float dist = distance(uv, center);
+    float angle = uTime * 0.1 + dist * (2.0 + uScale * 10.0);
     vec2 rotUv = uv + vec2(cos(angle), sin(angle)) * 0.002 * uAudio;
     
-    // Feedback with slight scale and rotation
-    vec2 feedbackUv = (uv - 0.5) * (0.99 - uAudio * 0.02) + 0.5;
+    // Feedback with Trigger-based scaling
+    vec2 feedbackUv = (uv - center) * (0.99 - uAudio * 0.02 - uScale * 0.05) + center;
     vec4 prev = texture2D(tPrev, feedbackUv);
     
     // Webcam input (mirrored)
@@ -41,6 +46,16 @@ const fragmentShader = `
     // Mix based on luma and audio
     vec4 finalColor = mix(prev * 0.98, video, 0.1 + uAudio * 0.3);
     
+    // Color Shift Trigger
+    if (uShift > 0.1) {
+        finalColor.rgb = finalColor.gbr;
+    }
+
+    // Invert Trigger
+    if (uInvert > 0.1) {
+        finalColor.rgb = 1.0 - finalColor.rgb;
+    }
+
     // Chromatic aberration in the feedback
     finalColor.r = mix(finalColor.r, texture2D(tPrev, feedbackUv + 0.005 * uAudio).r, 0.5);
     finalColor.b = mix(finalColor.b, texture2D(tPrev, feedbackUv - 0.005 * uAudio).b, 0.5);
@@ -101,12 +116,19 @@ export function FeedbackVortex() {
         }
     }, [])
 
+    const modifier = useVisualStore(s => s.visualModifier)
+    const triggers = useVisualStore(s => s.triggers)
+
     const uniforms = useMemo(() => ({
         tVideo: { value: videoTexture },
         tPrev: { value: null as any },
         uTime: { value: 0 },
         uAudio: { value: 0 },
-        uResolution: { value: new THREE.Vector2(size.width, size.height) }
+        uResolution: { value: new THREE.Vector2(size.width, size.height) },
+        uModifier: { value: new THREE.Vector2(0, 0) },
+        uShift: { value: 0 },
+        uScale: { value: 0 },
+        uInvert: { value: 0 }
     }), [videoTexture, size])
 
     useFrame((state) => {
@@ -115,6 +137,10 @@ export function FeedbackVortex() {
 
         uniforms.uTime.value = state.clock.getElapsedTime()
         uniforms.uAudio.value = intensity
+        uniforms.uModifier.value.set(modifier.x, -modifier.y)
+        uniforms.uShift.value = triggers.visual_shift || 0
+        uniforms.uScale.value = triggers.visual_scale || 0
+        uniforms.uInvert.value = triggers.visual_invert || 0
 
         // First pass: render feedback
         const read = targets[readTarget.current]

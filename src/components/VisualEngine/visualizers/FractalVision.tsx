@@ -17,6 +17,10 @@ const fragmentShader = `
   uniform float uTime;
   uniform float uAudio;
   uniform vec2 uResolution;
+  uniform vec2 uModifier;
+  uniform float uShift;
+  uniform float uScale;
+  uniform float uInvert;
   varying vec2 vUv;
 
   vec2 complexMul(vec2 a, vec2 b) {
@@ -29,19 +33,20 @@ const fragmentShader = `
     vec3 video = texture2D(tVideo, videoUv).rgb;
     float luma = dot(video, vec3(0.299, 0.587, 0.114));
 
-    // Fractal Julia Set parameters driven by audio and video
+    // Fractal Julia Set parameters driven by audio, video and Stick
     vec2 c = vec2(-0.8, 0.156) + vec2(cos(uTime * 0.5), sin(uTime * 0.5)) * 0.1;
-    c += (video.rg - 0.5) * 0.2; // Input from video colors
-    c *= (1.0 + uAudio * 2.0);   // Audio drives complexity
+    c += (video.rg - 0.5) * 0.2; 
+    c += uModifier * 0.5; // Stick control
+    c *= (1.0 + uAudio * 2.0);   
 
-    vec2 z = (uv - 0.5) * 2.0;
-    z *= (1.0 - uAudio * 0.5); // Zoom in on peaks
+    vec2 z = (uv - 0.5) * (2.0 + uModifier.y * 2.0); // Stick Y zoom
+    z *= (1.0 - uAudio * 0.5 - uScale * 0.3); 
 
     float iter = 0.0;
-    const float max_iter = 64.0;
+    float max_iter = 64.0 + uScale * 64.0; // Scale trigger increases detail
     
-    // Fractal Iteration Loop
-    for(float i = 0.0; i < max_iter; i++) {
+    for(float i = 0.0; i < 128.0; i++) {
+        if (i >= max_iter) break;
         z = complexMul(z, z) + c;
         if(length(z) > 4.0) break;
         iter++;
@@ -49,22 +54,22 @@ const fragmentShader = `
 
     float f = iter / max_iter;
     
-    // Mix fractal with video based on luma
     vec3 fractalCol = vec3(f * 0.5, f * 0.8, f) + video * 0.5;
     
-    // Feedback loop for trails / motion blur
-    vec2 feedbackUv = (uv - 0.5) * (0.98 + uAudio * 0.05) + 0.5;
+    // Shift Trigger
+    if (uShift > 0.1) fractalCol.rgb = fractalCol.brg;
+
+    vec2 feedbackUv = (uv - 0.5) * (0.98 + uAudio * 0.05 + uScale * 0.02) + 0.5;
     vec3 prev = texture2D(tPrev, feedbackUv).rgb;
     
-    // If audio is high, "break" the fractal
-    if (uAudio > 0.6) {
-        uv += (fractalCol.rg - 0.5) * 0.1;
+    if (uAudio > 0.6 || uInvert > 0.1) {
+        uv += (fractalCol.rg - 0.5) * (0.1 + uInvert * 0.2);
     }
 
-    // Motion trail effect
     vec3 finalColor = mix(fractalCol, prev, 0.9 - uAudio * 0.4);
     
-    // Colorize based on audio
+    if (uInvert > 0.1) finalColor.rgb = 1.0 - finalColor.rgb;
+
     finalColor = mix(finalColor, vec3(1.0, 0.2, 0.5) * f, uAudio);
 
     gl_FragColor = vec4(finalColor, 1.0);
@@ -120,12 +125,19 @@ export function FractalVision() {
         }
     }, [])
 
+    const modifier = useVisualStore(s => s.visualModifier)
+    const triggers = useVisualStore(s => s.triggers)
+
     const uniforms = useMemo(() => ({
         tVideo: { value: videoTexture },
         tPrev: { value: null as any },
         uTime: { value: 0 },
         uAudio: { value: 0 },
-        uResolution: { value: new THREE.Vector2(size.width, size.height) }
+        uResolution: { value: new THREE.Vector2(size.width, size.height) },
+        uModifier: { value: new THREE.Vector2(0, 0) },
+        uShift: { value: 0 },
+        uScale: { value: 0 },
+        uInvert: { value: 0 }
     }), [videoTexture, size])
 
     useFrame((state) => {
@@ -134,10 +146,13 @@ export function FractalVision() {
 
         uniforms.uTime.value = state.clock.getElapsedTime()
         uniforms.uAudio.value = intensity
+        uniforms.uModifier.value.set(modifier.x, -modifier.y)
+        uniforms.uShift.value = triggers.visual_shift || 0
+        uniforms.uScale.value = triggers.visual_scale || 0
+        uniforms.uInvert.value = triggers.visual_invert || 0
 
         const read = targets[readTarget.current]
         const write = targets[1 - readTarget.current]
-
         uniforms.tPrev.value = read.texture
 
         gl.setRenderTarget(write)

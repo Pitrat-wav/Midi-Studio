@@ -55,11 +55,15 @@ interface VisualState {
     handData: HandLandmark[] | null
     statusMessage: string | null
     showHelp: boolean
+    showGamepadHelp: boolean
     focusInstrument: InstrumentType | null
     setFocusInstrument: (instrument: InstrumentType | null) => void
     appView: AppView
     visualizerIndex: number
+    visualModifier: { x: number, y: number }
     setVisualizerIndex: (index: number) => void
+    cycleVisualizer: (dir: number) => void
+    setVisualModifier: (x: number, y: number) => void
     setAppView: (view: AppView) => void
     cycleView: () => void
 
@@ -80,6 +84,7 @@ interface VisualState {
     setHandData: (data: HandLandmark[] | null) => void
     setStatus: (msg: string | null) => void
     toggleHelp: () => void
+    toggleGamepadHelp: () => void
 
     // Background
     backgroundPreset: number
@@ -113,6 +118,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     handData: null,
     statusMessage: null,
     showHelp: false,
+    showGamepadHelp: false,
     focusInstrument: null,
     conditions: {
         temperature: 20,
@@ -159,7 +165,13 @@ export const useVisualStore = create<VisualState>((set) => ({
 
     appView: '3D',
     visualizerIndex: 0,
-    setVisualizerIndex: (index) => set({ visualizerIndex: index }),
+    visualModifier: { x: 0, y: 0 },
+    setVisualizerIndex: (index: number) => set({ visualizerIndex: index }),
+    cycleVisualizer: (dir) => set((state) => {
+        const next = (state.visualizerIndex + dir + 3) % 3 // Assuming 3 visualizers
+        return { visualizerIndex: next }
+    }),
+    setVisualModifier: (x, y) => set({ visualModifier: { x, y } }),
     setAppView: (view) => set({ appView: view }),
     cycleView: () => set((state) => {
         const views: AppView[] = ['3D', 'NODES', 'LIVE', 'ARRANGE', 'VISUALIZER']
@@ -202,6 +214,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     },
 
     toggleHelp: () => set((state) => ({ showHelp: !state.showHelp })),
+    toggleGamepadHelp: () => set((state) => ({ showGamepadHelp: !state.showGamepadHelp })),
 
     decay: () => set((state) => {
         // Slow decay for energy, fast for triggers
@@ -229,7 +242,11 @@ export const useVisualStore = create<VisualState>((set) => ({
                 buchla: d(state.triggers.buchla, 0.15)
             },
             interactionEnergy: d(state.interactionEnergy, 0.05),
-            globalAudioIntensity: d(state.globalAudioIntensity, 0.1)
+            globalAudioIntensity: d(state.globalAudioIntensity, 0.1),
+            visualModifier: {
+                x: state.visualModifier.x * 0.95,
+                y: state.visualModifier.y * 0.95
+            }
         }
     })
 }))

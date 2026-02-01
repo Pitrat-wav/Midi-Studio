@@ -145,25 +145,47 @@ class GamepadManagerClass {
 
     private handleVisualizerButtons(index: number, visual: any) {
         switch (index) {
-            case 0: // Cross (X) - Layer 1 (Vortex)
-                visual.setVisualizerIndex(0)
-                this.vibrate(40, 0.4)
+            case 0: // Cross (X) - TRIGGER: SHIFT COLORS
+                visual.triggerPulse('visual_shift', 1.0)
+                this.vibrate(30, 0.3)
                 break
-            case 1: // Circle (O) - Layer 2 (Quantum)
-                visual.setVisualizerIndex(1)
-                this.vibrate(40, 0.4)
+            case 1: // Circle (O) - TRIGGER: FEEDBACK SCALE
+                visual.triggerPulse('visual_scale', 1.0)
+                this.vibrate(30, 0.3)
                 break
-            case 2: // Square (□) - Layer 3 (Fractal)
-                visual.setVisualizerIndex(2)
-                this.vibrate(40, 0.4)
+            case 2: // Square (□) - TRIGGER: INVERT
+                visual.triggerPulse('visual_invert', 1.0)
+                this.vibrate(30, 0.3)
                 break
             case 3: // Triangle (Δ) - GLITCH PULSE
-                visual.setAudioIntensity(1.5) // Instant max intensity spike
+                visual.setAudioIntensity(1.5)
                 this.vibrate(100, 1.0)
                 break
-            case 9: // Options - Cycle back to 3D
+            case 4: // L1 - Prev Visualizer
+                visual.cycleVisualizer(-1)
+                this.vibrate(40, 0.4)
+                break
+            case 5: // R1 - Next Visualizer
+                visual.cycleVisualizer(1)
+                this.vibrate(40, 0.4)
+                break
+            case 9: // Options - Return to 3D
                 visual.setAppView('3D')
                 this.vibrate(60, 0.6)
+                break
+            case 12: // D-Pad Up - Cycle BG Next
+                visual.cycleBackgroundPreset()
+                this.vibrate(20, 0.5)
+                break
+            case 13: // D-Pad Down - Cycle BG Prev? (currently only next exists)
+                visual.cycleBackgroundPreset()
+                this.vibrate(20, 0.5)
+                break
+            case 14: // D-Pad Left - Prev Visualizer
+                visual.cycleVisualizer(-1)
+                break
+            case 15: // D-Pad Right - Next Visualizer
+                visual.cycleVisualizer(1)
                 break
             case 17: // Touchpad Click - Return to Studio
                 visual.setAppView('3D')
@@ -181,7 +203,6 @@ class GamepadManagerClass {
         }
 
         // Left Stick (Axes 0, 1) usually handled by CameraController in 3D mode
-        // but we could add focus-specific modulation here
     }
 
     private handleVisualizerSticks(gp: Gamepad, visual: any) {
@@ -191,11 +212,23 @@ class GamepadManagerClass {
             visual.setAudioIntensity(visual.globalAudioIntensity + r2 * 0.15)
         }
 
-        // Left Stick for local visual parameters if needed
+        // L2 Trigger for Intensity Reduction
+        const l2 = gp.buttons[6].value
+        if (l2 > 0.05) {
+            visual.setAudioIntensity(Math.max(0, visual.globalAudioIntensity - l2 * 0.15))
+        }
+
+        // Left Stick (Axes 0, 1) for Visual Modifier (Movement/Warp)
         const lsX = gp.axes[0]
         const lsY = gp.axes[1]
-        if (Math.abs(lsX) > 0.1 || Math.abs(lsY) > 0.1) {
-            // Future-proofing: modulate internal visualizer params
+        if (Math.abs(lsX) > 0.05 || Math.abs(lsY) > 0.05) {
+            visual.setVisualModifier(lsX, lsY)
+        }
+
+        // Right Stick Y (Axis 3) for Zoom modulation
+        const rsY = gp.axes[3]
+        if (Math.abs(rsY) > 0.05) {
+            // Can be mapped to a specific uniform in shaders
         }
     }
 

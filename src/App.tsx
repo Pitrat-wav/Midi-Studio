@@ -37,6 +37,7 @@ import { LiveSession } from './components/HUD/LiveSession'
 import { ArrangementEditor } from './components/HUD/ArrangementEditor'
 import { useNodeStore } from './store/nodeStore'
 import { ReferenceOverlay } from './components/HUD/ReferenceOverlay'
+import { GamepadOverlay } from './components/HUD/GamepadOverlay'
 import { GraphEngine } from './logic/GraphEngine'
 import { VisualEngine } from './components/VisualEngine/VisualEngine'
 import './App.css'
@@ -162,6 +163,8 @@ function App() {
         )
     }
 
+    const toggleGamepadHelp = useVisualStore(s => s.toggleGamepadHelp)
+
     return (
         <ErrorBoundary>
             <div className="app-3d">
@@ -233,6 +236,9 @@ function App() {
                 {/* Unified Reference HUD */}
                 <ReferenceOverlay />
 
+                {/* Gamepad Control Map */}
+                <GamepadOverlay />
+
                 {/* Node-Based Routing Editor */}
                 {activeView === 'NODES' && <NodeEditor onClose={() => cycleView()} />}
 
@@ -253,6 +259,15 @@ function App() {
                     currentInstrument={focusedInstrument}
                     onSelect={setFocusedInstrument}
                 />
+
+                {/* Gamepad Toggle Button (Bottom Left) */}
+                <button
+                    className="gamepad-toggle-btn"
+                    onClick={toggleGamepadHelp}
+                    title="Gamepad Reference"
+                >
+                    🎮
+                </button>
 
                 {/* 2D HUDs */}
                 {focusedInstrument === 'bass' && <BassScreen />}
