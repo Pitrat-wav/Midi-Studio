@@ -17,6 +17,7 @@ export const PRESETS = [
 export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'
 export type PerformanceMode = 'low' | 'medium' | 'high' | 'ultra'
 export type AestheticTheme = 'none' | 'cosmic' | 'cyber' | 'pixel' | 'southpark'
+export type AppView = '3D' | 'NODES' | 'LIVE' | 'ARRANGE'
 
 export interface EnvironmentConditions {
     temperature: number // Celsius
@@ -53,8 +54,12 @@ interface VisualState {
     handTrackingEnabled: boolean
     handData: HandLandmark[] | null
     statusMessage: string | null
+    showHelp: boolean
     focusInstrument: InstrumentType | null
     setFocusInstrument: (instrument: InstrumentType | null) => void
+    appView: AppView
+    setAppView: (view: AppView) => void
+    cycleView: () => void
 
     // Actions
     updateEnergy: (instrument: string, value: number) => void
@@ -72,6 +77,7 @@ interface VisualState {
     setHandTrackingEnabled: (enabled: boolean) => void
     setHandData: (data: HandLandmark[] | null) => void
     setStatus: (msg: string | null) => void
+    toggleHelp: () => void
 
     // Background
     backgroundPreset: number
@@ -104,6 +110,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     handTrackingEnabled: false,
     handData: null,
     statusMessage: null,
+    showHelp: false,
     focusInstrument: null,
     conditions: {
         temperature: 20,
@@ -148,6 +155,15 @@ export const useVisualStore = create<VisualState>((set) => ({
 
     setFocusInstrument: (instrument) => set({ focusInstrument: instrument }),
 
+    appView: '3D',
+    setAppView: (view) => set({ appView: view }),
+    cycleView: () => set((state) => {
+        const views: AppView[] = ['3D', 'NODES', 'LIVE', 'ARRANGE']
+        const currentIndex = views.indexOf(state.appView)
+        const nextIndex = (currentIndex + 1) % views.length
+        return { appView: views[nextIndex] }
+    }),
+
     // Background Presets
     backgroundPreset: 0,
     aestheticTheme: 'none',
@@ -180,6 +196,8 @@ export const useVisualStore = create<VisualState>((set) => ({
         set({ statusMessage: msg })
         setTimeout(() => set({ statusMessage: null }), 2000)
     },
+
+    toggleHelp: () => set((state) => ({ showHelp: !state.showHelp })),
 
     decay: () => set((state) => {
         // Slow decay for energy, fast for triggers

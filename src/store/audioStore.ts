@@ -7,8 +7,9 @@ import { FMBass } from '../logic/FMBass'
 import { HarmSynth } from '../logic/HarmSynth'
 import { SamplerInstrument } from '../logic/SamplerInstrument'
 import { generateBassPattern } from '../logic/StingGenerator'
-import { useBassStore, useDrumStore, useSamplerStore } from './instrumentStore'
+import { useBassStore, useDrumStore, useSamplerStore, usePadStore, useSequencerStore, useHarmStore } from './instrumentStore'
 import sampleManifest from '../data/sampleManifest.json'
+import { SNAPSHOT_LIBRARY } from '../data/snapshotLibrary'
 
 export interface AudioState {
     isInitializing: boolean
@@ -27,6 +28,7 @@ export interface AudioState {
     samplerInstrument: SamplerInstrument | null
     volumes: { drums: number, bass: number, lead: number, pads: number, harm: number, sampler: number, mic: number }
     mutes: { drums: boolean, bass: boolean, lead: boolean, pads: boolean, harm: boolean, sampler: boolean, mic: boolean }
+    solos: { drums: boolean, bass: boolean, lead: boolean, pads: boolean, harm: boolean, sampler: boolean, mic: boolean }
     fx: {
         reverb: { wet: number, decay: number },
         delay: { wet: number, feedback: number, delayTime: string },
@@ -46,14 +48,22 @@ export interface AudioState {
     setVolume: (channel: 'drums' | 'bass' | 'lead' | 'pads' | 'harm' | 'mic' | 'sampler', value: number) => void
     setMasterVolume: (value: number) => void
     toggleMute: (channel: 'drums' | 'bass' | 'lead' | 'pads' | 'harm' | 'mic' | 'sampler') => void
+    toggleSolo: (channel: 'drums' | 'bass' | 'lead' | 'pads' | 'harm' | 'mic' | 'sampler') => void
+    triggerPerformanceFx: (effect: 'tapeStop' | 'washOut' | 'stutter' | 'noise' | 'glitch' | 'riser', active: boolean) => void
     setBpm: (bpm: number) => void
     setSwing: (swing: number) => void
     setCurrentStep: (currentStep: number) => void
-    setFxParam: (effect: 'reverb' | 'delay' | 'distortion', params: Partial<{ wet: number, decay: number, feedback: number, amount: number }>) => void
+    setFxParam: (effect: 'reverb' | 'delay' | 'distortion', params: Partial<{ wet: number, decay: number, feedback: number, amount: number, delayTime: string }>) => void
     panic: () => void
     dispose: () => void
     masterEQ: { low: number, lowMid: number, highMid: number, high: number }
     setMasterEQ: (band: 'low' | 'lowMid' | 'highMid' | 'high', value: number) => void
+    recalculateRouting: (edges: any[]) => void
+    // Snapshot Grid
+    activeSnapshots: Record<string, number>
+    queuedSnapshots: Record<string, number | null>
+    triggerSnapshot: (instId: string, index: number) => void
+    commitSnapshots: () => void
 }
 
 export const useAudioStore = create<AudioState>((set, get) => ({
@@ -73,6 +83,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     samplerInstrument: null,
     volumes: { drums: 0.8, bass: 0.8, lead: 0.8, pads: 0.8, harm: 0.8, sampler: 0.8, mic: 1 },
     mutes: { drums: false, bass: false, lead: false, pads: false, harm: false, sampler: false, mic: false },
+    solos: { drums: false, bass: false, lead: false, pads: false, harm: false, sampler: false, mic: false },
     fx: {
         reverb: { wet: 0.3, decay: 1.5 },
         delay: { wet: 0.3, feedback: 0.3, delayTime: "8n" },
@@ -84,6 +95,9 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     micGain: null,
     isMicOpen: false,
     isMicMonitor: false,
+
+    activeSnapshots: { drums: 0, bass: 0, lead: 0, pads: 0, sampler: 0, harm: 0 },
+    queuedSnapshots: { drums: null, bass: null, lead: null, pads: null, sampler: null, harm: null },
 
     masterEQ: { low: 0, lowMid: 0, highMid: 0, high: 0 },
 
@@ -395,6 +409,74 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         }
     },
 
+    toggleSolo: (channel) => {
+        const currentSolos = get().solos
+        const newSolos = { ...currentSolos, [channel]: !currentSolos[channel] }
+        set({ solos: newSolos })
+
+        const hasAnySolo = Object.values(newSolos).some(v => v)
+        const channels: ('drums' | 'bass' | 'lead' | 'pads' | 'harm' | 'sampler' | 'mic')[] = ['drums', 'bass', 'lead', 'pads', 'harm', 'sampler', 'mic']
+
+        channels.forEach(ch => {
+            const isSoloed = newSolos[ch]
+            const isMuted = get().mutes[ch]
+
+            // If any solo is active, non-soloed tracks should be silent unless they are also soloed
+            // Logic: play if (it is soloed) OR (no solos are active AND it is not muted)
+            const shouldBeSilent = hasAnySolo ? !isSoloed : isMuted
+            const db = shouldBeSilent ? -Infinity : Tone.gainToDb(get().volumes[ch])
+
+            const { bassSynth, leadSynth, drumMachine, padSynth, harmSynth, samplerInstrument, micGain } = get()
+            if (ch === 'bass' && bassSynth) bassSynth.setVolume(db)
+            if (ch === 'lead' && leadSynth) leadSynth.setVolume(db)
+            if (ch === 'drums' && drumMachine) drumMachine.setVolume(db)
+            if (ch === 'pads' && padSynth?.synth?.volume) padSynth.synth.volume.value = db
+            if (ch === 'harm' && harmSynth) harmSynth.setVolume(db)
+            if (ch === 'sampler' && samplerInstrument) samplerInstrument.setVolume(db)
+            if (ch === 'mic' && micGain) micGain.volume.value = db
+        })
+    },
+
+    triggerPerformanceFx: (effect, active) => {
+        const nodes = (window as any).masterFX
+        if (!nodes) return
+
+        if (effect === 'tapeStop') {
+            if (active) {
+                Tone.Transport.bpm.rampTo(10, 0.5)
+                Tone.Destination.volume.rampTo(-Infinity, 0.5)
+            } else {
+                Tone.Transport.bpm.rampTo(get().bpm, 0.2)
+                Tone.Destination.volume.rampTo(0, 0.2)
+            }
+        } else if (effect === 'washOut') {
+            const wetVal = active ? 0.8 : get().fx.reverb.wet
+            nodes.reverb.wet.rampTo(wetVal, active ? 0.1 : 1.0)
+            nodes.delay.wet.rampTo(wetVal, active ? 0.1 : 1.0)
+        } else if (effect === 'stutter') {
+            if (active) {
+                // Manual stutter via volume LFO or rapid ramp
+                // For simplicity, let's use a quick repeat if it were a sampler, 
+                // but globally we can just toggle destination volume
+                const interval = setInterval(() => {
+                    Tone.Destination.mute = !Tone.Destination.mute
+                }, 100)
+                    ; (window as any)._stutterInt = interval
+            } else {
+                clearInterval((window as any)._stutterInt)
+                Tone.Destination.mute = false
+            }
+        } else if (effect === 'glitch') {
+            if (active) {
+                nodes.distortion.distortion = 0.9
+                nodes.distortion.wet.value = 0.8
+            } else {
+                nodes.distortion.distortion = get().fx.distortion.amount
+                nodes.distortion.wet.value = get().fx.distortion.wet
+            }
+        }
+    },
+
     setBpm: (bpm: number) => {
         if (Tone.Transport.bpm) Tone.Transport.bpm.value = bpm
         set({ bpm })
@@ -407,7 +489,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
     setCurrentStep: (currentStep: number) => set({ currentStep }),
 
-    setFxParam: (effect: 'reverb' | 'delay' | 'distortion', params: Partial<{ wet: number, decay: number, feedback: number, amount: number }>) => {
+    setFxParam: (effect: 'reverb' | 'delay' | 'distortion', params: Partial<{ wet: number, decay: number, feedback: number, amount: number, delayTime: string }>) => {
         set((state) => ({
             fx: {
                 ...state.fx,
@@ -424,6 +506,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         } else if (effect === 'delay') {
             if (params.wet !== undefined) nodes.delay.wet.value = params.wet
             if (params.feedback !== undefined) nodes.delay.feedback.value = params.feedback
+            if (params.delayTime !== undefined) nodes.delay.delayTime.value = params.delayTime
         } else if (effect === 'distortion') {
             if (params.wet !== undefined) nodes.distortion.wet.value = params.wet
             if (params.amount !== undefined) nodes.distortion.distortion = params.amount
@@ -476,5 +559,118 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
         sessionStorage.removeItem('midi_app_has_started')
         set({ isInitialized: false, hasStarted: false, isPlaying: false, bassSynth: null, fmBass: null, leadSynth: null, drumMachine: null, padSynth: null, harmSynth: null, samplerInstrument: null })
-    }
+    },
+
+    recalculateRouting: (edges: any[]) => {
+        const state = get()
+        if (!state.isInitialized) return
+
+        const nodes = (window as any).masterFX
+        if (!nodes) return
+
+        console.log('[Audio] Recalculating Routing...', edges)
+
+            // 2. Disconnect everything from everywhere to start fresh
+            // Instruments
+            ; (state.bassSynth as any)?.outputGain?.disconnect()
+            ; (state.leadSynth as any)?.outputGain?.disconnect()
+            ; (state.drumMachine as any)?.output?.disconnect()
+        if (state.padSynth?.synth) state.padSynth.synth.disconnect()
+            ; (state.harmSynth as any)?.outputGain?.disconnect()
+            ; (state.samplerInstrument as any)?.volume?.disconnect()
+        state.micGain?.disconnect()
+
+        // Effects
+        nodes.distortion.disconnect()
+        nodes.delay.disconnect()
+        nodes.reverb.disconnect()
+        nodes.masterBus.disconnect()
+
+        // 3. Map Node IDs to Tone Nodes
+        const getToneNode = (id: string) => {
+            if (id === 'drums') return (state.drumMachine as any)?.output
+            if (id === 'bass') return (state.bassSynth as any)?.outputGain
+            if (id === 'lead') return (state.leadSynth as any)?.outputGain
+            if (id === 'pads') return state.padSynth?.synth
+            if (id === 'harm') return (state.harmSynth as any)?.outputGain
+            if (id === 'sampler') return (state.samplerInstrument as any)?.volume
+            if (id === 'mic') return state.micGain
+            if (id === 'distortion') return nodes.distortion
+            if (id === 'delay') return nodes.delay
+            if (id === 'reverb') return nodes.reverb
+            if (id === 'master') return Tone.getDestination()
+            return null
+        }
+
+        // 4. Apply connections from edges
+        edges.forEach((edge: any) => {
+            const source = getToneNode(edge.source)
+            const target = getToneNode(edge.target)
+
+            if (source && target) {
+                try {
+                    console.log(`[Audio] Connecting ${edge.source} -> ${edge.target}`)
+                    source.connect(target)
+                } catch (err) {
+                    console.warn(`[Audio] Connection failed: ${edge.source} -> ${edge.target}`, err)
+                }
+            }
+        })
+
+        // 5. Connect untargeted instruments to Master by default? 
+        // No, let the user decide. But we need a way to hear things if no edges.
+        if (edges.length === 0) {
+            // Restore default linear chain if no connections
+            ; (state.bassSynth as any)?.outputGain?.connect(nodes.masterBus)
+                ; (state.leadSynth as any)?.outputGain?.connect(nodes.masterBus)
+                ; (state.drumMachine as any)?.output?.connect(nodes.masterBus)
+                ; (state.padSynth as any)?.synth?.connect(nodes.masterBus)
+                ; (state.harmSynth as any)?.outputGain?.connect(nodes.masterBus)
+                ; (state.samplerInstrument as any)?.volume?.connect(nodes.masterBus)
+            nodes.masterBus.chain(nodes.eqLow, nodes.eqLowMid, nodes.eqHighMid, nodes.eqHigh, nodes.distortion, nodes.delay, nodes.reverb, Tone.Destination)
+        }
+    },
+
+    triggerSnapshot: (instId, index) => {
+        set((state) => ({
+            queuedSnapshots: { ...state.queuedSnapshots, [instId]: index }
+        }))
+    },
+
+    commitSnapshots: () => {
+        const { queuedSnapshots, activeSnapshots } = get()
+        const newActive = { ...activeSnapshots }
+        let changed = false
+
+        Object.entries(queuedSnapshots).forEach(([instId, index]) => {
+            if (index !== null) {
+                newActive[instId] = index
+                changed = true
+
+                const params = SNAPSHOT_LIBRARY[instId]?.[index]
+                if (!params) return
+
+                // Apply to specific stores
+                if (instId === 'drums') {
+                    const ds = useDrumStore.getState()
+                    if (params.kick) ds.setParams('kick', params.kick)
+                    if (params.hihat) ds.setParams('hihat', params.hihat)
+                    if (params.snare) ds.setParams('snare', params.snare)
+                }
+                if (instId === 'bass') useBassStore.getState().setParams(params)
+                if (instId === 'pads') usePadStore.getState().setParams(params)
+                if (instId === 'sampler') useSamplerStore.getState().setParam(params)
+                if (instId === 'lead') {
+                    useSequencerStore.getState().setTuringParam(params)
+                }
+            }
+        })
+
+        if (changed) {
+            set({
+                activeSnapshots: newActive,
+                queuedSnapshots: { drums: null, bass: null, lead: null, pads: null, sampler: null, harm: null }
+            })
+        }
+    },
 }))

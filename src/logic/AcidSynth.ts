@@ -1,9 +1,9 @@
 import * as Tone from 'tone'
 
 export class AcidSynth {
-    private synth: Tone.PolySynth<Tone.MonoSynth> | undefined
-    private dist: Tone.Distortion | undefined
-    private outputGain: Tone.Volume | undefined
+    public synth: Tone.PolySynth<Tone.MonoSynth> | undefined
+    public dist: Tone.Distortion | undefined
+    public outputGain: Tone.Volume | undefined
 
     private _cutoff = 400
     private _resonance = 1

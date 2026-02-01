@@ -1,6 +1,8 @@
 import * as Tone from 'tone'
 import { useAudioStore } from '../store/audioStore'
 import { useDrumStore, useBassStore, usePadStore, useHarmStore, useHarmonyStore, useSequencerStore } from '../store/instrumentStore'
+import { useArrangementStore } from '../store/arrangementStore'
+import { useVisualStore } from '../store/visualStore'
 import { generatePadProgression } from './PadGenerator'
 
 // VERSION: v2.0 - без Scaler, прямой вызов MIDI нот
@@ -21,10 +23,29 @@ export function startSequencerLoop() {
         const step = stepCounter % 16
         const totalStep = stepCounter
 
-        // Лог раз в такт
+        // Лог раз в такт + Коммит снапшотов
         if (step === 0) {
             const bar = Math.floor(totalStep / 16)
             console.log(`🎹 Bar ${bar}, Transport: ${Tone.Transport.state}`)
+            useAudioStore.getState().commitSnapshots()
+        }
+
+        // --- ARRANGEMENT PLAYBACK LOGIC ---
+        const visual = useVisualStore.getState()
+        const arrange = useArrangementStore.getState() // Get arrangement state
+
+        if (visual.appView === 'ARRANGE') {
+            const { clips } = arrange
+            const startingClips = clips.filter(c => c.startTick === totalStep)
+
+            if (startingClips.length > 0) {
+                startingClips.forEach(clip => {
+                    console.log(`⏱️ Arrangement: Triggering ${clip.trackId} snapshot ${clip.snapshotId}`)
+                    useAudioStore.getState().triggerSnapshot(clip.trackId, clip.snapshotId)
+                })
+                // Commit arrangement clips immediately at their start step
+                useAudioStore.getState().commitSnapshots()
+            }
         }
 
         // Получаем синтезаторы
@@ -38,9 +59,23 @@ export function startSequencerLoop() {
         const harmony = useHarmonyStore.getState()
         const seq = useSequencerStore.getState()
 
+        // --- SOLO LOGIC ---
+        const anySolo = Object.values(arrange.tracks).some(t => t.solo)
+        const isTrackActive = (trackId: string) => {
+            const settings = arrange.tracks[trackId] || { mute: false, solo: false, volume: 0.8 }
+            if (anySolo) return settings.solo
+            return !settings.mute
+        }
+
         // 1. DRUMS
-        if (drums.isPlaying && drumMachine) {
+        const drumSettings = arrange.tracks?.drums || { mute: false, solo: false, volume: 0.8 }
+        if (drums.isPlaying && drumMachine && isTrackActive('drums')) {
             const patterns = drums.activePatterns
+
+            // Apply arrangement volume (linear to dB)
+            if (drumMachine.output) {
+                drumMachine.output.volume.value = Tone.gainToDb(drumSettings.volume)
+            }
 
             if (patterns.kick[step] && !drums.kick.muted) {
                 drumMachine.triggerDrum('kick', time)
@@ -63,12 +98,16 @@ export function startSequencerLoop() {
         }
 
         // 2. BASS
-        if (bass.isPlaying) {
+        const bassSettings = arrange.tracks?.bass || { mute: false, solo: false, volume: 0.8 }
+        if (bass.isPlaying && isTrackActive('bass')) {
             const bassStep = bass.pattern[step]
             const prevBassStep = bass.pattern[(step + 15) % 16]
 
             if (bassStep && bassStep.active) {
                 if (bass.activeInstrument === 'acid' && bassSynth) {
+                    if (bassSynth.outputGain) {
+                        bassSynth.outputGain.volume.value = Tone.gainToDb(bassSettings.volume)
+                    }
                     const isContinuing = prevBassStep?.active && prevBassStep?.slide
                     bassSynth.triggerNote(
                         bassStep.note,
@@ -86,11 +125,12 @@ export function startSequencerLoop() {
         }
 
 
-        // 3. LEAD (Stages Sequencer) - УПРОЩЕННАЯ ВЕРСИЯ С ОТЛАДКОЙ
-        if (leadSynth) {
-            // Логирование состояния каждый такт
-            if (step === 0) {
-                console.log(`  🎸 LEAD: isStagesPlaying=${seq.isStagesPlaying}, isSnakePlaying=${seq.isSnakePlaying}, isTuringPlaying=${seq.isTuringPlaying}`)
+        // 3. LEAD (Stages Sequencer)
+        const leadSettings = arrange.tracks?.lead || { mute: false, solo: false, volume: 0.8 }
+        if (leadSynth && isTrackActive('lead')) {
+            // Apply volume
+            if (leadSynth.outputGain) {
+                leadSynth.outputGain.volume.value = Tone.gainToDb(leadSettings.volume)
             }
 
             if (seq.isStagesPlaying) {
@@ -125,8 +165,12 @@ export function startSequencerLoop() {
         }
 
         // 4. PADS (каждые 32 шага = 2 такта)
-        if (pads.active && padSynth && totalStep % 32 === 0) {
+        const padSettings = arrange.tracks?.pads || { mute: false, solo: false, volume: 0.8 }
+        if (pads.active && padSynth && totalStep % 32 === 0 && isTrackActive('pads')) {
             try {
+                if (padSynth.synth) {
+                    padSynth.synth.volume.value = Tone.gainToDb(padSettings.volume)
+                }
                 const progression = generatePadProgression(
                     harmony.root,
                     harmony.scale,
@@ -144,8 +188,12 @@ export function startSequencerLoop() {
 
 
         // 5. HARM SYNTH
-        if (harm.isPlaying && harmSynth && totalStep % 32 === 0) {
+        const harmSettings = arrange.tracks?.harm || { mute: false, solo: false, volume: 0.8 }
+        if (harm.isPlaying && harmSynth && totalStep % 32 === 0 && isTrackActive('harm')) {
             try {
+                if (harmSynth.outputGain) {
+                    harmSynth.outputGain.volume.value = Tone.gainToDb(harmSettings.volume)
+                }
                 const rootNote = harmony.root + '2'
                 const rootMidi = Tone.Frequency(rootNote).toMidi()
                 harmSynth.triggerNote(rootNote, '2n', time, 0.7)

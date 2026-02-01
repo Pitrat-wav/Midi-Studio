@@ -55,8 +55,13 @@ export function KeyboardController({
                 case 'Slash': // ? key (Shift+/)
                     if (e.shiftKey) {
                         e.preventDefault()
-                        onToggleFAQ?.()
+                        visual.toggleHelp()
+                        if (!visual.showHelp) visual.setStatus('HELP HUD ACTIVE')
                     }
+                    break
+                case 'Tab':
+                    e.preventDefault()
+                    visual.cycleView()
                     break
 
                 // --- NAVIGATION ---

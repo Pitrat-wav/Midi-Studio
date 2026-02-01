@@ -35,6 +35,11 @@ The studio is powered by several autonomous music engines running in parallel:
 - **Snake Grid**: Cartesian 4x4 coordinate sequencer.
 - **Turing Machine**: Probabilistic shift-register for infinite melody generation.
 
+### 6. **Arrangement Mode (Elite 4.0)**
+- **Timeline**: Linear DAW-style arrangement with sample-accurate clip placement.
+- **Tools**: Scissors (`S`) for splitting, cross-track dragging, and automation lanes.
+- **Markers**: Logical song structure (Intro, Drop, Outro) on the timeline.
+
 ## 🎨 Visual Themes System
 
 The studio features a dynamic "Aesthetic Engine" that completely transforms the rendering pipeline:
@@ -56,6 +61,7 @@ The studio features a dynamic "Aesthetic Engine" that completely transforms the 
 - **Focus**: Click any instrument to zoom in (`Double Click` for instant jump).
 - **Manipulation**: Click & Drag knobs vertically to adjust parameters.
 - **HUD**: Press `H` to toggle the Head-Up Display (Transport/BPM).
+- **HELP**: Press `?` anywhere for the **Global Reference HUD**.
 
 ### Shortcuts
 - `1` - Drums

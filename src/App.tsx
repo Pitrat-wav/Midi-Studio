@@ -32,6 +32,11 @@ import { SequencerScreen } from './components/HUD/SequencerScreen'
 import { DroneScreen } from './components/HUD/DroneScreen'
 import { MasterScreen } from './components/HUD/MasterScreen'
 import { GamepadManager } from './lib/GamepadManager'
+import { NodeEditor } from './components/HUD/NodeEditor'
+import { LiveSession } from './components/HUD/LiveSession'
+import { ArrangementEditor } from './components/HUD/ArrangementEditor'
+import { useNodeStore } from './store/nodeStore'
+import { ReferenceOverlay } from './components/HUD/ReferenceOverlay'
 import './App.css'
 
 function App() {
@@ -41,6 +46,8 @@ function App() {
     const initAudioEngine = useAudioStore(s => s.initialize)
     const togglePlay = useAudioStore(s => s.togglePlay)
     const setBPM = useAudioStore(s => s.setBpm)
+    const activeView = useVisualStore(s => s.appView)
+    const cycleView = useVisualStore(s => s.cycleView)
 
     const loadingStep = useAudioStore(s => s.loadingStep)
     const isInitializing = useAudioStore(s => s.isInitializing)
@@ -51,6 +58,15 @@ function App() {
 
     const [showOverlay, setShowOverlay] = useState(true)
     const [showFAQ, setShowFAQ] = useState(false)
+    const recalculateRouting = useAudioStore(s => s.recalculateRouting)
+    const edges = useNodeStore(s => s.edges)
+
+    // Sync Node Routing on Init
+    useEffect(() => {
+        if (isInitialized) {
+            recalculateRouting(edges)
+        }
+    }, [isInitialized, recalculateRouting, edges])
 
     // Toggle South Park theme class on body
     useEffect(() => {
@@ -153,10 +169,12 @@ function App() {
                 />
 
                 {/* Full-screen WebGL Scene */}
-                <WebGLScene
-                    focusInstrument={focusedInstrument}
-                    cameraMode={focusedInstrument ? 'focus' : 'overview'}
-                />
+                <div className={`scene-container ${activeView !== '3D' ? 'view-blur' : ''}`}>
+                    <WebGLScene
+                        focusInstrument={focusedInstrument}
+                        cameraMode={focusedInstrument ? 'focus' : 'overview'}
+                    />
+                </div>
 
                 {/* Minimal 2D Overlay */}
                 {showOverlay && (
@@ -203,6 +221,18 @@ function App() {
 
                 {/* FAQ Overlay */}
                 {showFAQ && <FAQ onClose={() => setShowFAQ(false)} />}
+
+                {/* Unified Reference HUD */}
+                <ReferenceOverlay />
+
+                {/* Node-Based Routing Editor */}
+                {activeView === 'NODES' && <NodeEditor onClose={() => cycleView()} />}
+
+                {/* Live Session Dashboard */}
+                {activeView === 'LIVE' && <LiveSession />}
+
+                {/* Arrangement Timeline Editor */}
+                {activeView === 'ARRANGE' && <ArrangementEditor onClose={() => cycleView()} />}
 
                 {/* Instrument Navigation Bar (Holographic Quick-Bar) */}
                 <InstrumentNavigation

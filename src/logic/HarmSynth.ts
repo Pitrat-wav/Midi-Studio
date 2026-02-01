@@ -232,7 +232,7 @@ export class HarmSynth {
     private chorus: Tone.Chorus | undefined
     private delay: Tone.FeedbackDelay | undefined
     private reverb: Tone.Reverb | undefined
-    private outputGain: Tone.Volume | undefined
+    public outputGain: Tone.Volume | undefined
 
     // Global Settings (applied to all voices)
     private settings = {

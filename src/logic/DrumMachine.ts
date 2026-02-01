@@ -8,7 +8,7 @@ export class DrumMachine {
     clap: Tone.NoiseSynth
     ride: Tone.MetalSynth
     comp: Tone.Compressor
-    output: Tone.Volume
+    public output: Tone.Volume
 
     constructor() {
         this.output = new Tone.Volume(0)
