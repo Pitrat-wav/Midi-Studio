@@ -78,25 +78,6 @@ export function GlobalHUD() {
             )}
 
             {/* Edge Gesture Indicators */}
-            {activeGesture === 'swipe' && isEdgeSwipe && (
-                <div style={{
-                    position: 'absolute',
-                    top: '50px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: 'rgba(0,0,0,0.8)',
-                    color: edgeSide === 'top' ? '#3390ec' : '#ffcc33',
-                    padding: '10px 20px',
-                    borderRadius: '20px',
-                    fontSize: '14px',
-                    fontFamily: 'monospace',
-                    zIndex: 10,
-                    pointerEvents: 'none',
-                    border: '1px solid currentColor'
-                }}>
-                    {edgeSide === 'top' ? `MASTER VOLUME: ${Math.round(masterVol * 100)}%` : `GLOBAL BPM: ${Math.round(bpm)}`}
-                </div>
-            )}
         </>
     )
 }
