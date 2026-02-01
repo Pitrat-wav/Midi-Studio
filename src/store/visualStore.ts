@@ -191,7 +191,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     visualDetail: 0.5,
     setVisualizerIndex: (index: number) => set({ visualizerIndex: index }),
     cycleVisualizer: (dir) => set((state) => {
-        const next = (state.visualizerIndex + dir + 4) % 4
+        const next = (state.visualizerIndex + dir + 9) % 9
         return { visualizerIndex: next }
     }),
     setVisualModifier: (x, y) => set({ visualModifier: { x, y } }),
