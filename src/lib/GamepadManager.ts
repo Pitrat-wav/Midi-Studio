@@ -65,12 +65,25 @@ class GamepadManagerClass {
             this.lastButtons[i] = pressed
         })
 
-        // 2. Handle Sticks (Continuous Modulation)
+        // 2. Handle Sticks & Triggers (Continuous Modulation)
+
+        // R2 (Trigger) for Visual Intensity Boost
+        const r2 = gp.buttons[7].value
+        if (r2 > 0.1) {
+            visual.setAudioIntensity(visual.globalAudioIntensity + r2 * 0.1)
+        }
+
         // Right Stick Y (Axis 3) for BPM
         const rsY = gp.axes[3]
-        if (Math.abs(rsY) > 0.1) {
-            const newBpm = Math.max(60, Math.min(240, audio.bpm - rsY * 2))
+        if (Math.abs(rsY) > 0.15) {
+            const newBpm = Math.max(60, Math.min(240, audio.bpm - rsY * 1.5))
             audio.setBpm(Math.round(newBpm))
+        }
+
+        // Left Stick Y (Axis 1) for Camera Focus Zoom or Visual Mod
+        const lsY = gp.axes[1]
+        if (visual.appView === 'VISUALIZER' && Math.abs(lsY) > 0.15) {
+            // Modulate time or zoom in visualizer if needed via store
         }
 
         // Left Stick for Camera Movement (handled by CameraController)
@@ -96,20 +109,32 @@ class GamepadManagerClass {
 
     private onButtonDown(index: number, audio: any, visual: any) {
         switch (index) {
-            case 0: // Cross (X) - Play/Stop
-                audio.togglePlay()
+            case 0: // Cross (X) - Play/Stop or Select Visualizer 1
+                if (visual.appView === 'VISUALIZER') {
+                    visual.setVisualizerIndex(0)
+                } else {
+                    audio.togglePlay()
+                }
                 this.vibrate(50, 0.5)
                 break
-            case 1: // Circle (O) - Mute Current
-                if (visual.focusInstrument) {
-                    audio.toggleMute(visual.focusInstrument)
-                    this.vibrate(30, 0.3)
+            case 1: // Circle (O) - Mute or Select Visualizer 2
+                if (visual.appView === 'VISUALIZER') {
+                    visual.setVisualizerIndex(1)
+                } else {
+                    if (visual.focusInstrument) {
+                        audio.toggleMute(visual.focusInstrument)
+                        this.vibrate(30, 0.3)
+                    }
                 }
                 break
-            case 2: // Square (□) - Toggle Overview
-                if (visual.focusInstrument) visual.setFocusInstrument(null)
-                else visual.setFocusInstrument('master')
-                this.vibrate(20, 0.2)
+            case 2: // Square (□) - Toggle Overview or Select Visualizer 3
+                if (visual.appView === 'VISUALIZER') {
+                    visual.setVisualizerIndex(2)
+                } else {
+                    if (visual.focusInstrument) visual.setFocusInstrument(null)
+                    else visual.setFocusInstrument('master')
+                    this.vibrate(20, 0.2)
+                }
                 break
             case 3: // Triangle (Δ) - PANIC
                 audio.panic()
@@ -121,6 +146,11 @@ class GamepadManagerClass {
             case 5: // R1 - Next instrument
                 this.cycleInstrument(1, visual)
                 break
+            case 8: // Share/Create - Prev View
+            case 9: // Options - Cycle View (3D > Nodes > Live > Arrange > Visualizer)
+                visual.cycleView()
+                this.vibrate(60, 0.6)
+                break
             case 12: // D-Pad Up - Cycle BG
                 visual.cycleBackgroundPreset()
                 this.vibrate(20, 0.5)
@@ -130,6 +160,11 @@ class GamepadManagerClass {
                 break
             case 15: // D-Pad Right - BPM Up
                 audio.setBpm(audio.bpm + 1)
+                break
+            case 17: // Touchpad Click - Toggle Visualizer Mode Directly
+                if (visual.appView === 'VISUALIZER') visual.setAppView('3D')
+                else visual.setAppView('VISUALIZER')
+                this.vibrate(80, 0.7)
                 break
         }
     }

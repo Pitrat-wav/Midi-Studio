@@ -123,6 +123,16 @@ export function ReferenceOverlay() {
                         { key: 'Tab', desc: 'Cycle views (3D > Nodes > Live > Arrange)' },
                         { key: 'Space', desc: 'Play / Stop master clock' }
                     ]
+                },
+                {
+                    label: '🎮 GAMEPAD (DualSense)',
+                    hints: [
+                        { key: 'Touchpad', desc: 'Toggle Visualizer Mode' },
+                        { key: 'X / O / □', desc: 'Switch Visualizer Layers' },
+                        { key: 'L1 / R1', desc: 'Cycle Instruments focus' },
+                        { key: 'R2 Trigger', desc: 'BOOST Visual Intensity' },
+                        { key: 'R-Stick Y', desc: 'Master BPM control' }
+                    ]
                 }
             ],
             footer: 'Press ESC or Click Outside to close reference.'
