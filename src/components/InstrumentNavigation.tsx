@@ -33,10 +33,10 @@ const VISUALIZERS = [
     { id: 'fractal', label: 'Fractal', icon: '💎', shortcut: '3', color: '#00ffcc' },
     { id: 'neon', label: 'Weave', icon: '🕸️', shortcut: '4', color: '#00ffff' },
     { id: 'plasma', label: 'Plasma', icon: '🔮', shortcut: '5', color: '#ff00ff' },
-    { id: 'dna', label: 'DNA', icon: '🧬', shortcut: '6', color: '#44ff44' },
+    { id: 'liquid', label: 'Liquid', icon: '💧', shortcut: '6', color: '#888888' },
     { id: 'gravity', label: 'Well', icon: '🕳️', shortcut: '7', color: '#8888ff' },
-    { id: 'rain', label: 'Rain', icon: '🌧️', shortcut: '8', color: '#33ff33' },
-    { id: 'mountain', label: 'Peak', icon: '🏔️', shortcut: '9', color: '#3390ec' },
+    { id: 'tunnel', label: 'Tunnel', icon: '🚇', shortcut: '8', color: '#ffcc00' },
+    { id: 'kaleido', label: 'Sphere', icon: '💠', shortcut: '9', color: '#ff00ff' },
 ]
 
 export function InstrumentNavigation({ currentInstrument, onSelect }: InstrumentNavigationProps) {
