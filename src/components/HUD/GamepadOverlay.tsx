@@ -36,6 +36,8 @@ export function GamepadOverlay() {
                                     <div className="tooltip t-touchpad">SWITCH MODE</div>
                                     <div className="tooltip t-l1">PREV VISUAL</div>
                                     <div className="tooltip t-r1">NEXT VISUAL</div>
+                                    <div className="tooltip t-dpad-lr">VISUAL SPEED</div>
+                                    <div className="tooltip t-dpad-ud">VISUAL DETAIL</div>
                                     <div className="tooltip t-cross">COLOR SHIFT</div>
                                     <div className="tooltip t-circle">SCALE FEEDBACK</div>
                                     <div className="tooltip t-square">INVERT</div>
@@ -65,7 +67,9 @@ export function GamepadOverlay() {
                             <ul>
                                 {appView === 'VISUALIZER' ? (
                                     <>
-                                        <li><strong>L1 / R1 / D-Pad</strong> — Cycle Visualizers</li>
+                                        <li><strong>L1 / R1</strong> — Cycle Visualizers</li>
+                                        <li><strong>D-Pad ←/→</strong> — Modulation Speed (uSpeed)</li>
+                                        <li><strong>D-Pad ↑/↓</strong> — Graphics Detail (uDetail)</li>
                                         <li><strong>Left Stick</strong> — Warp / Offset center</li>
                                         <li><strong>Trigger R2 / L2</strong> — Boost / Decrease Intensity</li>
                                         <li><strong>X / O / □</strong> — Color Shift / Feedback Scale / Invert</li>

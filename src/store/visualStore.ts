@@ -61,9 +61,12 @@ interface VisualState {
     appView: AppView
     visualizerIndex: number
     visualModifier: { x: number, y: number }
+    visualSpeed: number // 0-2 (multiplier for uTime)
+    visualDetail: number // 0-1 (iterations/feedback strength)
     setVisualizerIndex: (index: number) => void
     cycleVisualizer: (dir: number) => void
     setVisualModifier: (x: number, y: number) => void
+    setVisualParams: (params: Partial<{ speed: number, detail: number }>) => void
     setAppView: (view: AppView) => void
     cycleView: () => void
 
@@ -166,12 +169,18 @@ export const useVisualStore = create<VisualState>((set) => ({
     appView: '3D',
     visualizerIndex: 0,
     visualModifier: { x: 0, y: 0 },
+    visualSpeed: 1.0,
+    visualDetail: 0.5,
     setVisualizerIndex: (index: number) => set({ visualizerIndex: index }),
     cycleVisualizer: (dir) => set((state) => {
-        const next = (state.visualizerIndex + dir + 3) % 3 // Assuming 3 visualizers
+        const next = (state.visualizerIndex + dir + 3) % 3
         return { visualizerIndex: next }
     }),
     setVisualModifier: (x, y) => set({ visualModifier: { x, y } }),
+    setVisualParams: (params) => set((state) => ({
+        visualSpeed: params.speed !== undefined ? params.speed : state.visualSpeed,
+        visualDetail: params.detail !== undefined ? params.detail : state.visualDetail
+    })),
     setAppView: (view) => set({ appView: view }),
     cycleView: () => set((state) => {
         const views: AppView[] = ['3D', 'NODES', 'LIVE', 'ARRANGE', 'VISUALIZER']

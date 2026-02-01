@@ -16,6 +16,8 @@ const fragmentShader = `
   uniform sampler2D tPrev;
   uniform float uTime;
   uniform float uAudio;
+  uniform float uSpeed;
+  uniform float uDetail;
   uniform vec2 uResolution;
   uniform vec2 uModifier;
   uniform float uShift;
@@ -33,19 +35,21 @@ const fragmentShader = `
     vec3 video = texture2D(tVideo, videoUv).rgb;
     float luma = dot(video, vec3(0.299, 0.587, 0.114));
 
-    // Fractal Julia Set parameters driven by audio, video and Stick
-    vec2 c = vec2(-0.8, 0.156) + vec2(cos(uTime * 0.5), sin(uTime * 0.5)) * 0.1;
-    c += (video.rg - 0.5) * 0.2; 
+    // Fractal Julia Set parameters driven by audio, video, Stick and Speed
+    float time = uTime * uSpeed;
+    vec2 c = vec2(-0.8, 0.156) + vec2(cos(time * 0.5), sin(time * 0.5)) * 0.1;
+    c += (video.rg - 0.5) * (0.2 + uDetail * 0.2); 
     c += uModifier * 0.5; // Stick control
     c *= (1.0 + uAudio * 2.0);   
 
-    vec2 z = (uv - 0.5) * (2.0 + uModifier.y * 2.0); // Stick Y zoom
+    vec2 z = (uv - 0.5) * (2.0 + uModifier.y * 2.0 + (1.0 - uDetail) * 2.0); // Stick Y zoom + Detail zoom
     z *= (1.0 - uAudio * 0.5 - uScale * 0.3); 
 
     float iter = 0.0;
-    float max_iter = 64.0 + uScale * 64.0; // Scale trigger increases detail
+    float base_iters = 32.0 + uDetail * 96.0;
+    float max_iter = base_iters + uScale * 64.0; // Scale trigger increases detail
     
-    for(float i = 0.0; i < 128.0; i++) {
+    for(float i = 0.0; i < 200.0; i++) {
         if (i >= max_iter) break;
         z = complexMul(z, z) + c;
         if(length(z) > 4.0) break;
@@ -126,6 +130,8 @@ export function FractalVision() {
     }, [])
 
     const modifier = useVisualStore(s => s.visualModifier)
+    const speed = useVisualStore(s => s.visualSpeed)
+    const detail = useVisualStore(s => s.visualDetail)
     const triggers = useVisualStore(s => s.triggers)
 
     const uniforms = useMemo(() => ({
@@ -133,6 +139,8 @@ export function FractalVision() {
         tPrev: { value: null as any },
         uTime: { value: 0 },
         uAudio: { value: 0 },
+        uSpeed: { value: 1.0 },
+        uDetail: { value: 0.5 },
         uResolution: { value: new THREE.Vector2(size.width, size.height) },
         uModifier: { value: new THREE.Vector2(0, 0) },
         uShift: { value: 0 },
@@ -146,6 +154,8 @@ export function FractalVision() {
 
         uniforms.uTime.value = state.clock.getElapsedTime()
         uniforms.uAudio.value = intensity
+        uniforms.uSpeed.value = speed
+        uniforms.uDetail.value = detail
         uniforms.uModifier.value.set(modifier.x, -modifier.y)
         uniforms.uShift.value = triggers.visual_shift || 0
         uniforms.uScale.value = triggers.visual_scale || 0

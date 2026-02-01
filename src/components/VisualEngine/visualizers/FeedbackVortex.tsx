@@ -16,6 +16,8 @@ const fragmentShader = `
   uniform sampler2D tPrev;
   uniform float uTime;
   uniform float uAudio;
+  uniform float uSpeed;
+  uniform float uDetail;
   uniform vec2 uResolution;
   uniform vec2 uModifier;
   uniform float uShift;
@@ -26,14 +28,14 @@ const fragmentShader = `
   void main() {
     vec2 uv = vUv;
     
-    // Vortex displacement with Stick Modulation
+    // Vortex displacement with Stick Modulation & Speed
     vec2 center = vec2(0.5) + uModifier * 0.2;
     float dist = distance(uv, center);
-    float angle = uTime * 0.1 + dist * (2.0 + uScale * 10.0);
+    float angle = (uTime * uSpeed) * 0.1 + dist * (2.0 + uScale * 10.0 + uDetail * 5.0);
     vec2 rotUv = uv + vec2(cos(angle), sin(angle)) * 0.002 * uAudio;
     
-    // Feedback with Trigger-based scaling
-    vec2 feedbackUv = (uv - center) * (0.99 - uAudio * 0.02 - uScale * 0.05) + center;
+    // Feedback with Trigger-based scaling & Detail
+    vec2 feedbackUv = (uv - center) * (0.99 - uAudio * 0.02 - uScale * 0.05 - (1.0 - uDetail) * 0.02) + center;
     vec4 prev = texture2D(tPrev, feedbackUv);
     
     // Webcam input (mirrored)
@@ -117,6 +119,8 @@ export function FeedbackVortex() {
     }, [])
 
     const modifier = useVisualStore(s => s.visualModifier)
+    const speed = useVisualStore(s => s.visualSpeed)
+    const detail = useVisualStore(s => s.visualDetail)
     const triggers = useVisualStore(s => s.triggers)
 
     const uniforms = useMemo(() => ({
@@ -124,6 +128,8 @@ export function FeedbackVortex() {
         tPrev: { value: null as any },
         uTime: { value: 0 },
         uAudio: { value: 0 },
+        uSpeed: { value: 1.0 },
+        uDetail: { value: 0.5 },
         uResolution: { value: new THREE.Vector2(size.width, size.height) },
         uModifier: { value: new THREE.Vector2(0, 0) },
         uShift: { value: 0 },
@@ -137,6 +143,8 @@ export function FeedbackVortex() {
 
         uniforms.uTime.value = state.clock.getElapsedTime()
         uniforms.uAudio.value = intensity
+        uniforms.uSpeed.value = speed
+        uniforms.uDetail.value = detail
         uniforms.uModifier.value.set(modifier.x, -modifier.y)
         uniforms.uShift.value = triggers.visual_shift || 0
         uniforms.uScale.value = triggers.visual_scale || 0

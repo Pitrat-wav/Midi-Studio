@@ -222,3 +222,5 @@
         padding: 24px;
     }
 }.t-l2 { top: 12%; left: 30%; }
+.t-dpad-lr { bottom: 44%; left: 15%; }
+.t-dpad-ud { top: 32%; left: 25%; }

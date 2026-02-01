@@ -173,19 +173,21 @@ class GamepadManagerClass {
                 visual.setAppView('3D')
                 this.vibrate(60, 0.6)
                 break
-            case 12: // D-Pad Up - Cycle BG Next
-                visual.cycleBackgroundPreset()
-                this.vibrate(20, 0.5)
+            case 12: // D-Pad Up - Increase DETAIL
+                visual.setVisualParams({ detail: Math.min(1.0, visual.visualDetail + 0.1) })
+                this.vibrate(20, 0.4)
                 break
-            case 13: // D-Pad Down - Cycle BG Prev? (currently only next exists)
-                visual.cycleBackgroundPreset()
-                this.vibrate(20, 0.5)
+            case 13: // D-Pad Down - Decrease DETAIL
+                visual.setVisualParams({ detail: Math.max(0.0, visual.visualDetail - 0.1) })
+                this.vibrate(20, 0.4)
                 break
-            case 14: // D-Pad Left - Prev Visualizer
-                visual.cycleVisualizer(-1)
+            case 14: // D-Pad Left - Decrease SPEED
+                visual.setVisualParams({ speed: Math.max(0.1, visual.visualSpeed - 0.1) })
+                this.vibrate(15, 0.3)
                 break
-            case 15: // D-Pad Right - Next Visualizer
-                visual.cycleVisualizer(1)
+            case 15: // D-Pad Right - Increase SPEED
+                visual.setVisualParams({ speed: Math.min(2.0, visual.visualSpeed + 0.1) })
+                this.vibrate(15, 0.3)
                 break
             case 17: // Touchpad Click - Return to Studio
                 visual.setAppView('3D')
