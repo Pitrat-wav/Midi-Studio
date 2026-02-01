@@ -153,9 +153,9 @@ class GamepadManagerClass {
                 visual.triggerPulse('visual_scale', 1.0)
                 this.vibrate(30, 0.3)
                 break
-            case 2: // Square (□) - TRIGGER: INVERT
-                visual.triggerPulse('visual_invert', 1.0)
-                this.vibrate(30, 0.3)
+            case 2: // Square (□) - RESET ALL CHANGES
+                visual.resetVisuals()
+                this.vibrate(60, 0.8)
                 break
             case 3: // Triangle (Δ) - GLITCH PULSE
                 visual.setAudioIntensity(1.5)

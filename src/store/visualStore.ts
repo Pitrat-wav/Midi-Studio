@@ -67,6 +67,7 @@ interface VisualState {
     cycleVisualizer: (dir: number) => void
     setVisualModifier: (x: number, y: number) => void
     setVisualParams: (params: Partial<{ speed: number, detail: number }>) => void
+    resetVisuals: () => void
     setAppView: (view: AppView) => void
     cycleView: () => void
 
@@ -181,6 +182,12 @@ export const useVisualStore = create<VisualState>((set) => ({
         visualSpeed: params.speed !== undefined ? params.speed : state.visualSpeed,
         visualDetail: params.detail !== undefined ? params.detail : state.visualDetail
     })),
+    resetVisuals: () => set({
+        visualSpeed: 1.0,
+        visualDetail: 0.5,
+        visualModifier: { x: 0, y: 0 },
+        globalAudioIntensity: 0
+    }),
     setAppView: (view) => set({ appView: view }),
     cycleView: () => set((state) => {
         const views: AppView[] = ['3D', 'NODES', 'LIVE', 'ARRANGE', 'VISUALIZER']

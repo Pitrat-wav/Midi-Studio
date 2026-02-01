@@ -40,7 +40,7 @@ export function GamepadOverlay() {
                                     <div className="tooltip t-dpad-ud">VISUAL DETAIL</div>
                                     <div className="tooltip t-cross">COLOR SHIFT</div>
                                     <div className="tooltip t-circle">SCALE FEEDBACK</div>
-                                    <div className="tooltip t-square">INVERT</div>
+                                    <div className="tooltip t-square">RESET ALL</div>
                                     <div className="tooltip t-triangle">GLITCH PULSE</div>
                                     <div className="tooltip t-r2">BOOST (+)</div>
                                     <div className="tooltip t-l2">REDUCE (-)</div>
@@ -72,7 +72,8 @@ export function GamepadOverlay() {
                                         <li><strong>D-Pad ↑/↓</strong> — Graphics Detail (uDetail)</li>
                                         <li><strong>Left Stick</strong> — Warp / Offset center</li>
                                         <li><strong>Trigger R2 / L2</strong> — Boost / Decrease Intensity</li>
-                                        <li><strong>X / O / □</strong> — Color Shift / Feedback Scale / Invert</li>
+                                        <li><strong>X / O</strong> — Color Shift / Feedback Scale</li>
+                                        <li><strong>□ (Square)</strong> — RESET to initial settings</li>
                                         <li><strong>△ (Triangle)</strong> — GLITCH PULSE (Max Intensity)</li>
                                         <li><strong>Touchpad</strong> — Exit to 3D World</li>
                                     </>
