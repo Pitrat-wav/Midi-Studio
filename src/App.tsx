@@ -300,12 +300,6 @@ function App() {
                         {activeView === 'VISUALIZER' ? '1-3 Switch / R2 Boost / TAB or Touchpad to Exit' : 'Press H for HUD / ? for Help'}
                     </div>
                 )}
-                {activeView === 'VISUALIZER' && (
-                    <div className="visualizer-hint">
-                        <span>MODE: {useVisualStore.getState().visualizerIndex === 0 ? 'FEEDBACK NEBULA (WEBCAM)' : 'GEOMETRIC DYNAMIC (AUDIO)'}</span>
-                        <div className="v-shortcuts">Keys [1] [2] to Switch</div>
-                    </div>
-                )}
             </div>
         </ErrorBoundary>
     )
