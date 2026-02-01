@@ -59,22 +59,6 @@ export function VisualEngine() {
                 </Suspense>
             </Canvas>
 
-            {/* Internal HUD for the engine */}
-            <div className="engine-hud" style={{
-                position: 'absolute',
-                bottom: '40px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                color: 'rgba(51, 144, 236, 0.8)',
-                fontFamily: 'monospace',
-                fontSize: '0.8rem',
-                letterSpacing: '4px',
-                textTransform: 'uppercase',
-                pointerEvents: 'none',
-                textAlign: 'center'
-            }}>
-                Visual Engine v1.1 — {getEngineName()} — Intensity: {Math.round(intensity * 100)}%
-            </div>
         </div>
     )
 }
