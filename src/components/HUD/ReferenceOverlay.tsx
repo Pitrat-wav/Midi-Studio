@@ -126,14 +126,13 @@ export function ReferenceOverlay() {
                 },
                 {
                     label: '🎮 GAMEPAD (DualSense)',
-                    text: 'Connect via USB-C or Bluetooth (Hold PS + Share until blinking). Press any button to activate.',
+                    text: 'Controls are ISOLATED per mode. No overlap between Studio & Visualizer.',
                     hints: [
-                        { key: 'Touchpad', desc: 'Toggle Visualizer Mode' },
-                        { key: 'X / O / □', desc: 'Switch Visualizer Layers' },
-                        { key: 'L1 / R1', desc: 'Cycle Instruments focus' },
-                        { key: 'R2 Trigger', desc: 'BOOST Visual Intensity' },
-                        { key: 'R-Stick Y', desc: 'Master BPM control' },
-                        { key: 'Triangle', desc: 'Global STOP (Panic)' }
+                        { key: 'Touchpad', desc: 'Switch Mode (3D ↔ Visualizer)' },
+                        { key: 'X / O / □', desc: 'Studio: Play/Mute/Focus | Visual: Layer Select' },
+                        { key: 'Triangle', desc: 'Studio: PANIC | Visual: GLITCH PULSE' },
+                        { key: 'R2 Trigger', desc: 'Visual: BOOST Intensity' },
+                        { key: 'R-Stick Y', desc: 'Studio: Master BPM control' }
                     ]
                 }
             ],

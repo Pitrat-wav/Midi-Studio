@@ -54,39 +54,26 @@ class GamepadManagerClass {
         const audio = useAudioStore.getState()
         const visual = useVisualStore.getState()
 
-        // 1. Handle Buttons (Discrete Actions)
+        // Handle Buttons
         gp.buttons.forEach((btn, i) => {
             const pressed = btn.pressed
             const wasPressed = this.lastButtons[i]
-
             if (pressed && !wasPressed) {
-                this.onButtonDown(i, audio, visual)
+                if (visual.appView === 'VISUALIZER') {
+                    this.handleVisualizerButtons(i, visual)
+                } else {
+                    this.handleStudioButtons(i, audio, visual)
+                }
             }
             this.lastButtons[i] = pressed
         })
 
-        // 2. Handle Sticks & Triggers (Continuous Modulation)
-
-        // R2 (Trigger) for Visual Intensity Boost
-        const r2 = gp.buttons[7].value
-        if (r2 > 0.1) {
-            visual.setAudioIntensity(visual.globalAudioIntensity + r2 * 0.1)
+        // Handle Sticks & Triggers
+        if (visual.appView === 'VISUALIZER') {
+            this.handleVisualizerSticks(gp, visual)
+        } else {
+            this.handleStudioSticks(gp, audio, visual)
         }
-
-        // Right Stick Y (Axis 3) for BPM
-        const rsY = gp.axes[3]
-        if (Math.abs(rsY) > 0.15) {
-            const newBpm = Math.max(60, Math.min(240, audio.bpm - rsY * 1.5))
-            audio.setBpm(Math.round(newBpm))
-        }
-
-        // Left Stick Y (Axis 1) for Camera Focus Zoom or Visual Mod
-        const lsY = gp.axes[1]
-        if (visual.appView === 'VISUALIZER' && Math.abs(lsY) > 0.15) {
-            // Modulate time or zoom in visualizer if needed via store
-        }
-
-        // Left Stick for Camera Movement (handled by CameraController)
     }
 
     public getStick(stick: 'left' | 'right'): { x: number, y: number } {
@@ -107,34 +94,22 @@ class GamepadManagerClass {
         return { x, y }
     }
 
-    private onButtonDown(index: number, audio: any, visual: any) {
+    private handleStudioButtons(index: number, audio: any, visual: any) {
         switch (index) {
-            case 0: // Cross (X) - Play/Stop or Select Visualizer 1
-                if (visual.appView === 'VISUALIZER') {
-                    visual.setVisualizerIndex(0)
-                } else {
-                    audio.togglePlay()
-                }
+            case 0: // Cross (X) - Play/Stop
+                audio.togglePlay()
                 this.vibrate(50, 0.5)
                 break
-            case 1: // Circle (O) - Mute or Select Visualizer 2
-                if (visual.appView === 'VISUALIZER') {
-                    visual.setVisualizerIndex(1)
-                } else {
-                    if (visual.focusInstrument) {
-                        audio.toggleMute(visual.focusInstrument)
-                        this.vibrate(30, 0.3)
-                    }
+            case 1: // Circle (O) - Mute Current
+                if (visual.focusInstrument) {
+                    audio.toggleMute(visual.focusInstrument)
+                    this.vibrate(30, 0.3)
                 }
                 break
-            case 2: // Square (□) - Toggle Overview or Select Visualizer 3
-                if (visual.appView === 'VISUALIZER') {
-                    visual.setVisualizerIndex(2)
-                } else {
-                    if (visual.focusInstrument) visual.setFocusInstrument(null)
-                    else visual.setFocusInstrument('master')
-                    this.vibrate(20, 0.2)
-                }
+            case 2: // Square (□) - Toggle Overview
+                if (visual.focusInstrument) visual.setFocusInstrument(null)
+                else visual.setFocusInstrument('master')
+                this.vibrate(20, 0.2)
                 break
             case 3: // Triangle (Δ) - PANIC
                 audio.panic()
@@ -146,7 +121,7 @@ class GamepadManagerClass {
             case 5: // R1 - Next instrument
                 this.cycleInstrument(1, visual)
                 break
-            case 8: // Share/Create - Prev View
+            case 8: // Share/Create - Prev View (removed, now only Options cycles)
             case 9: // Options - Cycle View (3D > Nodes > Live > Arrange > Visualizer)
                 visual.cycleView()
                 this.vibrate(60, 0.6)
@@ -161,11 +136,66 @@ class GamepadManagerClass {
             case 15: // D-Pad Right - BPM Up
                 audio.setBpm(audio.bpm + 1)
                 break
-            case 17: // Touchpad Click - Toggle Visualizer Mode Directly
-                if (visual.appView === 'VISUALIZER') visual.setAppView('3D')
-                else visual.setAppView('VISUALIZER')
+            case 17: // Touchpad Click - Go to Visualizer
+                visual.setAppView('VISUALIZER')
                 this.vibrate(80, 0.7)
                 break
+        }
+    }
+
+    private handleVisualizerButtons(index: number, visual: any) {
+        switch (index) {
+            case 0: // Cross (X) - Layer 1 (Vortex)
+                visual.setVisualizerIndex(0)
+                this.vibrate(40, 0.4)
+                break
+            case 1: // Circle (O) - Layer 2 (Quantum)
+                visual.setVisualizerIndex(1)
+                this.vibrate(40, 0.4)
+                break
+            case 2: // Square (□) - Layer 3 (Fractal)
+                visual.setVisualizerIndex(2)
+                this.vibrate(40, 0.4)
+                break
+            case 3: // Triangle (Δ) - GLITCH PULSE
+                visual.setAudioIntensity(1.5) // Instant max intensity spike
+                this.vibrate(100, 1.0)
+                break
+            case 9: // Options - Cycle back to 3D
+                visual.setAppView('3D')
+                this.vibrate(60, 0.6)
+                break
+            case 17: // Touchpad Click - Return to Studio
+                visual.setAppView('3D')
+                this.vibrate(80, 0.7)
+                break
+        }
+    }
+
+    private handleStudioSticks(gp: Gamepad, audio: any, visual: any) {
+        // Right Stick Y (Axis 3) for BPM
+        const rsY = gp.axes[3]
+        if (Math.abs(rsY) > 0.15) {
+            const newBpm = Math.max(60, Math.min(240, audio.bpm - rsY * 1.5))
+            audio.setBpm(Math.round(newBpm))
+        }
+
+        // Left Stick (Axes 0, 1) usually handled by CameraController in 3D mode
+        // but we could add focus-specific modulation here
+    }
+
+    private handleVisualizerSticks(gp: Gamepad, visual: any) {
+        // R2 Trigger for Intensity Boost
+        const r2 = gp.buttons[7].value
+        if (r2 > 0.05) {
+            visual.setAudioIntensity(visual.globalAudioIntensity + r2 * 0.15)
+        }
+
+        // Left Stick for local visual parameters if needed
+        const lsX = gp.axes[0]
+        const lsY = gp.axes[1]
+        if (Math.abs(lsX) > 0.1 || Math.abs(lsY) > 0.1) {
+            // Future-proofing: modulate internal visualizer params
         }
     }
 
