@@ -31,12 +31,12 @@ const VISUALIZERS = [
     { id: 'feedback', label: 'Vortex', icon: '🌀', shortcut: '1', color: '#3390ec' },
     { id: 'quantum', label: 'Quantum', icon: '✨', shortcut: '2', color: '#ff3b30' },
     { id: 'fractal', label: 'Fractal', icon: '💎', shortcut: '3', color: '#00ffcc' },
-    { id: 'empty4', label: 'Empty', icon: '⚫', shortcut: '4', color: '#333333' },
-    { id: 'empty5', label: 'Empty', icon: '⚫', shortcut: '5', color: '#333333' },
-    { id: 'empty6', label: 'Empty', icon: '⚫', shortcut: '6', color: '#333333' },
-    { id: 'empty7', label: 'Empty', icon: '⚫', shortcut: '7', color: '#333333' },
-    { id: 'empty8', label: 'Empty', icon: '⚫', shortcut: '8', color: '#333333' },
-    { id: 'empty9', label: 'Empty', icon: '⚫', shortcut: '9', color: '#333333' },
+    { id: 'neon', label: 'Weave', icon: '🕸️', shortcut: '4', color: '#00ffff' },
+    { id: 'plasma', label: 'Plasma', icon: '🔮', shortcut: '5', color: '#ff00ff' },
+    { id: 'dna', label: 'DNA', icon: '🧬', shortcut: '6', color: '#44ff44' },
+    { id: 'gravity', label: 'Well', icon: '🕳️', shortcut: '7', color: '#8888ff' },
+    { id: 'rain', label: 'Rain', icon: '🌧️', shortcut: '8', color: '#33ff33' },
+    { id: 'mountain', label: 'Peak', icon: '🏔️', shortcut: '9', color: '#3390ec' },
 ]
 
 export function InstrumentNavigation({ currentInstrument, onSelect }: InstrumentNavigationProps) {

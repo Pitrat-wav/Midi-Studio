@@ -4,6 +4,12 @@ import { useVisualStore } from '../../store/visualStore'
 import { FeedbackVortex } from './visualizers/FeedbackVortex'
 import { QuantumParticles } from './visualizers/QuantumParticles'
 import { FractalVision } from './visualizers/FractalVision'
+import { NeonWeave } from './visualizers/NeonWeave'
+import { PlasmaOrb } from './visualizers/PlasmaOrb'
+import { AudioDNA } from './visualizers/AudioDNA'
+import { GravityWell } from './visualizers/GravityWell'
+import { DigitalRain } from './visualizers/DigitalRain'
+import { SoundscapeMountain } from './visualizers/SoundscapeMountain'
 import { Stars, OrbitControls } from '@react-three/drei'
 import { usePoseTracking } from '../../hooks/usePoseTracking'
 
@@ -17,8 +23,13 @@ export function VisualEngine() {
         if (index === 0) return 'Feedback Vortex'
         if (index === 1) return 'Quantum Particles'
         if (index === 2) return 'Fractal Mirror'
-        if (index === 3) return 'SKELETON FLOW'
-        return 'Unknown'
+        if (index === 3) return 'Neon Weave'
+        if (index === 4) return 'Plasma Orb'
+        if (index === 5) return 'Audio DNA'
+        if (index === 6) return 'Gravity Well'
+        if (index === 7) return 'Digital Rain'
+        if (index === 8) return 'Soundscape Mountain'
+        return 'Empty Slot'
     }
 
     return (
@@ -45,6 +56,12 @@ export function VisualEngine() {
                     {index === 0 && <FeedbackVortex />}
                     {index === 1 && <QuantumParticles />}
                     {index === 2 && <FractalVision />}
+                    {index === 3 && <NeonWeave />}
+                    {index === 4 && <PlasmaOrb />}
+                    {index === 5 && <AudioDNA />}
+                    {index === 6 && <GravityWell />}
+                    {index === 7 && <DigitalRain />}
+                    {index === 8 && <SoundscapeMountain />}
 
                     {/* Abstract lighting for the engine */}
                     <ambientLight intensity={0.1} />
