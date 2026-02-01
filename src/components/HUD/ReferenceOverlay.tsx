@@ -126,16 +126,18 @@ export function ReferenceOverlay() {
                 },
                 {
                     label: '🎮 GAMEPAD (DualSense)',
+                    text: 'Connect via USB-C or Bluetooth (Hold PS + Share until blinking). Press any button to activate.',
                     hints: [
                         { key: 'Touchpad', desc: 'Toggle Visualizer Mode' },
                         { key: 'X / O / □', desc: 'Switch Visualizer Layers' },
                         { key: 'L1 / R1', desc: 'Cycle Instruments focus' },
                         { key: 'R2 Trigger', desc: 'BOOST Visual Intensity' },
-                        { key: 'R-Stick Y', desc: 'Master BPM control' }
+                        { key: 'R-Stick Y', desc: 'Master BPM control' },
+                        { key: 'Triangle', desc: 'Global STOP (Panic)' }
                     ]
                 }
             ],
-            footer: 'Press ESC or Click Outside to close reference.'
+            footer: 'Gamepad detected automatically. Press any key to bind. Press ESC to close.'
         }
     }
 
