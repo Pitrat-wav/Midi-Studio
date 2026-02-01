@@ -1,6 +1,22 @@
 # Журнал изменений (Changelog)
 
 
+## v5.3.0 — The Visual Expansion & Search — [2026-02-02]
+- **VISUALIZER EXPLOSION (50+ Modes)**:
+    - 🚀 **Expansion**: Добавлено более 40 новых визуализаторов (всего 51 режим).
+    - 💎 **Batches**: Визуализаторы разделены на логические группы (Organic, Space, Geometry, Chaos, Minimalist).
+    - 🎨 **Modern Art**: Добавлены специальные 2D режимы: **Mondrian Composition** и **Kandinsky Abstract**.
+    - 📉 **2D Analytics**: Набор классических 2D визуализаторов (Oscilloscope, Spectrum, Radial Pulse).
+- **SMART SEARCH SYSTEM**:
+    - 🔍 **Visualizer Search**: Вызов по нажатию **`/`** в режиме визуализатора.
+    - 🏷 **Tag-Based Filtering**: Поиск по названиям и тегам (например, "space", "particles", "2d").
+    - ⌨ **Context-Aware Shortcuts**: Клавиша `/` теперь автоматически переключается между поиском инструментов (в 3D) и поиском визуалов (в VISUALIZER).
+- **GLOBAL HUD & CONTROL**:
+    - 🎮 **Gamepad Refinement**: Исправлена прокрутка визуализаторов (L1/R1 теперь циклично проходят через все 51 режим).
+    - 🧹 **UI Cleanup**: Удалены лишние текстовые подсказки и индикаторы ("visualizer-hint", "edge gesture percentage") для максимального погружения.
+- **DOCUMENTATION**:
+    - 📚 **Visualizers Guide**: Создан полный каталог всех режимов с ID, иконками и описанием в `docs/visuals/VISUALIZERS_LIST.md`.
+
 ## v5.2.0 — Vision, Control & Immersion — [2026-02-02]
 - **SKELETON FLOW (AI Vision)**:
     - ☠️ **MediaPipe Integration**: 4-й режим визуализации, использующий веб-камеру для трекинга тела в реальном времени.
