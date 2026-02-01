@@ -57,8 +57,12 @@ export function QuantumParticles() {
         }
 
         meshRef.current.geometry.attributes.position.needsUpdate = true
-        meshRef.current.rotation.y += 0.002
-        meshRef.current.rotation.z += 0.001
+
+        // Manual Rotation Control (Left Stick)
+        const modifier = useVisualStore.getState().visualModifier
+
+        meshRef.current.rotation.y += 0.002 + (modifier?.x || 0) * 0.05
+        meshRef.current.rotation.x += (modifier?.y || 0) * 0.05
     })
 
     return (
