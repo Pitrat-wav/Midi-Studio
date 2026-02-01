@@ -87,54 +87,48 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
 
             <Canvas camera={{ position: [0, 15, 15], fov: 75 }}>
                 <Suspense fallback={null}>
-                    {appView === 'VISUALIZER' ? (
-                        <VisualizerLayer />
-                    ) : (
-                        <>
-                            {/* Background gradient/noise */}
-                            <GenerativeBackground />
+                    {/* Background gradient/noise */}
+                    <GenerativeBackground />
 
-                            {/* Audio-reactive ambient object */}
-                            <AudioReactiveObject />
+                    {/* Audio-reactive ambient object */}
+                    <AudioReactiveObject />
 
-                            {/* All instruments in 3D space */}
-                            <AllInstruments3D />
+                    {/* All instruments in 3D space */}
+                    <AllInstruments3D />
 
-                            {/* Radial Context Menu */}
-                            <RadialMenu3D
-                                visible={gestures.isRadialMenuOpen}
-                                position={radialPos}
-                                items={[
-                                    { id: 'focus', label: 'FOCUS', color: '#3390ec' },
-                                    { id: 'overview', label: 'OVERVIEW', color: '#ffffff' },
-                                    { id: 'presets', label: 'PRESETS', color: '#ffcc33' },
-                                    { id: 'panic', label: 'PANIC', color: '#ff3b30' }
-                                ]}
-                                onSelect={(id) => {
-                                    if (id === 'focus' && gestures.targetPosition) {
-                                        console.log('Focusing near:', gestures.targetPosition)
-                                    } else if (id === 'overview') {
-                                        setInternalFocus(null)
-                                    } else if (id === 'panic') {
-                                        panic()
-                                    }
-                                    gestures.reset()
-                                }}
-                            />
+                    {/* Radial Context Menu */}
+                    <RadialMenu3D
+                        visible={gestures.isRadialMenuOpen}
+                        position={radialPos}
+                        items={[
+                            { id: 'focus', label: 'FOCUS', color: '#3390ec' },
+                            { id: 'overview', label: 'OVERVIEW', color: '#ffffff' },
+                            { id: 'presets', label: 'PRESETS', color: '#ffcc33' },
+                            { id: 'panic', label: 'PANIC', color: '#ff3b30' }
+                        ]}
+                        onSelect={(id) => {
+                            if (id === 'focus' && gestures.targetPosition) {
+                                console.log('Focusing near:', gestures.targetPosition)
+                            } else if (id === 'overview') {
+                                setInternalFocus(null)
+                            } else if (id === 'panic') {
+                                panic()
+                            }
+                            gestures.reset()
+                        }}
+                    />
 
-                            {/* 3D Instrument Selector */}
-                            <InstrumentSelector3D
-                                currentInstrument={focusInstrument}
-                                onSelect={setInternalFocus}
-                            />
+                    {/* 3D Instrument Selector */}
+                    <InstrumentSelector3D
+                        currentInstrument={focusInstrument}
+                        onSelect={setInternalFocus}
+                    />
 
-                            {/* Camera management */}
-                            <CameraController
-                                focusInstrument={focusInstrument}
-                                mode={focusInstrument ? 'focus' : 'overview'}
-                            />
-                        </>
-                    )}
+                    {/* Camera management */}
+                    <CameraController
+                        focusInstrument={focusInstrument}
+                        mode={focusInstrument ? 'focus' : 'overview'}
+                    />
 
                     {/* Hand Tracking Visualizer (Enabled in both modes if user wants) */}
                     <HandVision3D />

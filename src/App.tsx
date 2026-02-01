@@ -38,6 +38,7 @@ import { ArrangementEditor } from './components/HUD/ArrangementEditor'
 import { useNodeStore } from './store/nodeStore'
 import { ReferenceOverlay } from './components/HUD/ReferenceOverlay'
 import { GraphEngine } from './logic/GraphEngine'
+import { VisualEngine } from './components/VisualEngine/VisualEngine'
 import './App.css'
 
 function App() {
@@ -171,12 +172,16 @@ function App() {
                     onToggleFAQ={() => setShowFAQ(!showFAQ)}
                 />
 
-                {/* Full-screen WebGL Scene */}
-                <div className={`scene-container ${activeView !== '3D' ? 'view-blur' : ''}`}>
-                    <WebGLScene
-                        focusInstrument={focusedInstrument}
-                        cameraMode={focusedInstrument ? 'focus' : 'overview'}
-                    />
+                {/* Full-screen WebGL Scene / Visual Engine */}
+                <div className={`scene-container ${activeView !== '3D' && activeView !== 'VISUALIZER' ? 'view-blur' : ''}`}>
+                    {activeView === 'VISUALIZER' ? (
+                        <VisualEngine />
+                    ) : (
+                        <WebGLScene
+                            focusInstrument={focusedInstrument}
+                            cameraMode={focusedInstrument ? 'focus' : 'overview'}
+                        />
+                    )}
                 </div>
 
                 {/* Minimal 2D Overlay */}
