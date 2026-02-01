@@ -88,12 +88,13 @@ export function FractalVision() {
 
     const readTarget = useRef(0)
 
+    const [videoTexture, setVideoTexture] = React.useState<THREE.VideoTexture | null>(null)
+
     useEffect(() => {
         const video = document.createElement('video')
         video.autoplay = true
         video.playsInline = true
         video.muted = true
-        videoRef.current = video
 
         navigator.mediaDevices.getUserMedia({
             video: {
@@ -103,7 +104,13 @@ export function FractalVision() {
             }
         }).then(stream => {
             video.srcObject = stream
-            video.play()
+            video.onloadedmetadata = () => {
+                video.play()
+                const tex = new THREE.VideoTexture(video)
+                tex.minFilter = THREE.LinearFilter
+                tex.magFilter = THREE.LinearFilter
+                setVideoTexture(tex)
+            }
         }).catch(err => console.error("Webcam failed", err))
 
         return () => {
@@ -111,13 +118,6 @@ export function FractalVision() {
                 (video.srcObject as MediaStream).getTracks().forEach(t => t.stop())
             }
         }
-    }, [])
-
-    const videoTexture = useMemo(() => {
-        const tex = new THREE.VideoTexture(videoRef.current || document.createElement('video'))
-        tex.minFilter = THREE.LinearFilter
-        tex.magFilter = THREE.LinearFilter
-        return tex
     }, [])
 
     const uniforms = useMemo(() => ({
@@ -129,6 +129,7 @@ export function FractalVision() {
     }), [videoTexture, size])
 
     useFrame((state) => {
+        if (!videoTexture) return
         const { gl, scene, camera } = state
 
         uniforms.uTime.value = state.clock.getElapsedTime()
@@ -145,6 +146,8 @@ export function FractalVision() {
 
         readTarget.current = 1 - readTarget.current
     })
+
+    if (!videoTexture) return null
 
     return (
         <mesh position={[0, 0, 0]}>
