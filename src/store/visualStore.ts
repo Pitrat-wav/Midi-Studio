@@ -34,6 +34,13 @@ export interface HandLandmark {
     z: number
 }
 
+export interface PoseLandmark {
+    x: number
+    y: number
+    z: number
+    visibility: number
+}
+
 interface VisualState {
     // Current "Energy" levels for different parts of the scene (0-1)
     // Current "Energy" levels
@@ -53,6 +60,8 @@ interface VisualState {
     webglEnabled: boolean
     handTrackingEnabled: boolean
     handData: HandLandmark[] | null
+    poseTrackingEnabled: boolean
+    poseData: PoseLandmark[] | null
     statusMessage: string | null
     showHelp: boolean
     showGamepadHelp: boolean
@@ -86,6 +95,8 @@ interface VisualState {
     toggleWebGL: () => void
     setHandTrackingEnabled: (enabled: boolean) => void
     setHandData: (data: HandLandmark[] | null) => void
+    setPoseTrackingEnabled: (enabled: boolean) => void
+    setPoseData: (data: PoseLandmark[] | null) => void
     setStatus: (msg: string | null) => void
     toggleHelp: () => void
     toggleGamepadHelp: () => void
@@ -122,6 +133,8 @@ export const useVisualStore = create<VisualState>((set) => ({
     webglEnabled: true,
     handTrackingEnabled: false,
     handData: null,
+    poseTrackingEnabled: false,
+    poseData: null,
     statusMessage: null,
     showHelp: false,
     showGamepadHelp: false,
@@ -165,8 +178,9 @@ export const useVisualStore = create<VisualState>((set) => ({
     toggleWebGL: () => set((state) => ({ webglEnabled: !state.webglEnabled })),
 
     setHandTrackingEnabled: (enabled) => set({ handTrackingEnabled: enabled }),
-
     setHandData: (data) => set({ handData: data }),
+    setPoseTrackingEnabled: (enabled) => set({ poseTrackingEnabled: enabled }),
+    setPoseData: (data) => set({ poseData: data }),
 
     setFocusInstrument: (instrument) => set({ focusInstrument: instrument }),
 
@@ -177,7 +191,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     visualDetail: 0.5,
     setVisualizerIndex: (index: number) => set({ visualizerIndex: index }),
     cycleVisualizer: (dir) => set((state) => {
-        const next = (state.visualizerIndex + dir + 3) % 3
+        const next = (state.visualizerIndex + dir + 4) % 4
         return { visualizerIndex: next }
     }),
     setVisualModifier: (x, y) => set({ visualModifier: { x, y } }),
