@@ -1,49 +1,42 @@
 ---
 name: Antigravity Thinking
-description: A high-fidelity agentic workflow for complex coding tasks, featuring iterative planning, visual verification, and delivery checks.
+description: Высококачественный рабочий процесс для сложных задач: планирование, исполнение, верификация.
 ---
 
-# Antigravity Thinking Workflow
+# Мышление Антигравитации (Antigravity Thinking)
 
-This skill defines the standard operating procedure for Antigravity when handling non-trivial requests. It ensures quality, transparency, and safety through a 5-step iterative process.
+Этот навык определяет стандартную процедуру работы агента при решении нетривиальных задач. Это гарантия качества, прозрачности и безопасности.
 
-## Step 1: Audit & Research
-Before any code is written, conduct a deep dive into the current state.
-- **File Discovery**: Use `list_dir` and `find_by_name` to map the relevant territory.
-- **Context Extraction**: View existing store logic, component structures, and historical documentation.
-- **Constraint Identification**: Identify potential breaking changes, lint warnings, or architectural patterns.
+## Этап 1: Аудит и Исследование (Audit & Research)
+Прежде чем писать код, изучи текущее состояние.
+- **Поиск**: Используй `list_dir` и `grep_search` для понимания контекста.
+- **Анализ**: Изучи существующую логику в `store` и компонентах.
+- **Риски**: Найди возможные конфликты версий или архитектурные нарушения.
 
-## Step 2: Implementation Plan
-Create a comprehensive `implementation_plan.md` artifact.
-- **Clear Goal**: Define exactly what the change accomplishes.
-- **Proposed Changes**: Grouped by component/file with clear [MODIFY], [NEW], or [DELETE] tags.
-- **Verification Strategy**: Detail how the changes will be tested (unit tests, browser sessions, manual checks).
-- **User Approval**: Use `notify_user` to request review and do not proceed to execution until approved.
+## Этап 2: План Реализации (Implementation Plan)
+Создай артефакт `implementation_plan.md`.
+- **Цель**: Четко опиши, что именно будет сделано.
+- **Изменения**: Сгруппируй файлы по типу [MODIFY], [NEW], [DELETE].
+- **Стратегия Проверки**: Как мы узнаем, что это работает?
+- **Согласование**: Используй `notify_user` для утверждения плана.
 
-## Step 3: Execution
-Once approved, implement the plan following a granular checklist.
-- **Task Tracking**: Maintain `task.md` with incremental updates.
-- **Atomic Edits**: Use `task_boundary` to signal shifts in focus.
-- **Self-Correction**: If unexpected complexity arises, return to Step 2 to update the plan.
+## Этап 3: Исполнение (Execution)
+После утверждения действуй по чеклисту.
+- **Task Tracking**: Веди `task.md`.
+- **Atomic Edits**: Используй `task_boundary` для разделения этапов.
+- **Self-Correction**: Если план не работает, вернись на шаг 2.
 
-## Step 4: Verification
-Validate the implementation objectively.
-- **Browser Testing**: Use the browser subagent to record UI flows and capture truth-of-state screenshots.
-- **Proof of Work**: Document all tests and visual results in `walkthrough.md`.
-- **Media Embedding**: Always embed recordings/screenshots in the walkthrough for user clarity.
+## Этап 4: Верификация (Verification)
+Объективно докажи работоспособность.
+- **Browser Testing**: Запиши видео интерфейса, сделай скриншоты.
+- **Proof of Work**: Оформи `walkthrough.md` с доказательствами.
+- **Media**: Всегда вставляй скриншоты/видео в отчет.
 
-## Step 5: Delivery & Sync (Final Check)
-Ensure the final state matches the user's expectations and is securely stored.
-- **Git Sync**: Perform `git add`, `git commit`, and `git push` to synchronize remote state.
-- **Remote Verification**: Verify that the remote repository reflects the local changes.
-- **Documentation Polish**: Finalize the `CHANGELOG.md` and project metadata.
-
-## Step 6: Documentation Maintenance (Ongoing)
-Ensure that every major update is reflected in the technical documentation.
-- **Technical Sync**: Update files in `/Documentation` (e.g., `HARDWARE_REPLICAS.md`) whenever an engine or UI component is modified.
-- **Dating**: Always mark documentation updates with the current ISO date to maintain a clear trail of improvements.
-- **Index Update**: Keep `Documentation/README.md` updated with links to new functionality.
-- **Final Notification**: Concise summary of delivered features and location of artifacts.
+## Этап 5: Доставка и Синхронизация (Delivery)
+Финальная проверка.
+- **Git Sync**: Сделай коммит и пуш.
+- **Documentation**: Обнови `CHANGELOG.md` и `docs/`.
+- **Notification**: Уведоми пользователя финальным отчетом.
 
 ---
-*Note: This pattern is designed for high-stakes projects where visual excellence and state stability are paramount.*
+*Применяй этот паттерн для всех задач сложнее "исправь опечатку".*

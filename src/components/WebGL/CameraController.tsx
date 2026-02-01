@@ -16,6 +16,7 @@ import { OrbitControls } from '@react-three/drei'
 import { SPATIAL_LAYOUT, OVERVIEW_CAMERA_PRESET, type InstrumentType } from '../../lib/SpatialLayout'
 import { useGestureStore } from '../../logic/GestureManager'
 import { useVisualStore } from '../../store/visualStore'
+import { GamepadManager } from '../../lib/GamepadManager'
 
 export function CameraController({ focusInstrument, mode = 'overview' }: { focusInstrument: InstrumentType | null, mode?: 'overview' | 'focus' }) {
     const { camera } = useThree()
@@ -97,13 +98,21 @@ export function CameraController({ focusInstrument, mode = 'overview' }: { focus
             controlsRef.current.update()
         }
 
-        // --- B. Manual Navigation ---
+        // --- B. Manual Navigation (Keyboard & Gamepad) ---
         // Block if using UI knobs (activeParam)
         if (activeParam) return
 
+        // 1. Gamepad Input
+        const leftStick = GamepadManager.getStick('left')
+        const rightStick = GamepadManager.getStick('right')
+
+        // Deadzone check inside loop to potentially override keys
+        const gpMove = Math.abs(leftStick.y) > 0.1 || Math.abs(leftStick.x) > 0.1
+        const gpRot = Math.abs(rightStick.x) > 0.1
+
         const hasMove = keys.current.has('KeyW') || keys.current.has('KeyS') ||
-            keys.current.has('KeyA') || keys.current.has('KeyD')
-        const hasRot = keys.current.has('KeyQ') || keys.current.has('KeyE')
+            keys.current.has('KeyA') || keys.current.has('KeyD') || gpMove
+        const hasRot = keys.current.has('KeyQ') || keys.current.has('KeyE') || gpRot
 
         if (hasMove || hasRot) {
             // Break Auto-Pilot
@@ -122,6 +131,7 @@ export function CameraController({ focusInstrument, mode = 'overview' }: { focus
             forward.normalize()
             right.crossVectors(forward, camera.up).normalize()
 
+            // KEYBOARD
             if (keys.current.has('KeyW')) {
                 camera.position.addScaledVector(forward, speed)
                 controlsRef.current.target.addScaledVector(forward, speed)
@@ -139,12 +149,23 @@ export function CameraController({ focusInstrument, mode = 'overview' }: { focus
                 controlsRef.current.target.addScaledVector(right, speed)
             }
 
-            if (keys.current.has('KeyQ')) {
-                (controlsRef.current as any).rotateLeft?.(rotSpeed)
+            // GAMEPAD STICKS
+            if (gpMove) {
+                // Left Stick Y -> Forward/Back (Inverted typically, stick up is -1)
+                camera.position.addScaledVector(forward, -leftStick.y * speed)
+                controlsRef.current.target.addScaledVector(forward, -leftStick.y * speed)
+
+                // Left Stick X -> Strafe
+                camera.position.addScaledVector(right, leftStick.x * speed)
+                controlsRef.current.target.addScaledVector(right, leftStick.x * speed)
             }
-            if (keys.current.has('KeyE')) {
-                (controlsRef.current as any).rotateLeft?.(-rotSpeed)
+            if (gpRot) {
+                // Right Stick X -> Rotate
+                (controlsRef.current as any).rotateLeft?.(-rightStick.x * rotSpeed)
             }
+
+            if (keys.current.has('KeyQ')) (controlsRef.current as any).rotateLeft?.(rotSpeed)
+            if (keys.current.has('KeyE')) (controlsRef.current as any).rotateLeft?.(-rotSpeed)
 
             controlsRef.current.update()
         }

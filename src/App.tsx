@@ -37,6 +37,7 @@ import { LiveSession } from './components/HUD/LiveSession'
 import { ArrangementEditor } from './components/HUD/ArrangementEditor'
 import { useNodeStore } from './store/nodeStore'
 import { ReferenceOverlay } from './components/HUD/ReferenceOverlay'
+import { GraphEngine } from './logic/GraphEngine'
 import './App.css'
 
 function App() {
@@ -92,9 +93,11 @@ function App() {
         }
     }
 
-    // Initialize Gamepad Manager
+    // Initialize Gamepad Manager & Graph Engine
     useEffect(() => {
         GamepadManager.init()
+        GraphEngine.init()
+        return () => GraphEngine.dispose()
     }, [])
 
     // Initialize AudioVisualBridge when audio engine is ready

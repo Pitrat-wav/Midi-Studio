@@ -59,6 +59,23 @@ export function startSequencerLoop() {
         const harmony = useHarmonyStore.getState()
         const seq = useSequencerStore.getState()
 
+        // --- AUTOMATION INTERPOLATION HELPER ---
+        const getInterpolatedValue = (trackId: string, param: string, currentTick: number, defaultValue: number) => {
+            const trackAuto = arrange.automations[trackId] || {}
+            const points = trackAuto[param] || []
+            if (points.length === 0) return defaultValue
+            if (points.length === 1) return points[0].value
+
+            const nextIdx = points.findIndex(p => p.tick > currentTick)
+            if (nextIdx === -1) return points[points.length - 1].value
+            if (nextIdx === 0) return points[0].value
+
+            const p1 = points[nextIdx - 1]
+            const p2 = points[nextIdx]
+            const ratio = (currentTick - p1.tick) / (p2.tick - p1.tick)
+            return p1.value + (p2.value - p1.value) * ratio
+        }
+
         // --- SOLO LOGIC ---
         const anySolo = Object.values(arrange.tracks).some(t => t.solo)
         const isTrackActive = (trackId: string) => {
@@ -69,12 +86,13 @@ export function startSequencerLoop() {
 
         // 1. DRUMS
         const drumSettings = arrange.tracks?.drums || { mute: false, solo: false, volume: 0.8 }
+        const autoVolDrums = getInterpolatedValue('drums', 'volume', totalStep, drumSettings.volume)
+
         if (drums.isPlaying && drumMachine && isTrackActive('drums')) {
             const patterns = drums.activePatterns
 
-            // Apply arrangement volume (linear to dB)
             if (drumMachine.output) {
-                drumMachine.output.volume.value = Tone.gainToDb(drumSettings.volume)
+                drumMachine.output.volume.value = Tone.gainToDb(autoVolDrums)
             }
 
             if (patterns.kick[step] && !drums.kick.muted) {
@@ -99,6 +117,8 @@ export function startSequencerLoop() {
 
         // 2. BASS
         const bassSettings = arrange.tracks?.bass || { mute: false, solo: false, volume: 0.8 }
+        const autoVolBass = getInterpolatedValue('bass', 'volume', totalStep, bassSettings.volume)
+
         if (bass.isPlaying && isTrackActive('bass')) {
             const bassStep = bass.pattern[step]
             const prevBassStep = bass.pattern[(step + 15) % 16]
@@ -106,7 +126,7 @@ export function startSequencerLoop() {
             if (bassStep && bassStep.active) {
                 if (bass.activeInstrument === 'acid' && bassSynth) {
                     if (bassSynth.outputGain) {
-                        bassSynth.outputGain.volume.value = Tone.gainToDb(bassSettings.volume)
+                        bassSynth.outputGain.volume.value = Tone.gainToDb(autoVolBass)
                     }
                     const isContinuing = prevBassStep?.active && prevBassStep?.slide
                     bassSynth.triggerNote(
@@ -127,10 +147,12 @@ export function startSequencerLoop() {
 
         // 3. LEAD (Stages Sequencer)
         const leadSettings = arrange.tracks?.lead || { mute: false, solo: false, volume: 0.8 }
+        const autoVolLead = getInterpolatedValue('lead', 'volume', totalStep, leadSettings.volume)
+
         if (leadSynth && isTrackActive('lead')) {
             // Apply volume
             if (leadSynth.outputGain) {
-                leadSynth.outputGain.volume.value = Tone.gainToDb(leadSettings.volume)
+                leadSynth.outputGain.volume.value = Tone.gainToDb(autoVolLead)
             }
 
             if (seq.isStagesPlaying) {
@@ -166,10 +188,12 @@ export function startSequencerLoop() {
 
         // 4. PADS (каждые 32 шага = 2 такта)
         const padSettings = arrange.tracks?.pads || { mute: false, solo: false, volume: 0.8 }
+        const autoVolPads = getInterpolatedValue('pads', 'volume', totalStep, padSettings.volume)
+
         if (pads.active && padSynth && totalStep % 32 === 0 && isTrackActive('pads')) {
             try {
                 if (padSynth.synth) {
-                    padSynth.synth.volume.value = Tone.gainToDb(padSettings.volume)
+                    padSynth.synth.volume.value = Tone.gainToDb(autoVolPads)
                 }
                 const progression = generatePadProgression(
                     harmony.root,
@@ -189,10 +213,12 @@ export function startSequencerLoop() {
 
         // 5. HARM SYNTH
         const harmSettings = arrange.tracks?.harm || { mute: false, solo: false, volume: 0.8 }
+        const autoVolHarm = getInterpolatedValue('harm', 'volume', totalStep, harmSettings.volume)
+
         if (harm.isPlaying && harmSynth && totalStep % 32 === 0 && isTrackActive('harm')) {
             try {
                 if (harmSynth.outputGain) {
-                    harmSynth.outputGain.volume.value = Tone.gainToDb(harmSettings.volume)
+                    harmSynth.outputGain.volume.value = Tone.gainToDb(autoVolHarm)
                 }
                 const rootNote = harmony.root + '2'
                 const rootMidi = Tone.Frequency(rootNote).toMidi()

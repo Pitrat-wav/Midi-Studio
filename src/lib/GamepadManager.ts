@@ -73,8 +73,25 @@ class GamepadManagerClass {
             audio.setBpm(Math.round(newBpm))
         }
 
-        // Left Stick for Camera Movement (handled by CameraController if integrated, 
-        // but here we can emit status messages or small tweaks)
+        // Left Stick for Camera Movement (handled by CameraController)
+    }
+
+    public getStick(stick: 'left' | 'right'): { x: number, y: number } {
+        if (this.gamepadIndex === null) return { x: 0, y: 0 }
+        const gp = navigator.getGamepads()[this.gamepadIndex]
+        if (!gp) return { x: 0, y: 0 }
+
+        const deadzone = 0.1
+        let x = 0, y = 0
+
+        if (stick === 'left') {
+            x = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0
+            y = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0 // Up is -1 usually
+        } else {
+            x = Math.abs(gp.axes[2]) > deadzone ? gp.axes[2] : 0
+            y = Math.abs(gp.axes[3]) > deadzone ? gp.axes[3] : 0
+        }
+        return { x, y }
     }
 
     private onButtonDown(index: number, audio: any, visual: any) {
@@ -88,6 +105,11 @@ class GamepadManagerClass {
                     audio.toggleMute(visual.focusInstrument)
                     this.vibrate(30, 0.3)
                 }
+                break
+            case 2: // Square (□) - Toggle Overview
+                if (visual.focusInstrument) visual.setFocusInstrument(null)
+                else visual.setFocusInstrument('master')
+                this.vibrate(20, 0.2)
                 break
             case 3: // Triangle (Δ) - PANIC
                 audio.panic()
@@ -142,3 +164,5 @@ class GamepadManagerClass {
 }
 
 export const GamepadManager = new GamepadManagerClass()
+// Auto-init helper if needed, but best called explicitly
+

@@ -18,6 +18,9 @@ export interface ArrangementClip {
     snapshotId: number // ID from SNAPSHOT_LIBRARY
     startTick: number  // Start position in 16th notes
     durationTicks: number // Length in 16th notes
+    name?: string
+    color?: string
+    gain?: number
 }
 
 interface TrackSettings {
@@ -38,7 +41,7 @@ interface ArrangementState {
     loopStart: number
     loopEnd: number
     isLooping: boolean
-    snapResolution: '1n' | '4n' | '8n' | '16n'
+    snapResolution: '1n' | '4n' | '8n' | '16n' | '4t' | '8t'
     zoomLevel: number // TPP (Ticks per pixel)
 
     // Track Mixer
@@ -67,6 +70,7 @@ interface ArrangementState {
     addMarker: (tick: number, label: string) => void
     removeMarker: (id: string) => void
     setAutomationPoint: (trackId: string, param: string, tick: number, value: number) => void
+    removeAutomationPoint: (trackId: string, param: string, tick: number) => void
 
     clearArrangement: () => void
 }
@@ -204,6 +208,17 @@ export const useArrangementStore = create<ArrangementState>((set) => ({
             automations: {
                 ...state.automations,
                 [trackId]: { ...trackAuto, [param]: newPoints }
+            }
+        }
+    }),
+
+    removeAutomationPoint: (trackId, param, tick) => set((state) => {
+        const trackAuto = state.automations[trackId] || {}
+        const paramPoints = trackAuto[param] || []
+        return {
+            automations: {
+                ...state.automations,
+                [trackId]: { ...trackAuto, [param]: paramPoints.filter(p => p.tick !== tick) }
             }
         }
     }),

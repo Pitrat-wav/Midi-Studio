@@ -3,6 +3,7 @@ import * as Tone from 'tone'
 import { useAudioStore } from '../../store/audioStore'
 import { useArrangementStore, ArrangementClip } from '../../store/arrangementStore'
 import { useVisualStore } from '../../store/visualStore'
+import { useThemeStore } from '../../store/themeStore'
 import { SNAPSHOT_LIBRARY } from '../../data/snapshotLibrary'
 import {
     Clock,
@@ -130,8 +131,8 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
     const timelineRef = useRef<HTMLDivElement>(null)
     const seekTextRef = useRef<HTMLDivElement>(null)
     const vuRefs = useRef<Record<string, HTMLDivElement | null>>({})
-
     const [isScissorsMode, setIsScissorsMode] = useState(false)
+    const [inspectorClipId, setInspectorClipId] = useState<string | null>(null)
 
     const interaction = useRef({
         dragging: null as string | null,
@@ -153,6 +154,12 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
         { id: 'sampler', label: 'SAMPLER', color: '#ffaa00' },
         { id: 'harm', label: 'HARMONY', color: '#ffffff' }
     ], [])
+
+    useEffect(() => {
+        // Initialize Theme
+        const { currentTheme, setTheme } = useThemeStore.getState()
+        setTheme(currentTheme.id)
+    }, [])
 
     useEffect(() => {
         let rafId: number
@@ -189,6 +196,24 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
                 e.preventDefault()
                 duplicateSelectedClips()
             }
+            if (e.key === 'j' || e.key === 'J') {
+                Tone.Transport.ticks = Math.max(0, Tone.Transport.ticks - 768) // Seek back 1 bar
+            }
+            if (e.key === 'l' || e.key === 'L') {
+                Tone.Transport.ticks += 768 // Seek forward 1 bar
+            }
+            if (e.key === '[') {
+                // Jump to prev marker
+                const currentTick = Tone.Transport.ticks / 48
+                const prev = [...markers].sort((a, b) => b.tick - a.tick).find(m => m.tick < currentTick - 1)
+                if (prev) Tone.Transport.ticks = prev.tick * 48
+            }
+            if (e.key === ']') {
+                // Jump to next marker
+                const currentTick = Tone.Transport.ticks / 48
+                const next = [...markers].sort((a, b) => a.tick - b.tick).find(m => m.tick > currentTick + 1)
+                if (next) Tone.Transport.ticks = next.tick * 48
+            }
         }
         const onKeyUp = (e: KeyboardEvent) => {
             if (e.key === 's' || e.key === 'S') setIsScissorsMode(false)
@@ -202,7 +227,10 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
     }, [deleteSelectedClips, duplicateSelectedClips])
 
     const snapValue = (x: number) => {
-        const snap = { '1n': 16, '4n': 4, '8n': 2, '16n': 1 }[snapRes] || 4
+        const snap = {
+            '1n': 16, '4n': 4, '8n': 2, '16n': 1,
+            '4t': 4 * (2 / 3), '8t': 2 * (2 / 3)
+        }[snapRes as any] || 4
         const ticks = Math.floor(x / TPP)
         return Math.floor(ticks / snap) * snap
     }
@@ -229,7 +257,10 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
 
     const onMouseMove = (e: React.MouseEvent) => {
         const { dragging, resizing, marqueeStart, startX, startY, oldStart, oldDur } = interaction.current
-        const snap = { '1n': 16, '4n': 4, '8n': 2, '16n': 1 }[snapRes] || 4
+        const snap = {
+            '1n': 16, '4n': 4, '8n': 2, '16n': 1,
+            '4t': 4 * (2 / 3), '8t': 2 * (2 / 3)
+        }[snapRes as any] || 4
 
         if (dragging) {
             const deltaTicks = snapValue(e.clientX - startX)
@@ -281,6 +312,8 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
         setMarqueeRect(null)
     }
 
+    const inspectorClip = clips.find(c => c.id === inspectorClipId)
+
     return (
         <div className={`arrangement-overlay ${isScissorsMode ? 'scissors-mode' : ''}`}
             onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseDown={onMouseDown}>
@@ -292,6 +325,23 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
                 </div>
 
                 <div className="arr-transport-pro">
+                    {/* THEME CONTROLS */}
+                    <div className="theme-selector" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <select
+                            style={{ background: 'transparent', color: 'var(--primary-color)', border: 'none', fontSize: '10px', fontWeight: 'bold', outline: 'none', maxWidth: '80px' }}
+                            value={useThemeStore(s => s.currentTheme.id)}
+                            onChange={(e) => useThemeStore.getState().setTheme(e.target.value)}
+                        >
+                            {useThemeStore.getState().presets.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                        <button className="arr-tool" onClick={() => useThemeStore.getState().randomizeTheme()} title="Shuffle Theme">
+                            <Zap size={12} />
+                        </button>
+                    </div>
+                    <div className="v-separator" />
+
                     <button className={`arr-tool ${isLooping ? 'active' : ''}`} onClick={() => {
                         setLooping(!isLooping)
                         Tone.Transport.loop = !isLooping
@@ -304,7 +354,12 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
                     <div className="snap-selector">
                         <Anchor size={12} />
                         <select value={snapRes} onChange={(e: any) => useArrangementStore.setState({ snapResolution: e.target.value })}>
-                            <option value="1n">BAR</option><option value="4n">1/4</option><option value="8n">1/8</option><option value="16n">1/16</option>
+                            <option value="1n">BAR</option>
+                            <option value="4n">1/4</option>
+                            <option value="4t">1/4T</option>
+                            <option value="8n">1/8</option>
+                            <option value="8t">1/8T</option>
+                            <option value="16n">1/16</option>
                         </select>
                     </div>
                     <div className="v-separator" />
@@ -328,108 +383,158 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
                 <button className="arr-btn close" onClick={onClose}>EXIT</button>
             </div>
 
-            <div className="arr-main-container">
-                <div className="arr-track-list">
-                    <div className="track-list-ruler-corner">
-                        <button className="add-marker-btn" onClick={() => addMarker(Tone.Transport.ticks / 48, 'NEW MARKER')}>
-                            <Plus size={10} /> MARKER
-                        </button>
-                    </div>
-                    {tracks.map(t => (
-                        <TrackHeader
-                            key={t.id} track={t}
-                            settings={tracksState[t.id] || {}}
-                            vuRef={(el: any) => vuRefs.current[t.id] = el}
-                            onMute={(id: any, v: any) => setTrackSetting(id, { mute: v })}
-                            onSolo={(id: any, v: any) => setTrackSetting(id, { solo: v })}
-                            onVolume={(id: any, v: any) => setTrackSetting(id, { volume: v })}
-                            onToggleAuto={(id: any) => setTrackSetting(id, { showAutomation: !(tracksState[id]?.showAutomation) })}
-                        />
-                    ))}
-                </div>
-
-                <div className="arr-timeline" ref={timelineRef}>
-                    <div className="arr-ruler-pro" style={{ '--grid-size': `${16 * TPP}px` } as any}>
-                        {Array.from({ length: 256 }).map((_, i) => i % 4 === 0 && (
-                            <div key={i} className="ruler-number" style={{ left: i * TPP }}>
-                                {Math.floor(i / 16) + 1}.{(Math.floor(i / 4) % 4) + 1}
-                            </div>
+            <div className="arr-main-layout">
+                <div className="arr-main-container">
+                    <div className="arr-track-list">
+                        <div className="track-list-ruler-corner">
+                            <button className="add-marker-btn" onClick={() => addMarker(Tone.Transport.ticks / 48, 'NEW MARKER')}>
+                                <Plus size={10} /> MARKER
+                            </button>
+                        </div>
+                        {tracks.map(t => (
+                            <TrackHeader
+                                key={t.id} track={t}
+                                settings={tracksState[t.id] || {}}
+                                vuRef={(el: any) => vuRefs.current[t.id] = el}
+                                onMute={(id: any, v: any) => setTrackSetting(id, { mute: v })}
+                                onSolo={(id: any, v: any) => setTrackSetting(id, { solo: v })}
+                                onVolume={(id: any, v: any) => setTrackSetting(id, { volume: v })}
+                                onToggleAuto={(id: any) => setTrackSetting(id, { showAutomation: !(tracksState[id]?.showAutomation) })}
+                            />
                         ))}
-                        {markers.map(m => (
-                            <div key={m.id} className="song-marker" style={{ left: m.tick * TPP, borderColor: m.color || '#555' }}>
-                                <span>{m.label}</span>
-                                <div className="marker-line" style={{ background: m.color || '#555' }} />
-                                <button className="marker-del" onClick={() => removeMarker(m.id)}>×</button>
-                            </div>
-                        ))}
-                        {isLooping && <div className="loop-bracket" style={{ left: loopStart * TPP, width: (loopEnd - loopStart) * TPP }} />}
                     </div>
 
-                    <div className="arr-lanes" style={{ '--grid-size': `${16 * TPP}px` } as any}>
-                        {tracks.map(t => {
-                            const showAuto = tracksState[t.id]?.showAutomation
-                            const param = tracksState[t.id]?.automationParam || 'volume'
-                            const points = automations[t.id]?.[param] || []
-
-                            return (
-                                <div key={t.id} className={`track-lane-pro ${showAuto ? 'show-auto' : ''}`}>
-                                    {clips.filter(c => c.trackId === t.id).map(c => (
-                                        <ArrangementClipItem
-                                            key={c.id} clip={c} isSelected={selectedIds.includes(c.id)}
-                                            trackColor={t.color} TPP={TPP}
-                                            onDrag={(e: any, clip: any) => {
-                                                if (isScissorsMode) {
-                                                    const rect = timelineRef.current!.getBoundingClientRect()
-                                                    splitClip(clip.id, snapValue(e.clientX - rect.left + timelineRef.current!.scrollLeft - 180))
-                                                } else {
-                                                    interaction.current = { ...interaction.current, dragging: clip.id, startX: e.clientX, startY: e.clientY, oldStart: clip.startTick }
-                                                    if (!selectedIds.includes(clip.id)) setSelectedClips(e.shiftKey ? [...selectedIds, clip.id] : [clip.id])
-                                                }
-                                            }}
-                                            onResize={(e: any, clip: any, side: any) => {
-                                                e.stopPropagation()
-                                                interaction.current = { ...interaction.current, resizing: { id: clip.id, side }, startX: e.clientX, oldStart: clip.startTick, oldDur: clip.durationTicks }
-                                            }}
-                                            onDelete={removeClip}
-                                        />
-                                    ))}
-
-                                    {showAuto && (
-                                        <div className="automation-canvas" onClick={(e) => {
-                                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                                            const tick = snapValue(e.clientX - rect.left + timelineRef.current!.scrollLeft - 180)
-                                            const value = 1 - (e.clientY - rect.top) / rect.height
-                                            setAutomationPoint(t.id, param, tick, value)
-                                        }}>
-                                            <svg width="10000" height="80">
-                                                <path
-                                                    d={points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.tick * TPP} ${(1 - p.value) * 80}`).join(' ')}
-                                                    fill="none" stroke="#ffcc00" strokeWidth="2"
-                                                />
-                                                {points.map((p, i) => (
-                                                    <circle key={i} cx={p.tick * TPP} cy={(1 - p.value) * 80} r="3" fill="#ffcc00" />
-                                                ))}
-                                            </svg>
-                                        </div>
-                                    )}
+                    <div className="arr-timeline" ref={timelineRef}>
+                        <div className="arr-ruler-pro" style={{ '--grid-size': `${16 * TPP}px` } as any}>
+                            {Array.from({ length: 256 }).map((_, i) => i % 4 === 0 && (
+                                <div key={i} className="ruler-number" style={{ left: i * TPP }}>
+                                    {Math.floor(i / 16) + 1}.{(Math.floor(i / 4) % 4) + 1}
                                 </div>
-                            )
-                        })}
+                            ))}
+                            {markers.map(m => (
+                                <div key={m.id} className="song-marker" style={{ left: m.tick * TPP, borderColor: m.color || '#555' }}>
+                                    <span>{m.label}</span>
+                                    <div className="marker-line" style={{ background: m.color || '#555' }} />
+                                    <button className="marker-del" onClick={() => removeMarker(m.id)}>×</button>
+                                </div>
+                            ))}
+                            {isLooping && <div className="loop-bracket" style={{ left: loopStart * TPP, width: (loopEnd - loopStart) * TPP }} />}
+                        </div>
 
-                        {marqueeRect && <div className="marquee-box" style={marqueeRect} />}
+                        <div className="arr-lanes" style={{ '--grid-size': `${16 * TPP}px` } as any}>
+                            {tracks.map(t => {
+                                const showAuto = tracksState[t.id]?.showAutomation
+                                const param = tracksState[t.id]?.automationParam || 'volume'
+                                const points = automations[t.id]?.[param] || []
 
-                        <div className="arr-playhead-pro" ref={playheadRef}>
-                            <div className="playhead-line" /><div className="playhead-top" />
+                                return (
+                                    <div key={t.id} className={`track-lane-pro ${showAuto ? 'show-auto' : ''}`}>
+                                        {clips.filter(c => c.trackId === t.id).map(c => (
+                                            <ArrangementClipItem
+                                                key={c.id} clip={c} isSelected={selectedIds.includes(c.id)}
+                                                trackColor={t.color} TPP={TPP}
+                                                onDrag={(e: any, clip: any) => {
+                                                    if (isScissorsMode) {
+                                                        const rect = timelineRef.current!.getBoundingClientRect()
+                                                        splitClip(clip.id, snapValue(e.clientX - rect.left + timelineRef.current!.scrollLeft - 180))
+                                                    } else {
+                                                        interaction.current = { ...interaction.current, dragging: clip.id, startX: e.clientX, startY: e.clientY, oldStart: clip.startTick }
+                                                        if (!selectedIds.includes(clip.id)) setSelectedClips(e.shiftKey ? [...selectedIds, clip.id] : [clip.id])
+                                                    }
+                                                }}
+                                                onResize={(e: any, clip: any, side: any) => {
+                                                    e.stopPropagation()
+                                                    interaction.current = { ...interaction.current, resizing: { id: clip.id, side }, startX: e.clientX, oldStart: clip.startTick, oldDur: clip.durationTicks }
+                                                }}
+                                                onDelete={removeClip}
+                                            />
+                                        ))}
+
+                                        {showAuto && (
+                                            <div className="automation-canvas" onClick={(e) => {
+                                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                                const tick = snapValue(e.clientX - rect.left + timelineRef.current!.scrollLeft - 180)
+                                                const value = 1 - (e.clientY - rect.top) / rect.height
+                                                setAutomationPoint(t.id, param, tick, value)
+                                            }}>
+                                                <svg width="10000" height="80">
+                                                    <path
+                                                        d={points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.tick * TPP} ${(1 - p.value) * 80}`).join(' ')}
+                                                        fill="none" stroke="#ffcc00" strokeWidth="2"
+                                                    />
+                                                    {points.map((p, i) => (
+                                                        <circle key={i} cx={p.tick * TPP} cy={(1 - p.value) * 80} r="3" fill="#ffcc00" />
+                                                    ))}
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            })}
+
+                            {marqueeRect && <div className="marquee-box" style={marqueeRect} />}
+
+                            <div className="arr-playhead-pro" ref={playheadRef}>
+                                <div className="playhead-line" /><div className="playhead-top" />
+                            </div>
+                        </div>
+
+                        {/* MASTER TRACK LANE */}
+                        <div className="track-lane-pro master">
+                            <div className="master-label">MASTER BUS</div>
                         </div>
                     </div>
                 </div>
+
+                {inspectorClip && (
+                    <div className="arr-inspector glass">
+                        <header>
+                            <h3>CLIP INSPECTOR</h3>
+                            <button onClick={() => setInspectorClipId(null)}>×</button>
+                        </header>
+                        <div className="inspector-body">
+                            <div className="ins-row">
+                                <label>ID</label>
+                                <span>{inspectorClip.id}</span>
+                            </div>
+                            <div className="ins-row">
+                                <label>NAME</label>
+                                <input
+                                    type="text"
+                                    value={inspectorClip.name || ''}
+                                    placeholder={`SN ${inspectorClip.snapshotId + 1}`}
+                                    onChange={(e) => updateClip(inspectorClip.id, { name: e.target.value })}
+                                />
+                            </div>
+                            <div className="ins-row">
+                                <label>GAIN</label>
+                                <input
+                                    type="range" min="0" max="2" step="0.01"
+                                    value={inspectorClip.gain ?? 1}
+                                    onChange={(e) => updateClip(inspectorClip.id, { gain: Number(e.target.value) })}
+                                />
+                            </div>
+                            <div className="ins-row">
+                                <label>SNAPSHOT</label>
+                                <select
+                                    value={inspectorClip.snapshotId}
+                                    onChange={(e) => updateClip(inspectorClip.id, { snapshotId: Number(e.target.value) })}
+                                >
+                                    {Object.keys(SNAPSHOT_LIBRARY[inspectorClip.trackId] || {}).map(id => (
+                                        <option key={id} value={id}>Snapshot {Number(id) + 1}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="arr-footer-pro">
                 <div className="footer-stat">
                     <span>TRACKS: {tracks.length}</span><span>CLIPS: {clips.length}</span><span>SELECTED: {selectedIds.length}</span>
                 </div>
-                <div className="footer-msg">STUDIO ELITE V4.0 • {isScissorsMode ? 'SCISSORS TOOL ACTIVE' : 'ARRANGEMENT MODE'}</div>
+                <div className="footer-msg">STUDIO ELITE V5.0 • {isScissorsMode ? 'SCISSORS TOOL ACTIVE' : 'ARRANGEMENT MODE'}</div>
                 <div className="footer-seek" ref={seekTextRef}>1 : 1 : 0</div>
             </div>
         </div>

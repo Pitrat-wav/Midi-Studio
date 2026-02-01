@@ -1,5 +1,59 @@
 # Журнал изменений (Changelog)
 
+## v5.1.0 — Global Systems Audit & Documentation Overhaul — [2026-02-01]
+- **ГЛОБАЛЬНЫЙ АУДИТ И ДОКУМЕНТАЦИЯ (Full System Audit)**:
+    - 📚 **Библиотека 3D Инструментов**: Проведен детальный аудит и создана документация для всех WebGL-компонентов инструментов (`Mixer3D`, `Sampler3D`, `HarmSynth3D` и др.).
+    - 📦 **Ядро Состояний (Zustand)**: Полностью документированы ключевые сторы: `audioStore` (аудио-движок), `instrumentStore` (память паттернов) и `visualStore` (визуальная среда).
+    - ⚙️ **Логические Модули**: Созданы технические описания для `GlobalSequencer` (тайминг), `GraphEngine` (модульный DSP), `AudioVisualBridge` (реактивность), `MidiExporter` (экспорт) и `GestureManager` (3D-ввод).
+    - 🎼 **Фундаментальная Математика**: Описана логика модуля `Scaler` (теория музыки) и `nodeStore` (архитектура узлов).
+    - 📁 **Единая база знаний**: Все технические документы систематизированы в папке `docs/` на русском языке для поддержки и масштабирования проекта.
+
+## v5.0.0 - The "Agentic" Update (Feb 2026)
+**Major Overhaul: 3D Immersion, Theme Engine, & Node Power**
+
+### 🎮 Gamepad Integration (PS5 DualSense)
+- **Full 3D Navigation**: Use Left Stick to Walk, Right Stick to Look.
+- **Instrument Control**: L1/R1 to cycle instruments, Cross to Play/Stop.
+- **Tactile Feedback**: Haptic vibrations for interactions.
+- **Shortcuts**: Square (Overview), Circle (Mute), Triangle (Panic).
+
+### 🎨 Theme Engine "Prism"
+- **50+ Professional Presets**: Cyberpunk, Nature, Retro, Obsidian, and more.
+- **Dynamic Generator**: "Shuffle" button creates unique color harmonies instantly.
+- **Deep Integration**: Themes apply to 3D Fog, UI Overlay, Node Editor, and Arrangement view simultaneously.
+
+### 🎛️ Node Editor "Maximus"
+- **Expanded Library**: Added 100+ new nodes (Logic, Math, Signals).
+- **New Categories**: FX Rack (Reverb, Distortion, Delay) & Modular Drums.
+- **UX Improvements**: Custom Context Menu, Scrollable Palette, Wire Snapping.
+
+### 🎼 Arrangement Mode 2.0
+- **Restored UI**: Fixed "broken" clips, restored waveforms and handles.
+- **Dynamic Styling**: Full support for CSS Variables (Theme Engine).
+- **Absolute Precision**: Timeline/Grid now uses precise positioning.
+
+### 🚀 Core Improvements
+- **Performance**: Optimized 3D rendering loop.
+- **Cleanup**: Removed legacy "Mini App" constraints.
+- **Docs**: Full Russian Documentation update.
+
+---
+
+## v4.5.0 — Deep Node & Sonic Graph — [2026-02-01]
+- **ГЛУБОКАЯ РЕКОНСТРУКЦИЯ РЕДАКТОРА НОД (Deep Core Repair)**:
+    - 🧠 **Новый движок графа**: Полностью переписанная архитектура `GraphEngine` с поддержкой сложной маршрутизации (Handle-Aware Routing). Теперь можно модулировать конкретные параметры (например, FM-синтез, управляя частотой осциллятора другим осциллятором).
+    - 🎹 **Расширенная библиотека нод**:
+        - **Audio**: `Audio Env` (ADSR), `Delay`, `Reverb`, `Noise`, `Spectral Filter`.
+        - **Logic**: `Sequencer` (8 шагов с UI), `Clock` (Master/Slave), `Quantizer` (Scale Snapping), `Logic Math/Op` (Add, Mul, Compare).
+        - **Note**: `Note Quantizer`, `Note Delay` и поддержка полифонических сигналов.
+    - 📟 **Интерактивный UI**:
+        - **Секвенсор**: Добавлены вертикальные слайдеры для визуального редактирования шагов прямо на ноде.
+        - **MIDI In**: Новый модуль `io_midi_in` с разделением сигналов на **Pitch**, **Gate** и **Velocity**.
+    - 💻 **Scripting Pro**:
+        - Исправлен `script_js` сандбокс. Теперь можно писать кастомные DSP-скрипты, которые реально обрабатывают аудио в реальном времени.
+        - Добавлен помощник `createScriptNode` для безопасной компиляции пользовательского кода.
+    - 🤖 **AI Integration**: Нода `ai_gen` теперь имеет рабочий триггер-вход для генерации текстур по сигналу.
+
 ## v4.4.0 — Arrangement Elite & Reference HUD — [2026-02-01]
 - **ARRANGEMENT ELITE 4.0 (Professional Workflow)**:
     - ✂️ **Scissors Tool (S)**: Мгновенное разделение клипов на таймлайне.

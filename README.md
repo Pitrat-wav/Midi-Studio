@@ -1,6 +1,8 @@
-# Telegram MIDI Studio Pro — Autonomous 3D Audio Workstation
+# Telegram MIDI Studio Pro 3D (Studio Elite)
 
-**Telegram MIDI Studio Pro** is a next-generation generative audio workstation built for Telegram Mini Apps. It abandons traditional 2D interfaces in favor of a fully immersive, autonomous 3D environment where every visual element reacts to sound.
+**Next-Gen Generative Music Environment**
+
+Studio Elite is a fully immersive, 3D-first Digital Audio Workstation (DAW) and Generative Music Environment running directly in the browser. It combines the power of node-based synthesis, spatial audio navigation, and professional arrangement tools into a unified "Game-Like" experience.
 
 ![Studio Preview](public/assets/preview.png)
 
