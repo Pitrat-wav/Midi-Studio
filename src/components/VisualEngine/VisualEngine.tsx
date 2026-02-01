@@ -19,6 +19,7 @@ import { KaleidoSphere } from './visualizers/KaleidoSphere'
 import * as Batch1 from './visualizers/VisualBatch1'
 import * as Batch2 from './visualizers/VisualBatch2'
 import * as Batch3 from './visualizers/VisualBatch3'
+import * as Batch2D from './visualizers/VisualBatch2D'
 
 export function VisualEngine() {
     const index = useVisualStore(s => s.visualizerIndex)
@@ -73,6 +74,18 @@ export function VisualEngine() {
             case 36: return <Batch3.PulsarStar />
             case 37: return <Batch3.FractalForest />
             case 38: return <Batch3.GlassShards />
+
+            // Batch 2D (39-48)
+            case 39: return <Batch2D.RetroOscilloscope />
+            case 40: return <Batch2D.VibrantSpectrum />
+            case 41: return <Batch2D.RadialPulse />
+            case 42: return <Batch2D.GlitchScanner />
+            case 43: return <Batch2D.LavaLamp2D />
+            case 44: return <Batch2D.NeonWavelet />
+            case 45: return <Batch2D.BinaryStar2D />
+            case 46: return <Batch2D.GradientFlow />
+            case 47: return <Batch2D.PixelNoise />
+            case 48: return <Batch2D.AbstractGrid2D />
 
             default: return <Stars />
         }

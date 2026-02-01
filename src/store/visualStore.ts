@@ -56,7 +56,19 @@ export const VISUALIZER_REGISTRY = [
     { name: 'Double Helix', icon: '🧬', id: 35, tags: 'dna, spiral, complex' },
     { name: 'Pulsar Star', icon: '🔔', id: 36, tags: 'pulse, rings, center' },
     { name: 'Fractal Forest', icon: '🌲', id: 37, tags: 'recursive, tree, growth' },
-    { name: 'Glass Shards', icon: '🪟', id: 38, tags: 'broken, pieces, floating' }
+    { name: 'Glass Shards', icon: '🪟', id: 38, tags: 'broken, pieces, floating' },
+
+    // 10 2D VISUALIZERS
+    { name: 'Retro Oscilloscope', icon: '📉', id: 39, tags: '2d, wave, retro' },
+    { name: 'Vibrant Spectrum', icon: '📊', id: 40, tags: '2d, bars, color' },
+    { name: 'Radial Pulse', icon: '💿', id: 41, tags: '2d, circle, pulse' },
+    { name: 'Glitch Scanner', icon: '📠', id: 42, tags: '2d, glitch, scan' },
+    { name: 'Lava Lamp 2D', icon: '🟠', id: 43, tags: '2d, blobs, organic' },
+    { name: 'Neon Wavelet', icon: '➰', id: 44, tags: '2d, lines, flow' },
+    { name: 'Binary Star 2D', icon: '✨', id: 45, tags: '2d, star, center' },
+    { name: 'Gradient Flow', icon: '🌈', id: 46, tags: '2d, color, smooth' },
+    { name: 'Pixel Noise', icon: '👾', id: 47, tags: '2d, pixels, noise' },
+    { name: 'Abstract Grid 2D', icon: '⏹️', id: 48, tags: '2d, grid, pattern' }
 ]
 
 export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'
