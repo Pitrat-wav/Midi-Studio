@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useVisualStore, PoseLandmark } from '../../../store/visualStore'
-import { Line, Trail } from '@react-three/drei'
+import { Line, Trail, Html } from '@react-three/drei'
 
 // MediaPipe Pose connections
 const CONNECTIONS = [
@@ -83,7 +83,32 @@ export function SkeletonFlow() {
         }
     })
 
-    if (!poseData) return null
+    if (!poseData) {
+        return (
+            <group>
+                <mesh>
+                    <torusGeometry args={[2, 0.02, 16, 100]} />
+                    <meshBasicMaterial color="#3390ec" transparent opacity={0.5} />
+                </mesh>
+                <mesh rotation={[Math.PI / 2, 0, 0]}>
+                    <ringGeometry args={[1.8, 2.2, 32]} />
+                    <meshBasicMaterial color="#3390ec" wireframe transparent opacity={0.1} />
+                </mesh>
+                <Html center>
+                    <div style={{
+                        color: '#3390ec',
+                        fontFamily: 'monospace',
+                        fontSize: '1.2em',
+                        textAlign: 'center',
+                        textShadow: '0 0 10px #3390ec'
+                    }}>
+                        INITIALIZING VISION CORE...<br />
+                        <span style={{ fontSize: '0.8em', opacity: 0.7 }}>STAND IN FRONT OF CAMERA</span>
+                    </div>
+                </Html>
+            </group>
+        )
+    }
 
     return (
         <group>

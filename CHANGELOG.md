@@ -1,6 +1,25 @@
 # Журнал изменений (Changelog)
 
-## v5.1.0 — Global Systems Audit & Documentation Overhaul — [2026-02-01]
+
+## v5.2.0 — Vision, Control & Immersion — [2026-02-02]
+- **SKELETON FLOW (AI Vision)**:
+    - ☠️ **MediaPipe Integration**: 4-й режим визуализации, использующий веб-камеру для трекинга тела в реальном времени.
+    - 💃 **Motion Capture**: Движения игрока управляют неоновым скелетом и частицами в 3D сцене.
+    - 🔌 **On-Demand**: Камера включается только при выборе этого режима.
+
+- **HARDWARE CONTROL (Plug & Play)**:
+    - 🎛 **Novation Launch Control XL**: Полная нативная поддержка.
+        - **Faders**: Speed, Detail, Intensity.
+        - **Knobs**: Warp X/Y, Color Shift.
+        - **Buttons**: Переключение визуалов, Reset, Glitch Pulse.
+    - 🎮 **DualSense Refinement**:
+        - **Square (□)**: Мгновенный сброс (Reset) всех визуальных искажений.
+        - **D-Pad**: Точное управление скоростью и детализацией.
+
+- **VISUAL ENGINE OPTIMIZATION**:
+    - **Uniform Reactivity**: Шейдеры теперь получают `uSpeed` и `uDetail` напрямую из стора.
+    - **Stability**: Исправлены конфликты типов WebMidi и @react-three/drei.
+
 - **ГЛОБАЛЬНЫЙ АУДИТ И ДОКУМЕНТАЦИЯ (Full System Audit)**:
     - 📚 **Библиотека 3D Инструментов**: Проведен детальный аудит и создана документация для всех WebGL-компонентов инструментов (`Mixer3D`, `Sampler3D`, `HarmSynth3D` и др.).
     - 📦 **Ядро Состояний (Zustand)**: Полностью документированы ключевые сторы: `audioStore` (аудио-движок), `instrumentStore` (память паттернов) и `visualStore` (визуальная среда).
