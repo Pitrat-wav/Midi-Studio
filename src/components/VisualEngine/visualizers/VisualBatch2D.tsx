@@ -282,3 +282,115 @@ export function AbstractGrid2D() {
         </group>
     )
 }
+
+// 49: Mondrian Composition (Modern Art)
+export function MondrianComposition() {
+    const intensity = useVisualStore(s => s.globalAudioIntensity)
+    const { viewport } = useThree()
+
+    const blocks = useMemo(() => {
+        const b = []
+        const colors = ['#ff0000', '#0000ff', '#ffff00', '#ffffff']
+        for (let i = 0; i < 15; i++) {
+            b.push({
+                x: (Math.random() - 0.5) * viewport.width,
+                y: (Math.random() - 0.5) * viewport.height,
+                w: 1 + Math.random() * 3,
+                h: 1 + Math.random() * 3,
+                color: colors[Math.floor(Math.random() * colors.length)]
+            })
+        }
+        return b
+    }, [viewport])
+
+    return (
+        <group>
+            <mesh>
+                <planeGeometry args={[viewport.width, viewport.height]} />
+                <meshBasicMaterial color="#ffffff" />
+            </mesh>
+            {blocks.map((b, i) => (
+                <group key={i} position={[b.x, b.y, 0.01]}>
+                    <mesh scale={[1 + intensity * 0.5, 1 + intensity * 0.5, 1]}>
+                        <planeGeometry args={[b.w, b.h]} />
+                        <meshBasicMaterial color={b.color} />
+                    </mesh>
+                    <mesh position={[0, 0, 0.005]}>
+                        <planeGeometry args={[b.w, b.h]} />
+                        <meshBasicMaterial color="#000000" wireframe wireframeLinewidth={5} />
+                    </mesh>
+                </group>
+            ))}
+            {/* Black border lines */}
+            {Array.from({ length: 10 }).map((_, i) => (
+                <mesh key={i} position={[0, (i - 5) * 1.5, 0.02]}>
+                    <planeGeometry args={[viewport.width, 0.1]} />
+                    <meshBasicMaterial color="#000000" />
+                </mesh>
+            ))}
+            {Array.from({ length: 10 }).map((_, i) => (
+                <mesh key={i} position={[(i - 5) * 1.5, 0, 0.02]}>
+                    <planeGeometry args={[0.1, viewport.height]} />
+                    <meshBasicMaterial color="#000000" />
+                </mesh>
+            ))}
+        </group>
+    )
+}
+
+// 50: Kandinsky Abstract (Modern Art)
+export function KandinskyAbstract() {
+    const intensity = useVisualStore(s => s.globalAudioIntensity)
+    const { viewport } = useThree()
+
+    const elements = useMemo(() => {
+        const e = []
+        for (let i = 0; i < 20; i++) {
+            e.push({
+                x: (Math.random() - 0.5) * viewport.width,
+                y: (Math.random() - 0.5) * viewport.height,
+                size: 0.5 + Math.random() * 2,
+                type: Math.random() > 0.5 ? 'circle' : 'triangle',
+                color: new THREE.Color().setHSL(Math.random(), 0.7, 0.6)
+            })
+        }
+        return e
+    }, [viewport])
+
+    const groupRef = useRef<THREE.Group>(null!)
+    useFrame((state) => {
+        const t = state.clock.getElapsedTime()
+        groupRef.current.children.forEach((child, i) => {
+            if (i === 0) return // Skip background
+            child.position.x += Math.sin(t + i) * 0.01 * intensity
+            child.position.y += Math.cos(t + i) * 0.01 * intensity
+            child.rotation.z += 0.01 * intensity
+        })
+    })
+
+    return (
+        <group ref={groupRef}>
+            <mesh>
+                <planeGeometry args={[viewport.width, viewport.height]} />
+                <meshBasicMaterial color="#fdf2e9" />
+            </mesh>
+            {elements.map((el, i) => (
+                <mesh key={i} position={[el.x, el.y, 0.01]} rotation={[0, 0, Math.random() * Math.PI]}>
+                    {el.type === 'circle' ? (
+                        <circleGeometry args={[el.size, 32]} />
+                    ) : (
+                        <circleGeometry args={[el.size, 3]} />
+                    )}
+                    <meshBasicMaterial color={el.color} transparent opacity={0.7} />
+                </mesh>
+            ))}
+            {/* Abstract lines */}
+            {Array.from({ length: 15 }).map((_, i) => (
+                <mesh key={`line-${i}`} position={[(Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10, 0.02]} rotation={[0, 0, Math.random() * Math.PI]}>
+                    <planeGeometry args={[5, 0.02]} />
+                    <meshBasicMaterial color="#000000" />
+                </mesh>
+            ))}
+        </group>
+    )
+}

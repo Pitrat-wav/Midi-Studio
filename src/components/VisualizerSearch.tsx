@@ -96,7 +96,7 @@ export function VisualizerSearch() {
                             setQuery(e.target.value)
                             setSelectedIndex(0)
                         }}
-                        placeholder="Search 49 visualizers..."
+                        placeholder="Search 51 visualizers..."
                         style={{
                             flex: 1,
                             background: 'transparent',

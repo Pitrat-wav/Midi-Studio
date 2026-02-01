@@ -68,7 +68,9 @@ export const VISUALIZER_REGISTRY = [
     { name: 'Binary Star 2D', icon: '✨', id: 45, tags: '2d, star, center' },
     { name: 'Gradient Flow', icon: '🌈', id: 46, tags: '2d, color, smooth' },
     { name: 'Pixel Noise', icon: '👾', id: 47, tags: '2d, pixels, noise' },
-    { name: 'Abstract Grid 2D', icon: '⏹️', id: 48, tags: '2d, grid, pattern' }
+    { name: 'Abstract Grid 2D', icon: '⏹️', id: 48, tags: '2d, grid, pattern' },
+    { name: 'Mondrian Composition', icon: '🟥', id: 49, tags: '2d, modern art, grid, mondrian' },
+    { name: 'Kandinsky Abstract', icon: '🎨', id: 50, tags: '2d, modern art, circles, kandinsky' }
 ]
 
 export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'

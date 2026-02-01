@@ -86,6 +86,8 @@ export function VisualEngine() {
             case 46: return <Batch2D.GradientFlow />
             case 47: return <Batch2D.PixelNoise />
             case 48: return <Batch2D.AbstractGrid2D />
+            case 49: return <Batch2D.MondrianComposition />
+            case 50: return <Batch2D.KandinskyAbstract />
 
             default: return <Stars />
         }
