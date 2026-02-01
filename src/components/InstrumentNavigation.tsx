@@ -5,6 +5,7 @@
  */
 
 import type { InstrumentType } from '../lib/SpatialLayout'
+import { useVisualStore } from '../store/visualStore'
 import './InstrumentNavigation.css'
 
 interface InstrumentNavigationProps {
@@ -25,7 +26,49 @@ const INSTRUMENTS = [
     { id: 'buchla' as InstrumentType, label: 'Buchla', icon: '🧬', shortcut: '9', color: '#3390ec' },
 ]
 
+const VISUALIZERS = [
+    { id: 'studio', label: 'Studio', icon: '🏛️', shortcut: '0', color: '#888888' },
+    { id: 'feedback', label: 'Vortex', icon: '🌀', shortcut: '1', color: '#3390ec' },
+    { id: 'quantum', label: 'Quantum', icon: '✨', shortcut: '2', color: '#ff3b30' },
+]
+
 export function InstrumentNavigation({ currentInstrument, onSelect }: InstrumentNavigationProps) {
+    const appView = useVisualStore(s => s.appView)
+    const setAppView = useVisualStore(s => s.setAppView)
+    const visualizerIndex = useVisualStore(s => s.visualizerIndex)
+    const setVisualizerIndex = useVisualStore(s => s.setVisualizerIndex)
+
+    if (appView === 'VISUALIZER') {
+        return (
+            <div className="instrument-navigation">
+                <div className="nav-buttons visualizer-nav">
+                    {VISUALIZERS.map((v, i) => {
+                        const isActive = (v.id === 'studio' && appView !== 'VISUALIZER') ||
+                            (v.id !== 'studio' && visualizerIndex === i - 1)
+
+                        return (
+                            <button
+                                key={v.id}
+                                className={`nav-button ${isActive ? 'active' : ''}`}
+                                onClick={() => {
+                                    if (v.id === 'studio') setAppView('3D')
+                                    else setVisualizerIndex(i - 1)
+                                }}
+                                style={{
+                                    '--button-color': v.color
+                                } as React.CSSProperties}
+                            >
+                                <span className="nav-icon">{v.icon}</span>
+                                <span className="nav-label">{v.label}</span>
+                                <span className="nav-shortcut">{v.shortcut}</span>
+                            </button>
+                        )
+                    })}
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="instrument-navigation">
             <div className="nav-buttons">
