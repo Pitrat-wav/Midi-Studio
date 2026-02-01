@@ -64,37 +64,60 @@ export function KeyboardController({
                     visual.cycleView()
                     break
 
-                // --- NAVIGATION ---
+                // --- NAVIGATION / VISUALIZER SWITCH ---
                 case 'Digit0':
                     e.preventDefault()
-                    visual.setFocusInstrument(null)
+                    if (visual.appView === 'VISUALIZER') {
+                        // Maybe reset or something?
+                    } else {
+                        visual.setFocusInstrument(null)
+                    }
                     break
                 case 'Digit1':
-                    visual.setFocusInstrument('drums')
+                    e.preventDefault()
+                    if (visual.appView === 'VISUALIZER') {
+                        visual.setVisualizerIndex(0)
+                        visual.setStatus('VISUALIZER: FEEDBACK NEBULA')
+                    } else {
+                        visual.setFocusInstrument('drums')
+                    }
                     break
                 case 'Digit2':
-                    visual.setFocusInstrument('bass')
+                    e.preventDefault()
+                    if (visual.appView === 'VISUALIZER') {
+                        visual.setVisualizerIndex(1)
+                        visual.setStatus('VISUALIZER: GEOMETRIC DYNAMIC')
+                    } else {
+                        visual.setFocusInstrument('bass')
+                    }
                     break
                 case 'Digit3':
-                    visual.setFocusInstrument('harmony')
+                    e.preventDefault()
+                    if (visual.appView !== 'VISUALIZER') visual.setFocusInstrument('harmony')
                     break
                 case 'Digit4':
-                    visual.setFocusInstrument('pads')
+                    e.preventDefault()
+                    if (visual.appView !== 'VISUALIZER') visual.setFocusInstrument('pads')
                     break
                 case 'Digit5':
-                    visual.setFocusInstrument('sequencer')
+                    e.preventDefault()
+                    if (visual.appView !== 'VISUALIZER') visual.setFocusInstrument('sequencer')
                     break
                 case 'Digit6':
-                    visual.setFocusInstrument('drone')
+                    e.preventDefault()
+                    if (visual.appView !== 'VISUALIZER') visual.setFocusInstrument('drone')
                     break
                 case 'Digit7':
-                    visual.setFocusInstrument('master')
+                    e.preventDefault()
+                    if (visual.appView !== 'VISUALIZER') visual.setFocusInstrument('master')
                     break
                 case 'Digit8':
-                    visual.setFocusInstrument('sampler')
+                    e.preventDefault()
+                    if (visual.appView !== 'VISUALIZER') visual.setFocusInstrument('sampler')
                     break
                 case 'Digit9':
-                    visual.setFocusInstrument('buchla')
+                    e.preventDefault()
+                    if (visual.appView !== 'VISUALIZER') visual.setFocusInstrument('buchla')
                     break
 
                 // --- MUTE ---

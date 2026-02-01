@@ -263,7 +263,13 @@ function App() {
                 {/* Help hint (bottom right) */}
                 {!showOverlay && (
                     <div className="help-hint">
-                        Press <kbd>H</kbd> for HUD / <kbd>?</kbd> for Help
+                        {activeView === 'VISUALIZER' ? '1-2 Switch Visualizer / TAB to Exit' : 'Press H for HUD / ? for Help'}
+                    </div>
+                )}
+                {activeView === 'VISUALIZER' && (
+                    <div className="visualizer-hint">
+                        <span>MODE: {useVisualStore.getState().visualizerIndex === 0 ? 'FEEDBACK NEBULA (WEBCAM)' : 'GEOMETRIC DYNAMIC (AUDIO)'}</span>
+                        <div className="v-shortcuts">Keys [1] [2] to Switch</div>
                     </div>
                 )}
             </div>

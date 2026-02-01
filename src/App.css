@@ -1876,3 +1876,49 @@ body {
         opacity: 1;
     }
 }
+
+/* --- Visualizer Hint --- */
+.visualizer-hint {
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(15px);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border-right: 4px solid #3390ec;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 1000;
+    animation: slideLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    color: #fff;
+    pointer-events: none;
+}
+
+.visualizer-hint span {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #3390ec;
+    font-weight: bold;
+}
+
+.visualizer-hint .v-shortcuts {
+    font-size: 1.1rem;
+    font-weight: 300;
+    opacity: 0.9;
+}
+
+@keyframes slideLeft {
+    from {
+        opacity: 0;
+        transform: translate(100%, -50%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(0, -50%);
+    }
+}

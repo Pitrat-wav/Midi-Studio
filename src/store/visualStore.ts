@@ -17,7 +17,7 @@ export const PRESETS = [
 export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'
 export type PerformanceMode = 'low' | 'medium' | 'high' | 'ultra'
 export type AestheticTheme = 'none' | 'cosmic' | 'cyber' | 'pixel' | 'southpark'
-export type AppView = '3D' | 'NODES' | 'LIVE' | 'ARRANGE'
+export type AppView = '3D' | 'NODES' | 'LIVE' | 'ARRANGE' | 'VISUALIZER'
 
 export interface EnvironmentConditions {
     temperature: number // Celsius
@@ -58,6 +58,8 @@ interface VisualState {
     focusInstrument: InstrumentType | null
     setFocusInstrument: (instrument: InstrumentType | null) => void
     appView: AppView
+    visualizerIndex: number
+    setVisualizerIndex: (index: number) => void
     setAppView: (view: AppView) => void
     cycleView: () => void
 
@@ -156,9 +158,11 @@ export const useVisualStore = create<VisualState>((set) => ({
     setFocusInstrument: (instrument) => set({ focusInstrument: instrument }),
 
     appView: '3D',
+    visualizerIndex: 0,
+    setVisualizerIndex: (index) => set({ visualizerIndex: index }),
     setAppView: (view) => set({ appView: view }),
     cycleView: () => set((state) => {
-        const views: AppView[] = ['3D', 'NODES', 'LIVE', 'ARRANGE']
+        const views: AppView[] = ['3D', 'NODES', 'LIVE', 'ARRANGE', 'VISUALIZER']
         const currentIndex = views.indexOf(state.appView)
         const nextIndex = (currentIndex + 1) % views.length
         return { appView: views[nextIndex] }

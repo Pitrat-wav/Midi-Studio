@@ -22,6 +22,7 @@ import { HandVision3D } from './HandVision3D'
 import { GlobalHUD } from './GlobalHUD'
 import { SpectrumAnalyzer3D } from './visualizers/SpectrumAnalyzer3D'
 import { WaveformScope3D } from './visualizers/WaveformScope3D'
+import { VisualizerLayer } from './visualizers/VisualizerLayer'
 // Postprocessing library removed due to crashes - using custom shaders instead
 import type { InstrumentType } from '../../lib/SpatialLayout'
 
@@ -35,6 +36,7 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
     const internalFocus = useVisualStore(s => s.focusInstrument)
     const setInternalFocus = useVisualStore(s => s.setFocusInstrument)
     const aestheticTheme = useVisualStore(s => s.aestheticTheme)
+    const appView = useVisualStore(s => s.appView)
 
     // Use external focus if provided, otherwise use internal (Store)
     const focusInstrument = externalFocus ?? internalFocus
@@ -85,50 +87,56 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
 
             <Canvas camera={{ position: [0, 15, 15], fov: 75 }}>
                 <Suspense fallback={null}>
-                    {/* Background gradient/noise */}
-                    <GenerativeBackground />
+                    {appView === 'VISUALIZER' ? (
+                        <VisualizerLayer />
+                    ) : (
+                        <>
+                            {/* Background gradient/noise */}
+                            <GenerativeBackground />
 
-                    {/* Audio-reactive ambient object */}
-                    <AudioReactiveObject />
+                            {/* Audio-reactive ambient object */}
+                            <AudioReactiveObject />
 
-                    {/* All instruments in 3D space */}
-                    <AllInstruments3D />
+                            {/* All instruments in 3D space */}
+                            <AllInstruments3D />
 
-                    {/* Radial Context Menu */}
-                    <RadialMenu3D
-                        visible={gestures.isRadialMenuOpen}
-                        position={radialPos}
-                        items={[
-                            { id: 'focus', label: 'FOCUS', color: '#3390ec' },
-                            { id: 'overview', label: 'OVERVIEW', color: '#ffffff' },
-                            { id: 'presets', label: 'PRESETS', color: '#ffcc33' },
-                            { id: 'panic', label: 'PANIC', color: '#ff3b30' }
-                        ]}
-                        onSelect={(id) => {
-                            if (id === 'focus' && gestures.targetPosition) {
-                                console.log('Focusing near:', gestures.targetPosition)
-                            } else if (id === 'overview') {
-                                setInternalFocus(null)
-                            } else if (id === 'panic') {
-                                panic()
-                            }
-                            gestures.reset()
-                        }}
-                    />
+                            {/* Radial Context Menu */}
+                            <RadialMenu3D
+                                visible={gestures.isRadialMenuOpen}
+                                position={radialPos}
+                                items={[
+                                    { id: 'focus', label: 'FOCUS', color: '#3390ec' },
+                                    { id: 'overview', label: 'OVERVIEW', color: '#ffffff' },
+                                    { id: 'presets', label: 'PRESETS', color: '#ffcc33' },
+                                    { id: 'panic', label: 'PANIC', color: '#ff3b30' }
+                                ]}
+                                onSelect={(id) => {
+                                    if (id === 'focus' && gestures.targetPosition) {
+                                        console.log('Focusing near:', gestures.targetPosition)
+                                    } else if (id === 'overview') {
+                                        setInternalFocus(null)
+                                    } else if (id === 'panic') {
+                                        panic()
+                                    }
+                                    gestures.reset()
+                                }}
+                            />
 
-                    {/* 3D Instrument Selector */}
-                    <InstrumentSelector3D
-                        currentInstrument={focusInstrument}
-                        onSelect={setInternalFocus}
-                    />
+                            {/* 3D Instrument Selector */}
+                            <InstrumentSelector3D
+                                currentInstrument={focusInstrument}
+                                onSelect={setInternalFocus}
+                            />
 
-                    {/* Camera management */}
-                    <CameraController
-                        focusInstrument={focusInstrument}
-                        mode={focusInstrument ? 'focus' : 'overview'}
-                    />
+                            {/* Camera management */}
+                            <CameraController
+                                focusInstrument={focusInstrument}
+                                mode={focusInstrument ? 'focus' : 'overview'}
+                            />
+                        </>
+                    )}
 
-                    {/* Hand Tracking Visualizer */}
+                    {/* Hand Tracking Visualizer (Enabled in both modes if user wants) */}
                     <HandVision3D />
 
                 </Suspense>
