@@ -31,6 +31,12 @@ const VISUALIZERS = [
     { id: 'feedback', label: 'Vortex', icon: '🌀', shortcut: '1', color: '#3390ec' },
     { id: 'quantum', label: 'Quantum', icon: '✨', shortcut: '2', color: '#ff3b30' },
     { id: 'fractal', label: 'Fractal', icon: '💎', shortcut: '3', color: '#00ffcc' },
+    { id: 'skeleton', label: 'Flow', icon: '🧘', shortcut: '4', color: '#ffcc00' },
+    { id: 'empty5', label: 'Empty', icon: '⚫', shortcut: '5', color: '#333333' },
+    { id: 'empty6', label: 'Empty', icon: '⚫', shortcut: '6', color: '#333333' },
+    { id: 'empty7', label: 'Empty', icon: '⚫', shortcut: '7', color: '#333333' },
+    { id: 'empty8', label: 'Empty', icon: '⚫', shortcut: '8', color: '#333333' },
+    { id: 'empty9', label: 'Empty', icon: '⚫', shortcut: '9', color: '#333333' },
 ]
 
 export function InstrumentNavigation({ currentInstrument, onSelect }: InstrumentNavigationProps) {
