@@ -50,20 +50,22 @@ export function usePoseTracking() {
             video.muted = true // Prevent feedback
 
             // Hidden video element, or we can show it for debug
+            // Minimal, circular video feedback
             Object.assign(video.style, {
                 position: 'fixed',
                 bottom: '20px',
                 right: '20px',
-                width: '320px',
-                height: '240px',
+                width: '160px',
+                height: '160px',
                 objectFit: 'cover',
                 zIndex: '50',
-                borderRadius: '12px',
-                border: '2px solid #ff3b30',
+                borderRadius: '50%',
+                border: '2px solid #3390ec',
+                boxShadow: '0 0 20px rgba(51, 144, 236, 0.4)',
                 transform: 'scaleX(-1)', // Mirror
                 opacity: '0.8',
                 pointerEvents: 'none',
-                display: 'none' // Hide by default, visualizer will show the result
+                display: 'block'
             })
 
             document.body.appendChild(video)

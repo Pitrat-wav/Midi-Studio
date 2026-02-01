@@ -21,45 +21,42 @@ const CONNECTIONS = [
     [9, 10] // Mouth/Chin
 ]
 
-function Bone({ start, end, intensity }: { start: PoseLandmark, end: PoseLandmark, intensity: number }) {
-    if (!start || !end || (start.visibility < 0.5) || (end.visibility < 0.5)) return null
+// Helper to get position vector
+const getPos = (landmark: PoseLandmark) => {
+    return new THREE.Vector3(
+        (landmark.x - 0.5) * -4, // Reduced scale for cleaner look
+        (0.5 - landmark.y) * 4 + 1.5, // Centered vertically
+        -landmark.z * 2
+    )
+}
 
-    // Map MediaPipe coordinates (0..1, Y down) to ThreeJS world (-5..5, Y up)
-    const p1 = new THREE.Vector3(
-        (start.x - 0.5) * -10, // Mirror X
-        (0.5 - start.y) * 8,
-        -start.z * 5
-    )
-    const p2 = new THREE.Vector3(
-        (end.x - 0.5) * -10,
-        (0.5 - end.y) * 8,
-        -end.z * 5
-    )
+function Bone({ start, end, intensity }: { start: PoseLandmark, end: PoseLandmark, intensity: number }) {
+    // Auto-complete logic in parent, here just render if visible
+    if (!start || !end || (start.visibility < 0.3) || (end.visibility < 0.3)) return null
+
+    const p1 = getPos(start)
+    const p2 = getPos(end)
 
     return (
         <Line
             points={[p1, p2]}
-            color={new THREE.Color().setHSL(0.6 + intensity * 0.4, 1, 0.5)}
-            lineWidth={3 + intensity * 5}
+            color={new THREE.Color().setHSL(0.6, 1, 0.5 + intensity * 0.5)}
+            lineWidth={2 + intensity * 3}
             transparent
-            opacity={0.8}
+            opacity={0.6 + intensity * 0.4}
         />
     )
 }
 
 function Joint({ point, intensity }: { point: PoseLandmark, intensity: number }) {
-    if (!point || point.visibility < 0.5) return null
+    if (!point || point.visibility < 0.3) return null
 
-    const pos = new THREE.Vector3(
-        (point.x - 0.5) * -10,
-        (0.5 - point.y) * 8,
-        -point.z * 5
-    )
+    const pos = getPos(point)
 
     return (
         <mesh position={pos}>
-            <sphereGeometry args={[0.05 + intensity * 0.1, 8, 8]} />
-            <meshBasicMaterial color={new THREE.Color().setHSL(0.1 + intensity * 0.2, 1, 0.5)} />
+            <sphereGeometry args={[0.04 + intensity * 0.04, 16, 16]} />
+            <meshBasicMaterial color={new THREE.Color().setHSL(0.1, 1, 0.8)} />
         </mesh>
     )
 }
@@ -136,13 +133,9 @@ export function SkeletonFlow() {
 
 function HandParticles({ handIndex, poseData, intensity, color }: any) {
     const hand = poseData[handIndex]
-    if (!hand || hand.visibility < 0.5) return null
+    if (!hand || hand.visibility < 0.3) return null
 
-    const pos = new THREE.Vector3(
-        (hand.x - 0.5) * -10,
-        (0.5 - hand.y) * 8,
-        -hand.z * 5
-    )
+    const pos = getPos(hand)
 
     return (
         <mesh position={pos}>
