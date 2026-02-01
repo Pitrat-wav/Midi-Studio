@@ -295,11 +295,6 @@ function App() {
                 <AIPanel />
 
                 {/* Help hint (bottom right) */}
-                {!showOverlay && (
-                    <div className="help-hint">
-                        {activeView === 'VISUALIZER' ? '1-3 Switch / R2 Boost / TAB or Touchpad to Exit' : 'Press H for HUD / ? for Help'}
-                    </div>
-                )}
             </div>
         </ErrorBoundary>
     )

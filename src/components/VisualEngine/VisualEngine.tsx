@@ -4,7 +4,6 @@ import { useVisualStore } from '../../store/visualStore'
 import { FeedbackVortex } from './visualizers/FeedbackVortex'
 import { QuantumParticles } from './visualizers/QuantumParticles'
 import { FractalVision } from './visualizers/FractalVision'
-import { SkeletonFlow } from './visualizers/SkeletonFlow'
 import { Stars, OrbitControls } from '@react-three/drei'
 import { usePoseTracking } from '../../hooks/usePoseTracking'
 
@@ -46,7 +45,6 @@ export function VisualEngine() {
                     {index === 0 && <FeedbackVortex />}
                     {index === 1 && <QuantumParticles />}
                     {index === 2 && <FractalVision />}
-                    {index === 3 && <SkeletonFlow />}
 
                     {/* Abstract lighting for the engine */}
                     <ambientLight intensity={0.1} />
