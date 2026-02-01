@@ -3,11 +3,19 @@ import { Canvas } from '@react-three/fiber'
 import { useVisualStore } from '../../store/visualStore'
 import { FeedbackVortex } from './visualizers/FeedbackVortex'
 import { QuantumParticles } from './visualizers/QuantumParticles'
+import { FractalVision } from './visualizers/FractalVision'
 import { Stars, OrbitControls } from '@react-three/drei'
 
 export function VisualEngine() {
     const index = useVisualStore(s => s.visualizerIndex)
     const intensity = useVisualStore(s => s.globalAudioIntensity)
+
+    const getEngineName = () => {
+        if (index === 0) return 'Feedback Vortex'
+        if (index === 1) return 'Quantum Particles'
+        if (index === 2) return 'Fractal Mirror'
+        return 'Unknown'
+    }
 
     return (
         <div className="visual-engine-container" style={{
@@ -32,6 +40,7 @@ export function VisualEngine() {
 
                     {index === 0 && <FeedbackVortex />}
                     {index === 1 && <QuantumParticles />}
+                    {index === 2 && <FractalVision />}
 
                     {/* Abstract lighting for the engine */}
                     <ambientLight intensity={0.1} />
@@ -55,9 +64,10 @@ export function VisualEngine() {
                 fontSize: '0.8rem',
                 letterSpacing: '4px',
                 textTransform: 'uppercase',
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                textAlign: 'center'
             }}>
-                Visual Engine v1.0 — {index === 0 ? 'Feedback Vortex' : 'Quantum Particles'} — Intensity: {Math.round(intensity * 100)}%
+                Visual Engine v1.1 — {getEngineName()} — Intensity: {Math.round(intensity * 100)}%
             </div>
         </div>
     )

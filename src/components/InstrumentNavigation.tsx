@@ -30,6 +30,7 @@ const VISUALIZERS = [
     { id: 'studio', label: 'Studio', icon: '🏛️', shortcut: '0', color: '#888888' },
     { id: 'feedback', label: 'Vortex', icon: '🌀', shortcut: '1', color: '#3390ec' },
     { id: 'quantum', label: 'Quantum', icon: '✨', shortcut: '2', color: '#ff3b30' },
+    { id: 'fractal', label: 'Fractal', icon: '💎', shortcut: '3', color: '#00ffcc' },
 ]
 
 export function InstrumentNavigation({ currentInstrument, onSelect }: InstrumentNavigationProps) {
