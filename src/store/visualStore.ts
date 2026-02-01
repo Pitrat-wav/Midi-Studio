@@ -89,6 +89,8 @@ interface VisualState {
     setStatus: (msg: string | null) => void
     toggleHelp: () => void
     toggleGamepadHelp: () => void
+    micEnabled: boolean
+    toggleMic: () => void
 
     // Background
     backgroundPreset: number
@@ -123,6 +125,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     statusMessage: null,
     showHelp: false,
     showGamepadHelp: false,
+    micEnabled: false,
     focusInstrument: null,
     conditions: {
         temperature: 20,
@@ -231,6 +234,7 @@ export const useVisualStore = create<VisualState>((set) => ({
 
     toggleHelp: () => set((state) => ({ showHelp: !state.showHelp })),
     toggleGamepadHelp: () => set((state) => ({ showGamepadHelp: !state.showGamepadHelp })),
+    toggleMic: () => set((state) => ({ micEnabled: !state.micEnabled })),
 
     decay: () => set((state) => {
         // Slow decay for energy, fast for triggers

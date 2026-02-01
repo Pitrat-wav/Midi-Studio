@@ -48,6 +48,8 @@ type MIDICallback = (event: MIDIEventData) => void
 class AudioVisualBridgeClass {
     private analyser: Tone.Analyser | null = null
     private waveformAnalyser: Tone.Analyser | null = null
+    private micAnalyser: Tone.Analyser | null = null
+    private mic: Tone.UserMedia | null = null
     private visualCallbacks: Map<string, VisualCallback> = new Map()
     private midiCallbacks: Map<string, MIDICallback> = new Map()
     private pulses: Record<string, number> = {
@@ -102,9 +104,14 @@ class AudioVisualBridgeClass {
             // Waveform analyser для визуализации волны (256 samples)
             this.waveformAnalyser = new Tone.Analyser('waveform', 256)
 
+            // Анализатор для микрофона
+            this.micAnalyser = new Tone.Analyser('fft', 512)
+            this.mic = new Tone.UserMedia()
+
             // Подключаем к главному выходу
             Tone.getDestination().connect(this.analyser)
             Tone.getDestination().connect(this.waveformAnalyser)
+            this.mic.connect(this.micAnalyser)
 
             this.isInitialized = true
             this.startUpdateLoop()
@@ -115,16 +122,37 @@ class AudioVisualBridgeClass {
         }
     }
 
+    async toggleMic(enabled: boolean) {
+        if (!this.mic) return
+        if (enabled) {
+            try {
+                await this.mic.open()
+                console.log('🎤 Microphone opened')
+            } catch (e) {
+                console.error('🎤 Mic access denied', e)
+                useVisualStore.getState().toggleMic() // Reset store state if failed
+            }
+        } else {
+            await this.mic.close()
+            console.log('🎤 Microphone closed')
+        }
+    }
+
     /**
      * Основной цикл обновления (RAF)
      * Обновляет FFT данные и отправляет их всем подписчикам
      */
     private startUpdateLoop() {
         const update = () => {
-            if (!this.analyser || !this.waveformAnalyser) return
+            if (!this.analyser || !this.waveformAnalyser || !this.micAnalyser) return
 
-            // Получаем FFT и waveform данные
-            const fftData = this.analyser.getValue() as Float32Array
+            const micEnabled = useVisualStore.getState().micEnabled
+
+            // Получаем FFT данные (либо с выхода, либо с микрофона)
+            const fftData = micEnabled
+                ? (this.micAnalyser.getValue() as Float32Array)
+                : (this.analyser.getValue() as Float32Array)
+
             const waveformData = this.waveformAnalyser.getValue() as Float32Array
 
             if (!fftData || !waveformData) return

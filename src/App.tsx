@@ -40,6 +40,7 @@ import { ReferenceOverlay } from './components/HUD/ReferenceOverlay'
 import { GamepadOverlay } from './components/HUD/GamepadOverlay'
 import { GraphEngine } from './logic/GraphEngine'
 import { VisualEngine } from './components/VisualEngine/VisualEngine'
+import { launchControlXL } from './lib/controllers/LaunchControlXL'
 import './App.css'
 
 function App() {
@@ -86,6 +87,15 @@ function App() {
     // Pyodide Bridge
     useCompositionManager()
 
+    const micEnabled = useVisualStore(s => s.micEnabled)
+
+    // Sync Microphone State
+    useEffect(() => {
+        if (isInitialized) {
+            AudioVisualBridge.toggleMic(micEnabled)
+        }
+    }, [micEnabled, isInitialized])
+
     // Initialize Audio Engine
     const handleInit = async () => {
         try {
@@ -95,12 +105,13 @@ function App() {
         }
     }
 
-    // Initialize Gamepad Manager & Graph Engine
+    // Initialize Gamepad Manager & MIDI Controllers & Graph Engine
     useEffect(() => {
         GamepadManager.init()
-        GraphEngine.init()
+        launchControlXL.init()
+        GraphEngine.init(edges) // Initialize graph with current edges
         return () => GraphEngine.dispose()
-    }, [])
+    }, [edges])
 
     // Initialize AudioVisualBridge when audio engine is ready
     useEffect(() => {
