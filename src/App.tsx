@@ -242,14 +242,17 @@ function App() {
                 {/* Arrangement Timeline Editor */}
                 {activeView === 'ARRANGE' && <ArrangementEditor onClose={() => cycleView()} />}
 
+                {/* AI Generation Tools */}
+                <AIPanel />
+
+                {/* CMD+K Search HUD */}
+                <InstrumentSearch onSelect={setFocusedInstrument} />
+
                 {/* Instrument Navigation Bar (Holographic Quick-Bar) */}
                 <InstrumentNavigation
                     currentInstrument={focusedInstrument}
                     onSelect={setFocusedInstrument}
                 />
-
-                {/* CMD+K Search HUD */}
-                <InstrumentSearch onSelect={setFocusedInstrument} />
 
                 {/* 2D HUDs */}
                 {focusedInstrument === 'bass' && <BassScreen />}

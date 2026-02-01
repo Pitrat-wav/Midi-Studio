@@ -41,18 +41,20 @@ export function InstrumentNavigation({ currentInstrument, onSelect }: Instrument
 
     if (appView === 'VISUALIZER') {
         return (
-            <div className="instrument-navigation">
-                <div className="nav-buttons visualizer-nav">
+            <div className="instrument-navigation" style={{ pointerEvents: 'none' }}>
+                <div className="nav-buttons visualizer-nav" style={{ pointerEvents: 'auto' }}>
                     {VISUALIZERS.map((v, i) => {
-                        const isActive = (v.id === 'studio' && appView !== 'VISUALIZER') ||
-                            (v.id !== 'studio' && visualizerIndex === i - 1)
+                        const isStudio = v.id === 'studio'
+                        const isActive = isStudio ? false : (visualizerIndex === i - 1)
 
                         return (
                             <button
                                 key={v.id}
                                 className={`nav-button ${isActive ? 'active' : ''}`}
-                                onClick={() => {
-                                    if (v.id === 'studio') setAppView('3D')
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    if (isStudio) setAppView('3D')
                                     else setVisualizerIndex(i - 1)
                                 }}
                                 style={{
@@ -71,8 +73,8 @@ export function InstrumentNavigation({ currentInstrument, onSelect }: Instrument
     }
 
     return (
-        <div className="instrument-navigation">
-            <div className="nav-buttons">
+        <div className="instrument-navigation" style={{ pointerEvents: 'none' }}>
+            <div className="nav-buttons" style={{ pointerEvents: 'auto' }}>
                 {INSTRUMENTS.map((instrument) => {
                     const isActive = currentInstrument === instrument.id
 
@@ -80,7 +82,11 @@ export function InstrumentNavigation({ currentInstrument, onSelect }: Instrument
                         <button
                             key={instrument.id || 'all'}
                             className={`nav-button ${isActive ? 'active' : ''}`}
-                            onClick={() => onSelect(instrument.id)}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                onSelect(instrument.id)
+                            }}
                             style={{
                                 '--button-color': instrument.color
                             } as React.CSSProperties}
