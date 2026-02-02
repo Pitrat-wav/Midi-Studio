@@ -134,15 +134,30 @@ export const CustomNode = memo(({ id, data, selected }: NodeProps<NodeData>) => 
                     }
 
                     if (type === 'number') {
+                        let min = 0, max = 1, step = 0.01;
+                        if (key === 'frequency' || key === 'freq') { min = 20; max = 5000; step = 1; }
+                        else if (key === 'detune') { min = -100; max = 100; step = 1; }
+                        else if (key === 'bits') { min = 1; max = 16; step = 1; }
+                        else if (key === 'semi') { min = -24; max = 24; step = 1; }
+                        else if (key === 'oct') { min = -4; max = 4; step = 1; }
+                        else if (key === 'steps' || key === 'pulses' || key === 'max') { min = 1; max = 64; step = 1; }
+                        else if (key === 'rotate') { min = 0; max = 64; step = 1; }
+                        else if (key === 'decay') { min = 0.1; max = 10; step = 0.1; }
+                        else if (key === 'gain') { min = 0; max = 4; step = 0.05; }
+                        else if (key === 'threshold') { min = -60; max = 0; step = 1; }
+                        else if (key === 'ratio') { min = 1; max = 20; step = 1; }
+                        else if (key === 'pan') { min = -1; max = 1; step = 0.01; }
+
                         return (
                             <div key={key} className="param-row">
                                 <label>{key}</label>
                                 <input
                                     type="range"
-                                    min={0} max={key === 'frequency' ? 2000 : 1} step={key === 'frequency' ? 10 : 0.01}
-                                    defaultValue={value}
+                                    min={min} max={max} step={step}
+                                    value={value as number}
                                     onChange={(e) => updateParam(id, key, parseFloat(e.target.value))}
                                 />
+                                <span className="param-value-small">{String(value)}</span>
                             </div>
                         )
                     }
@@ -151,7 +166,7 @@ export const CustomNode = memo(({ id, data, selected }: NodeProps<NodeData>) => 
                         return (
                             <div key={key} className="param-row full">
                                 <textarea
-                                    defaultValue={value}
+                                    defaultValue={value as string}
                                     placeholder="Enter prompt..."
                                     className="param-text-area"
                                     onChange={(e) => updateParam(id, key, e.target.value)}
@@ -186,31 +201,7 @@ export const CustomNode = memo(({ id, data, selected }: NodeProps<NodeData>) => 
                         )
                     }
 
-                    // Array Param (Sequencer Steps)
-                    if (Array.isArray(value)) {
-                        return (
-                            <div key={key} className="param-group">
-                                <label>STEPS</label>
-                                <div className="seq-steps">
-                                    {value.map((step: any, i: number) => (
-                                        <div key={i} className="step-slider">
-                                            <input
-                                                type="range"
-                                                min={0} max={127}
-                                                value={step.note || 60}
-                                                onChange={(e) => {
-                                                    const newSteps = [...value]
-                                                    newSteps[i] = { ...newSteps[i], note: parseInt(e.target.value) }
-                                                    updateParam(id, key, newSteps)
-                                                }}
-                                            />
-                                            <div className="step-val">{step.note}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )
-                    }
+
 
                     return null
                 })}

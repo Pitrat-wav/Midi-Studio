@@ -42,6 +42,7 @@ import { GamepadOverlay } from './components/HUD/GamepadOverlay'
 import { GraphEngine } from './logic/GraphEngine'
 import { VisualEngine } from './components/VisualEngine/VisualEngine'
 import { launchControlXL } from './lib/controllers/LaunchControlXL'
+import { VisualizerShop } from './components/VisualEngine/VisualizerShop'
 import './App.css'
 
 function App() {
@@ -266,12 +267,15 @@ function App() {
                 {/* CMD+K Search HUD */}
                 <InstrumentSearch onSelect={setFocusedInstrument} />
                 <VisualizerSearch />
+                <VisualizerShop />
 
                 {/* Instrument Navigation Bar (Holographic Quick-Bar) */}
-                <InstrumentNavigation
-                    currentInstrument={focusedInstrument}
-                    onSelect={setFocusedInstrument}
-                />
+                {activeView !== 'NODES' && activeView !== 'ARRANGE' && activeView !== 'LIVE' && (
+                    <InstrumentNavigation
+                        currentInstrument={focusedInstrument}
+                        onSelect={setFocusedInstrument}
+                    />
+                )}
 
                 {/* Gamepad Toggle Button (Bottom Left) */}
                 <button
@@ -292,9 +296,6 @@ function App() {
                 {(focusedInstrument === 'sequencer' || focusedInstrument === 'ml185') && <SequencerScreen />}
                 {focusedInstrument === 'drone' && <DroneScreen />}
                 {focusedInstrument === 'master' && <MasterScreen />}
-
-                {/* AI Generation Tools */}
-                <AIPanel />
 
                 {/* Help hint (bottom right) */}
             </div>

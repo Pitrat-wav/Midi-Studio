@@ -104,33 +104,46 @@
     border-radius: 3px;
 }
 
+.context-switcher {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
 .btn-context {
     flex: 1;
-    background: #222;
+    background: #1a1a1f;
     border: 1px solid #333;
-    color: #666;
-    font-size: 10px;
-    padding: 6px;
+    color: #888;
+    font-size: 9px;
+    padding: 10px 4px;
     cursor: pointer;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 5px;
-    border-radius: 4px;
-    transition: all 0.2s;
+    gap: 4px;
+    border-radius: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .btn-context:hover {
-    background: #333;
-    color: #eee;
+    background: #222;
+    color: #fff;
+    border-color: #555;
+    transform: translateY(-2px);
 }
 
 .btn-context.active {
     background: #eee;
     color: #000;
     border-color: #fff;
-    font-weight: 700;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    font-weight: 800;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15);
 }
 
 /* CANVAS */
@@ -159,6 +172,167 @@
 .react-flow-dark .react-flow__controls-button:hover {
     background: #222;
     fill: #fff;
+}
+
+/* NODE INSPECTOR */
+.node-inspector-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5000;
+}
+
+.node-inspector-panel {
+    width: 450px;
+    background: #15151a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: inspector-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes inspector-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.node-inspector-panel header {
+    padding: 15px 20px;
+    background: #1a1a22;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+}
+
+.title-group h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.title-group .id {
+    color: #555;
+    font-size: 10px;
+    margin-left: 5px;
+}
+
+.close-x {
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+}
+
+.close-x:hover {
+    color: #fff;
+}
+
+.inspector-content {
+    padding: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.info-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #222;
+    border: 1px solid #444;
+    border-radius: 4px;
+    font-size: 9px;
+    color: #888;
+    margin-bottom: 20px;
+}
+
+.params-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.inspector-param-row {
+    background: #0d0d12;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #222;
+}
+
+.param-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.param-info label {
+    font-size: 11px;
+    color: #aaa;
+    text-transform: uppercase;
+}
+
+.val-text {
+    font-size: 11px;
+    color: #0f0;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.inspector-param-row input[type="range"] {
+    width: 100%;
+}
+
+.inspector-script-hint {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 165, 0, 0.05);
+    border: 1px dashed rgba(255, 165, 0, 0.3);
+    border-radius: 8px;
+    font-size: 11px;
+    color: #ffa500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.node-inspector-panel footer {
+    padding: 15px 20px;
+    background: #111;
+    border-top: 1px solid #222;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-secondary {
+    background: #eee;
+    color: #000;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
 .close-btn {

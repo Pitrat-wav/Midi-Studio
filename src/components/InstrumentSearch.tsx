@@ -42,7 +42,7 @@ export function InstrumentSearch({ onSelect }: InstrumentSearchProps) {
         const handleKeyDown = (e: KeyboardEvent) => {
             // Toggle Search: Cmd+K or /
             const appView = useVisualStore.getState().appView
-            if ((e.metaKey && e.key === 'k') || (e.key === '/' && !isOpen && appView !== 'VISUALIZER')) {
+            if ((e.metaKey && e.key === 'k') || (e.key === '/' && !isOpen && appView !== 'VISUALIZER' && appView !== 'NODES')) {
                 e.preventDefault()
                 setIsOpen(prev => !prev)
                 setQuery('')

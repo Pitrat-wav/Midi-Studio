@@ -5,7 +5,7 @@
  */
 
 import type { InstrumentType } from '../lib/SpatialLayout'
-import { useVisualStore } from '../store/visualStore'
+import { useVisualStore, VISUALIZER_REGISTRY } from '../store/visualStore'
 import './InstrumentNavigation.css'
 
 interface InstrumentNavigationProps {
@@ -26,50 +26,66 @@ const INSTRUMENTS = [
     { id: 'buchla' as InstrumentType, label: 'Buchla', icon: '🧬', shortcut: '9', color: '#3390ec' },
 ]
 
-const VISUALIZERS = [
-    { id: 'studio', label: 'Studio', icon: '🏛️', shortcut: '0', color: '#888888' },
-    { id: 'feedback', label: 'Vortex', icon: '🌀', shortcut: '1', color: '#3390ec' },
-    { id: 'quantum', label: 'Quantum', icon: '✨', shortcut: '2', color: '#ff3b30' },
-    { id: 'fractal', label: 'Fractal', icon: '💎', shortcut: '3', color: '#00ffcc' },
-    { id: 'neon', label: 'Weave', icon: '🕸️', shortcut: '4', color: '#00ffff' },
-    { id: 'plasma', label: 'Plasma', icon: '🔮', shortcut: '5', color: '#ff00ff' },
-    { id: 'liquid', label: 'Liquid', icon: '💧', shortcut: '6', color: '#888888' },
-    { id: 'gravity', label: 'Well', icon: '🕳️', shortcut: '7', color: '#8888ff' },
-    { id: 'tunnel', label: 'Tunnel', icon: '🚇', shortcut: '8', color: '#ffcc00' },
-    { id: 'kaleido', label: 'Sphere', icon: '💠', shortcut: '9', color: '#ff00ff' },
-]
-
 export function InstrumentNavigation({ currentInstrument, onSelect }: InstrumentNavigationProps) {
     const appView = useVisualStore(s => s.appView)
     const setAppView = useVisualStore(s => s.setAppView)
     const visualizerIndex = useVisualStore(s => s.visualizerIndex)
     const setVisualizerIndex = useVisualStore(s => s.setVisualizerIndex)
+    const visualizerQuickSlots = useVisualStore(s => s.visualizerQuickSlots)
+    const setQuickSlot = useVisualStore(s => s.setQuickSlot)
 
     if (appView === 'VISUALIZER') {
         return (
             <div className="instrument-navigation" style={{ pointerEvents: 'none' }}>
                 <div className="nav-buttons visualizer-nav" style={{ pointerEvents: 'auto' }}>
-                    {VISUALIZERS.map((v, i) => {
-                        const isStudio = v.id === 'studio'
-                        const isActive = isStudio ? false : (visualizerIndex === i - 1)
+                    {/* Home/Studio Button */}
+                    <button
+                        className="nav-button"
+                        onClick={() => setAppView('3D')}
+                        style={{ '--button-color': '#888888' } as any}
+                    >
+                        <span className="nav-icon">🏛️</span>
+                        <span className="nav-label">Studio</span>
+                        <span className="nav-shortcut">0</span>
+                    </button>
+
+                    {visualizerQuickSlots.map((vid, i) => {
+                        const v = VISUALIZER_REGISTRY.find(item => item.id === vid) || VISUALIZER_REGISTRY[0]
+                        const isActive = visualizerIndex === v.id
 
                         return (
                             <button
-                                key={v.id}
+                                key={`slot-${i}`}
                                 className={`nav-button ${isActive ? 'active' : ''}`}
+                                onDragOver={(e) => {
+                                    e.preventDefault()
+                                    e.currentTarget.classList.add('drag-over')
+                                }}
+                                onDragLeave={(e) => {
+                                    e.currentTarget.classList.remove('drag-over')
+                                }}
+                                onDrop={(e) => {
+                                    e.preventDefault()
+                                    e.currentTarget.classList.remove('drag-over')
+                                    const data = e.dataTransfer.getData('visualizerId')
+                                    if (data) {
+                                        setQuickSlot(i, parseInt(data))
+                                        useVisualStore.getState().setStatus(`SLOT ${i + 1} UPDATED: ${v.name}`)
+                                    }
+                                }}
                                 onClick={(e) => {
                                     e.preventDefault()
                                     e.stopPropagation()
-                                    if (isStudio) setAppView('3D')
-                                    else setVisualizerIndex(i - 1)
+                                    setVisualizerIndex(v.id)
                                 }}
                                 style={{
-                                    '--button-color': v.color
+                                    '--button-color': '#3390ec',
+                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                                 } as React.CSSProperties}
                             >
                                 <span className="nav-icon">{v.icon}</span>
-                                <span className="nav-label">{v.label}</span>
-                                <span className="nav-shortcut">{v.shortcut}</span>
+                                <span className="nav-label">{v.name.split(' ')[0]}</span>
+                                <span className="nav-shortcut">{i + 1}</span>
                             </button>
                         )
                     })}

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { withHistory } from './middleware/withHistory'
 import { ChordType } from '../logic/Scaler'
 import { SnakePattern } from '../logic/GridWalker'
 import { BassStep } from '../logic/StingGenerator'
@@ -49,7 +50,7 @@ interface DrumState {
     triggerHiHat: () => void
 }
 
-export const useDrumStore = create<DrumState>((set) => ({
+export const useDrumStore = create<DrumState>()(withHistory((set) => ({
     kick: { steps: 16, pulses: 4, rotate: 0, decay: 0.5, pitch: 0.5, volume: 0, muted: false },
     snare: { steps: 16, pulses: 0, rotate: 0, decay: 0.5, pitch: 0.5, volume: -5, muted: false },
     hihat: { steps: 16, pulses: 8, rotate: 0, decay: 0.5, pitch: 0.5, volume: -10, muted: false },
@@ -89,7 +90,7 @@ export const useDrumStore = create<DrumState>((set) => ({
     triggerKick: () => { /* Logic is handled by AudioVisualBridge on MIDI event or directly by local triggers */ },
     triggerSnare: () => { },
     triggerHiHat: () => { }
-}))
+}), { storeName: 'drumStore' }))
 
 
 // Pad Store
@@ -149,7 +150,7 @@ interface BassState {
     setParams: (params: Partial<BassState>) => void
 }
 
-export const useBassStore = create<BassState>((set) => ({
+export const useBassStore = create<BassState>()(withHistory((set) => ({
     activeInstrument: 'acid',
     density: 0.5,
     type: 0.2,
@@ -180,7 +181,7 @@ export const useBassStore = create<BassState>((set) => ({
     setPattern: (pattern) => set({ pattern }),
     togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
     setParams: (params) => set((state) => ({ ...state, ...params }))
-}))
+}), { storeName: 'bassStore', ignorePaths: ['lastNoteFrequency'] }))
 
 // Sequencer Store (ML-185 + Snake)
 export interface Stage {
@@ -260,7 +261,7 @@ const initialSnakeGrid: SnakeCell[] = [60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 7
     active: true
 }))
 
-export const useSequencerStore = create<SequencerState>((set) => ({
+export const useSequencerStore = create<SequencerState>()(withHistory((set) => ({
     stages: initialStages,
     snakePattern: 'linear',
     snakeGrid: initialSnakeGrid,
@@ -325,6 +326,9 @@ export const useSequencerStore = create<SequencerState>((set) => ({
     lastChordNotes: [],
     setSmartChordParam: (params) => set((state) => ({ ...state, ...params })),
     setLastChordNotes: (lastChordNotes) => set({ lastChordNotes })
+}), {
+    storeName: 'sequencerStore',
+    ignorePaths: ['currentStageIndex', 'currentPulseInStage', 'currentSnakeIndex', 'snakeX', 'snakeY', 'lastChordNotes']
 }))
 
 // Modulation Store
@@ -585,7 +589,7 @@ if (!HARM_PRESETS || HARM_PRESETS.length === 0) {
     console.log('HARM_PRESETS initialized with', HARM_PRESETS.length, 'presets')
 }
 
-export const useHarmStore = create<HarmState>((set) => ({
+export const useHarmStore = create<HarmState>()(withHistory((set) => ({
     ...(HARM_PRESETS[0] || BASE_PRESET),
     grid: Array.from({ length: 16 }, (_, i) => ({
         note: 48 + (i % 12),
@@ -611,7 +615,7 @@ export const useHarmStore = create<HarmState>((set) => ({
     })),
     togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
     loadPreset: (preset) => set({ ...preset })
-}))
+}), { storeName: 'harmStore', ignorePaths: ['currentStep', 'currentDroneStep'] }))
 
 export const useLfoStore = create<LfoState>((set) => ({
     enabled: false,

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useAudioStore } from '../store/audioStore'
 import { useBassStore, useDrumStore, usePadStore } from '../store/instrumentStore'
 import { useVisualStore } from '../store/visualStore'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { InstrumentType } from '../lib/SpatialLayout'
 import * as Tone from 'tone'
 
@@ -16,6 +17,7 @@ export function KeyboardController({
     onToggleFAQ,
     showOverlay
 }: KeyboardControllerProps) {
+    useKeyboardShortcuts()
     // We do NOT call useAudioStore() here to avoid re-renders on every step.
     // Instead we access state directly in the event handler.
 
@@ -67,10 +69,9 @@ export function KeyboardController({
                 // --- NAVIGATION / VISUALIZER SWITCH ---
                 case 'Digit0':
                     e.preventDefault()
-                    if (visual.appView === 'VISUALIZER') {
-                        // Maybe reset or something?
-                    } else {
-                        visual.setFocusInstrument(null)
+                    visual.toggleVisualizerShop()
+                    if (visual.showVisualizerShop) {
+                        visual.setStatus('VISUALIZER GALLERY OPENED')
                     }
                     break
                 case 'Digit1':

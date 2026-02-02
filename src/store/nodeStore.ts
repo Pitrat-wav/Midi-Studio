@@ -2,451 +2,196 @@ import { create } from 'zustand'
 import {
     Connection,
     Edge,
-    EdgeChange,
     Node,
-    NodeChange,
     addEdge,
     OnNodesChange,
     OnEdgesChange,
-    OnConnect,
     applyNodeChanges,
-    applyEdgeChanges
+    applyEdgeChanges,
 } from 'reactflow'
 
-// Grid Contexts: Defines the environment the nodes are running in
-export type GridContext = 'poly' | 'fx' | 'note'
-
-export type NodeCategory = 'audio' | 'logic' | 'note' | 'io' | 'script' | 'ai' | 'visual'
-
 export type NodeType =
-    // Audio (Stereo by default)
-    | 'audio_osc' | 'audio_filter' | 'audio_env' | 'audio_vca' | 'audio_mixer' | 'audio_spectral' | 'audio_lfo' | 'audio_delay' | 'audio_reverb' | 'audio_noise'
+    // Audio Core
+    | 'audio_osc' | 'audio_lfo' | 'audio_noise' | 'audio_filter' | 'audio_env' | 'audio_vca' | 'audio_mixer'
+    | 'audio_delay' | 'audio_reverb' | 'audio_spectral' | 'audio_phaser' | 'audio_bitcrusher' | 'audio_compressor' | 'audio_pan'
     // Logic
-    | 'logic_math' | 'logic_clock' | 'logic_gate' | 'logic_seq' | 'logic_compare' | 'logic_random' | 'logic_value' | 'logic_op' | 'logic_sample_hold' | 'logic_euclidean'
-    // Note (MIDI/Event)
-    | 'note_quantizer' | 'note_scale' | 'note_chord' | 'note_arp' | 'note_delay'
-    // FX
-    | 'fx_dist' | 'fx_delay' | 'fx_chorus' | 'fx_reverb'
-    // Inst
+    | 'logic_value' | 'logic_op' | 'logic_clock' | 'logic_seq' | 'logic_math' | 'logic_gate' | 'logic_compare' | 'logic_random' | 'logic_sample_hold' | 'logic_counter' | 'logic_toggle' | 'logic_combine' | 'logic_bitwise'
+    // Note Processors
+    | 'note_quantizer' | 'note_scale' | 'note_chord' | 'note_arp' | 'note_delay' | 'note_transpose' | 'note_velocity'
+    // Instruments & IO
     | 'inst_kick' | 'inst_snare' | 'inst_hat'
-    // IO
     | 'io_audio_in' | 'io_audio_out' | 'io_midi_in' | 'io_midi_out'
-    // Visual
-    | 'visual_scope'
-    // Advanced
-    | 'script_js' | 'ai_gen' | 'ai_chat'
+    // Advanced/AI
+    | 'script_js' | 'ai_gen' | 'ai_chat' | 'visual_scope' | 'visual_spectrum' | 'logic_euclidean'
+    | 'fx_echo' | 'fx_graindelay' | 'fx_saturator' | 'fx_limiter' | 'fx_platereverb' | 'fx_reduce' | 'fx_phaser_pro' | 'fx_flanger' | 'fx_overdrive' | 'fx_hybrid' | 'fx_filterdelay' | 'fx_delay' | 'fx_reverb' | 'fx_chorus' | 'fx_dist'
+    | 'fx_transient' | 'fx_env_follower' | 'fx_freq_shifter' | 'fx_exciter' | 'fx_formant' | 'fx_subgen' | 'fx_autopan' | 'fx_spectral_blur'
+    | 'adv_granular' | 'adv_fm_op' | 'adv_wavefolder' | 'adv_chaos' | 'adv_convolver'
+    | 'adv_vocoder' | 'adv_spectral_freeze' | 'adv_clock_div' | 'adv_bernoulli' | 'adv_turing'
+    | 'adv_prob_seq' | 'adv_math_exp' | 'adv_cv_scope' | 'adv_ai_melody' | 'adv_macro'
+    // Generic Library Nodes (Consolidated)
+    | 'lib_bass' | 'lib_lead' | 'lib_pad' | 'lib_keys' | 'lib_perc' | 'lib_fx_unit' | 'lib_drum_kit';
 
 export interface NodePort {
     id: string
     label: string
-    type: 'audio' | 'signal' | 'data' | 'phase' // Added Phase for complex modulation
+    type: 'audio' | 'signal' | 'data' | 'phase'
 }
 
 export interface NodeData {
     label: string
     type: NodeType
-    category: NodeCategory
+    category: 'audio' | 'logic' | 'note' | 'io' | 'visual' | 'script' | 'ai'
     inputs: NodePort[]
     outputs: NodePort[]
     params: Record<string, any>
-    script?: string // For js nodes
-    // React Flow specific
-    [key: string]: any
+    script?: string
 }
 
-interface NodeState {
-    context: GridContext
+export interface NodeState {
     nodes: Node<NodeData>[]
     edges: Edge[]
-
-    // React Flow handlers
+    context: 'poly' | 'fx' | 'note'
     onNodesChange: OnNodesChange
     onEdgesChange: OnEdgesChange
-    onConnect: OnConnect
-
-    // Custom Actions
-    setContext: (context: GridContext) => void
+    onConnect: (connection: Connection) => void
     addNode: (type: NodeType, x: number, y: number) => void
     removeNode: (id: string) => void
     updateNodeParam: (id: string, param: string, value: any) => void
     updateNodeScript: (id: string, code: string) => void
-
-    // Device Management
-    loadDevice: (deviceJson: string) => void
+    setContext: (context: 'poly' | 'fx' | 'note') => void
+    loadDevice: (json: string) => void
     saveDevice: () => string
-
     setNodes: (nodes: Node<NodeData>[]) => void
     setEdges: (edges: Edge[]) => void
 }
 
-const uuid = () => Math.random().toString(36).substring(2, 9)
+export const NODE_DEFS: Record<string, Partial<NodeData>> = {
+    // AUDIO CORE
+    'audio_osc': { label: 'Oscillator Pro', category: 'audio', params: { frequency: 440, type: 'sine', detune: 0 }, inputs: [{ id: 'fm', label: 'FM', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'audio_lfo': { label: 'LFO Pro', category: 'audio', params: { frequency: 1, type: 'sine', depth: 1 }, outputs: [{ id: 'out', label: 'Out', type: 'signal' }] },
+    'audio_noise': { label: 'Noise Gen', category: 'audio', params: { type: 'white' }, outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'audio_filter': { label: 'Filter Pro', category: 'audio', params: { frequency: 2000, Q: 1, type: 'lowpass' }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'audio_env': { label: 'Envelope ADSR', category: 'audio', params: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 0.8 }, inputs: [{ id: 'gate', label: 'Gate', type: 'signal' }], outputs: [{ id: 'out', label: 'Out', type: 'signal' }] },
+    'audio_vca': { label: 'VCA', category: 'audio', params: { gain: 1 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }, { id: 'gain', label: 'Gain', type: 'signal' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'audio_mixer': { label: 'Mixer', category: 'audio', params: { ch1: 0.7, ch2: 0.7 }, inputs: [{ id: 'in1', label: '1', type: 'audio' }, { id: 'in2', label: '2', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'audio_compressor': { label: 'Compressor', category: 'audio', params: { threshold: -20, ratio: 4 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'audio_bitcrusher': { label: 'Bitcrusher', category: 'audio', params: { bits: 8 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'audio_phaser': { label: 'Phaser Basic', category: 'audio', params: { rate: 0.5 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'audio_pan': { label: 'Pan', category: 'audio', params: { pan: 0 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
 
-// Expanded Node Definitions
-const NODE_DEFS: Record<NodeType, Partial<NodeData>> = {
-    // AUDIO (Stereo)
-    'audio_osc': {
-        label: 'Oscillator', category: 'audio',
-        inputs: [{ id: 'freq', label: 'Freq', type: 'signal' }, { id: 'fm', label: 'FM', type: 'audio' }, { id: 'phase', label: 'Phase', type: 'phase' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }],
-        params: { type: 'sine', frequency: 440, detune: 0, stereo_spread: 0 }
-    },
-    'audio_lfo': {
-        label: 'LFO', category: 'audio',
-        inputs: [{ id: 'freq', label: 'Rate', type: 'signal' }, { id: 'reset', label: 'Reset', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'signal' }],
-        params: { type: 'sine', frequency: 1, min: -1, max: 1 }
-    },
-    'audio_noise': {
-        label: 'Noise', category: 'audio',
-        inputs: [],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }],
-        params: { type: 'white' } // white, pink, brown
-    },
-    'audio_filter': {
-        label: 'Filter', category: 'audio',
-        inputs: [{ id: 'in', label: 'In', type: 'audio' }, { id: 'cutoff', label: 'Cutoff', type: 'signal' }, { id: 'q', label: 'Q', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }],
-        params: { type: 'lowpass', frequency: 1000, Q: 1 }
-    },
-    'audio_env': {
-        label: 'ADSR', category: 'audio',
-        inputs: [{ id: 'gate', label: 'Gate', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Env', type: 'signal' }],
-        params: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 1.0 }
-    },
-    'audio_vca': {
-        label: 'VCA', category: 'audio',
-        inputs: [{ id: 'in', label: 'In', type: 'audio' }, { id: 'cv', label: 'Gain', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }],
-        params: { gain: 0.0, pan: 0.0 }
-    },
-    'audio_mixer': {
-        label: 'Mixer (2ch)', category: 'audio',
-        inputs: [{ id: 'in1', label: 'In 1', type: 'audio' }, { id: 'in2', label: 'In 2', type: 'audio' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }],
-        params: { mix: 0.5 }
-    },
-    'audio_delay': {
-        label: 'Delay', category: 'audio',
-        inputs: [{ id: 'in', label: 'In', type: 'audio' }, { id: 'time', label: 'Time', type: 'signal' }, { id: 'feed', label: 'Fdbk', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }],
-        params: { delayTime: 0.25, feedback: 0.4, wet: 0.5 }
-    },
-    'audio_reverb': {
-        label: 'Reverb', category: 'audio',
-        inputs: [{ id: 'in', label: 'In', type: 'audio' }, { id: 'size', label: 'Size', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }],
-        params: { decay: 1.5, preDelay: 0.01, wet: 0.5 }
-    },
-    'audio_spectral': {
-        label: 'Spectral Filter', category: 'audio',
-        inputs: [{ id: 'in', label: 'In', type: 'audio' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }],
-        params: { bin_size: 512, shift: 0 }
-    },
+    // FX RACK
+    'fx_limiter': { label: 'Limiter', category: 'audio', params: { threshold: -1 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_transient': { label: 'Transient Shaper', category: 'audio', params: { attack: 0, sustain: 0 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_env_follower': { label: 'Env Follower', category: 'audio', params: { attack: 0.01, release: 0.1 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'cv', label: 'CV Out', type: 'signal' }] },
+
+    'fx_platereverb': { label: 'Plate Reverb', category: 'audio', params: { decay: 3 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_hybrid': { label: 'Hybrid Reverb', category: 'audio', params: { blend: 0.5 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_echo': { label: 'Digital Echo', category: 'audio', params: { delayTime: 0.25, feedback: 0.5 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_graindelay': { label: 'Grain Delay', category: 'audio', params: { grainSize: 0.1, feedback: 0.4 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_filterdelay': { label: 'Filter Delay', category: 'audio', params: { delayTime: 0.3, feedback: 0.6 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_reverb': { label: 'Reverb Pro', category: 'audio', params: { size: 0.7, damp: 3000 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_delay': { label: 'Simple Delay', category: 'audio', params: { delayTime: 0.4 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_autopan': { label: 'Auto Pan Pro', category: 'audio', params: { rate: 0.5, depth: 0.8 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_spectral_blur': { label: 'Spectral Blur', category: 'audio', params: { size: 0.5 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+
+    'fx_saturator': { label: 'Saturator', category: 'audio', params: { drive: 0.5 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_overdrive': { label: 'Overdrive', category: 'audio', params: { drive: 0.7 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_dist': { label: 'Saturation', category: 'audio', params: { drive: 0.5 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_reduce': { label: 'Redux (Bit)', category: 'audio', params: { bits: 12 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_exciter': { label: 'Exciter Pro', category: 'audio', params: { amount: 0.5 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_formant': { label: 'Formant Filter', category: 'audio', params: { vowel: 0.5 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_subgen': { label: 'Sub Generator', category: 'audio', params: { amount: 0.7 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_freq_shifter': { label: 'Freq Shifter', category: 'audio', params: { shift: 100 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+
+    'fx_phaser_pro': { label: 'Phaser Pro', category: 'audio', params: { rate: 0.1 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_flanger': { label: 'Flanger', category: 'audio', params: { feedback: 0.6 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'fx_chorus': { label: 'Chorus Pro', category: 'audio', params: { rate: 0.5, depth: 0.3 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
 
     // LOGIC
-    'logic_value': {
-        label: 'Value', category: 'logic',
-        inputs: [],
-        outputs: [{ id: 'out', label: 'Out', type: 'signal' }],
-        params: { value: 1.0 }
-    },
-    'logic_op': {
-        label: 'Math Op', category: 'logic',
-        inputs: [{ id: 'a', label: 'A', type: 'signal' }, { id: 'b', label: 'B', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'signal' }],
-        params: { op: 'add' } // add, sub, mul, div, mod, pow
-    },
-    'logic_clock': {
-        label: 'Clock', category: 'logic',
-        inputs: [],
-        outputs: [{ id: 'pulse', label: 'Pulse', type: 'signal' }, { id: 'phase', label: 'Phase', type: 'phase' }],
-        params: { bpm: 120, div: 4 }
-    },
-    'logic_seq': {
-        label: 'Sequencer (8)', category: 'logic',
-        inputs: [{ id: 'clock', label: 'Clock', type: 'signal' }, { id: 'phase', label: 'Phase', type: 'phase' }], // Phase driven sequencer
-        outputs: [{ id: 'cv', label: 'CV', type: 'signal' }, { id: 'gate', label: 'Gate', type: 'signal' }],
-        params: { steps: Array(8).fill(0).map(() => ({ note: 60, active: true })) }
-    },
-    'logic_math': {
-        label: 'Math Func', category: 'logic',
-        inputs: [{ id: 'in', label: 'In', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'signal' }],
-        params: { func: 'abs' } // abs, floor, ceil, sin, cos
-    },
-    'logic_gate': {
-        label: 'Gate Logic', category: 'logic',
-        inputs: [{ id: 'in', label: 'In', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'signal' }],
-        params: { mode: 'probability', value: 0.5 }
-    },
-    'logic_compare': {
-        label: 'Compare', category: 'logic',
-        inputs: [{ id: 'a', label: 'A', type: 'signal' }, { id: 'b', label: 'B', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Bool', type: 'signal' }],
-        params: { op: '>' }
-    },
-    'logic_random': {
-        label: 'Random', category: 'logic',
-        inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'signal' }],
-        params: { min: 0, max: 1 }
-    },
-    'logic_sample_hold': {
-        label: 'Sample & Hold', category: 'logic',
-        inputs: [{ id: 'in', label: 'In', type: 'signal' }, { id: 'trig', label: 'Trig', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'signal' }],
-        params: {}
-    },
+    'logic_value': { label: 'Constant', category: 'logic', params: { value: 1.0 }, outputs: [{ id: 'out', label: 'Out', type: 'signal' }] },
+    'logic_op': { label: 'Math Op', category: 'logic', params: { op: 'add' }, inputs: [{ id: 'a', label: 'A', type: 'signal' }, { id: 'b', label: 'B', type: 'signal' }], outputs: [{ id: 'out', label: 'Out', type: 'signal' }] },
+    'logic_clock': { label: 'Clock', category: 'logic', params: { bpm: 120 }, outputs: [{ id: 'out', label: 'Pulse', type: 'signal' }] },
+    'logic_seq': { label: 'Step Seq', category: 'logic', params: { steps: [1, 0, 1, 0] }, inputs: [{ id: 'clock', label: 'Clock', type: 'signal' }], outputs: [{ id: 'out', label: 'Gate', type: 'signal' }] },
+    'logic_random': { label: 'Random Gen', category: 'logic', params: { range: 1 }, inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }], outputs: [{ id: 'out', label: 'Out', type: 'signal' }] },
+    'logic_counter': { label: 'Counter', category: 'logic', params: { max: 16 }, inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }], outputs: [{ id: 'out', label: 'Val', type: 'signal' }] },
+    'logic_toggle': { label: 'Flip-Flop', category: 'logic', params: { state: false }, inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }], outputs: [{ id: 'out', label: 'Out', type: 'signal' }] },
+    'logic_compare': { label: 'Comparator', category: 'logic', params: { mode: '>' }, inputs: [{ id: 'a', label: 'A', type: 'signal' }, { id: 'b', label: 'B', type: 'signal' }], outputs: [{ id: 'out', label: 'Out', type: 'signal' }] },
+    'logic_bitwise': { label: 'Bitwise Logic', category: 'logic', params: { mode: 'XOR' }, inputs: [{ id: 'a', label: 'A', type: 'signal' }, { id: 'b', label: 'B', type: 'signal' }], outputs: [{ id: 'out', label: 'Out', type: 'signal' }] },
+    'logic_euclidean': { label: 'Euclidean Seq', category: 'logic', params: { steps: 16, fills: 4 }, inputs: [{ id: 'clock', label: 'Clock', type: 'signal' }], outputs: [{ id: 'out', label: 'Trig', type: 'signal' }] },
 
-    // NOTE (New)
-    'note_quantizer': {
-        label: 'Quantizer', category: 'note',
-        inputs: [{ id: 'pitch', label: 'Pitch', type: 'signal' }],
-        outputs: [{ id: 'quantized', label: 'Out', type: 'signal' }],
-        params: { scale: 'major', root: 'C' }
-    },
-    'note_scale': {
-        label: 'Scale Snap', category: 'note',
-        inputs: [{ id: 'in', label: 'Pitch', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Pitch', type: 'signal' }],
-        params: { scale: 'minor' }
-    },
-    'note_chord': {
-        label: 'Chord', category: 'note',
-        inputs: [{ id: 'root', label: 'Root', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Chord', type: 'signal' }], // Multi-channel signal?
-        params: { type: 'triad' }
-    },
-    'note_arp': {
-        label: 'Arpeggiator', category: 'note',
-        inputs: [{ id: 'chord', label: 'Chord', type: 'signal' }, { id: 'clock', label: 'Clock', type: 'signal' }],
-        outputs: [{ id: 'pitch', label: 'Pitch', type: 'signal' }],
-        params: { mode: 'up', octaves: 1 }
-    },
-    'note_delay': {
-        label: 'Note Delay', category: 'note',
-        inputs: [{ id: 'note', label: 'Note', type: 'signal' }, { id: 'gate', label: 'Gate', type: 'signal' }],
-        outputs: [{ id: 'note_d', label: 'Note', type: 'signal' }, { id: 'gate_d', label: 'Gate', type: 'signal' }],
-        params: { steps: 1 }
-    },
+    // NOTE PROCESSORS
+    'note_quantizer': { label: 'Quantizer', category: 'note', params: { scale: 'major' }, inputs: [{ id: 'in', label: 'CV In', type: 'signal' }], outputs: [{ id: 'out', label: 'CV Out', type: 'signal' }] },
+    'note_chord': { label: 'Chord Gen', category: 'note', params: { type: 'maj7' }, inputs: [{ id: 'root', label: 'Root', type: 'signal' }], outputs: [{ id: 'out', label: 'MIDI', type: 'data' }] },
+    'note_arp': { label: 'Arpeggiator', category: 'note', params: { mode: 'up' }, inputs: [{ id: 'in', label: 'MIDI In', type: 'data' }], outputs: [{ id: 'out', label: 'MIDI Out', type: 'data' }] },
+    'note_transpose': { label: 'Transpose', category: 'note', params: { semitones: 0 }, inputs: [{ id: 'in', label: 'MIDI In', type: 'data' }], outputs: [{ id: 'out', label: 'MIDI Out', type: 'data' }] },
+    'note_delay': { label: 'Note Delay', category: 'note', params: { delay: 0.1 }, inputs: [{ id: 'in', label: 'MIDI In', type: 'data' }], outputs: [{ id: 'out', label: 'MIDI Out', type: 'data' }] },
 
-    // IO
-    'io_audio_in': {
-        label: 'Audio In', category: 'io',
-        inputs: [],
-        outputs: [{ id: 'l', label: 'L', type: 'audio' }, { id: 'r', label: 'R', type: 'audio' }],
-        params: { gain: 1.0 }
-    },
-    'io_audio_out': {
-        label: 'Output', category: 'io',
-        inputs: [{ id: 'l', label: 'L', type: 'audio' }, { id: 'r', label: 'R', type: 'audio' }],
-        outputs: [],
-        params: { gain: 1.0 }
-    },
-    'io_midi_in': {
-        label: 'MIDI In', category: 'io',
-        inputs: [],
-        outputs: [{ id: 'note', label: 'Note', type: 'signal' }, { id: 'gate', label: 'Gate', type: 'signal' }, { id: 'vel', label: 'Vel', type: 'signal' }],
-        params: { channel: 1 }
-    },
-    'io_midi_out': {
-        label: 'MIDI Out', category: 'io',
-        inputs: [{ id: 'note', label: 'Note', type: 'signal' }, { id: 'gate', label: 'Gate', type: 'signal' }],
-        outputs: [],
-        params: { channel: 1 }
-    },
+    // ADVANCED
+    'adv_granular': { label: 'Granular Engine', category: 'audio', params: { pos: 0, size: 0.1 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'adv_fm_op': { label: 'FM Operator', category: 'audio', params: { ratio: 1, depth: 100 }, inputs: [{ id: 'fm', label: 'FM', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'adv_turing': { label: 'Turing Machine', category: 'logic', params: { length: 16, prob: 0.5 }, inputs: [{ id: 'clock', label: 'Clock', type: 'signal' }], outputs: [{ id: 'out', label: 'Notes', type: 'signal' }] },
+    'adv_vocoder': { label: 'Vocoder', category: 'audio', params: { bands: 16 }, inputs: [{ id: 'mod', label: 'Mod', type: 'audio' }, { id: 'car', label: 'Car', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'adv_chaos': { label: 'Chaos (Lorenz)', category: 'logic', params: { speed: 1 }, outputs: [{ id: 'x', label: 'X', type: 'signal' }, { id: 'y', label: 'Y', type: 'signal' }] },
+    'adv_prob_seq': { label: 'Prob Seq', category: 'logic', params: { steps: 8 }, inputs: [{ id: 'clock', label: 'Clock', type: 'signal' }], outputs: [{ id: 'out', label: 'Gate', type: 'signal' }] },
 
-    // --- FX ---
-    fx_dist: {
-        label: 'Distortion', category: 'audio',
-        params: { distortion: 0.4, wet: 1 },
-        inputs: [{ id: 'in', label: 'In', type: 'audio' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }]
-    },
-    fx_delay: {
-        label: 'Delay', category: 'audio',
-        params: { delayTime: 0.25, feedback: 0.5, wet: 0.5 },
-        inputs: [{ id: 'in', label: 'In', type: 'audio' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }]
-    },
-    fx_chorus: {
-        label: 'Chorus', category: 'audio',
-        params: { frequency: 4, delayTime: 2.5, depth: 0.5, wet: 0.5 },
-        inputs: [{ id: 'in', label: 'In', type: 'audio' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }]
-    },
-    fx_reverb: {
-        label: 'Reverb', category: 'audio',
-        params: { decay: 1.5, preDelay: 0.01, wet: 0.5 },
-        inputs: [{ id: 'in', label: 'In', type: 'audio' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }]
-    },
+    // VISUAL & IO
+    'visual_scope': { label: 'Oscilloscope', category: 'visual', params: {}, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [] },
+    'visual_spectrum': { label: 'Spectrum Viz', category: 'visual', params: {}, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [] },
+    'io_midi_in': { label: 'MIDI In', category: 'io', params: { channel: 1 }, outputs: [{ id: 'note', label: 'Note', type: 'signal' }, { id: 'gate', label: 'Gate', type: 'signal' }] },
+    'io_audio_in': { label: 'Audio In', category: 'io', params: { gain: 1 }, outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'io_audio_out': { label: 'Audio Out', category: 'io', params: { gain: 1 }, inputs: [{ id: 'l', label: 'L', type: 'audio' }, { id: 'r', label: 'R', type: 'audio' }] },
 
-    // --- INST (Modular Drums) ---
-    inst_kick: {
-        label: 'Kick', category: 'audio',
-        params: { pitch: 'C1', decay: 0.3 },
-        inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }]
-    },
-    inst_snare: {
-        label: 'Snare', category: 'audio',
-        params: { decay: 0.2, noise: 0.8 },
-        inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }]
-    },
-    inst_hat: {
-        label: 'HiHat', category: 'audio',
-        params: { decay: 0.1, freq: 8000 },
-        inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }],
-        outputs: [{ id: 'out', label: 'Out', type: 'audio' }]
-    },
+    // AI
+    'ai_gen': { label: 'AI Gen Lab', category: 'ai', params: { prompt: '' }, inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }], outputs: [{ id: 'out', label: 'Data', type: 'data' }] },
+    'ai_chat': { label: 'AI Composer', category: 'ai', params: {}, outputs: [{ id: 'out', label: 'Midi', type: 'data' }] },
 
-    // --- ADVANCED ---
-    visual_scope: {
-        label: 'Oscilloscope',
-        category: 'visual',
-        params: { mode: 'waveform' },
-        inputs: [{ id: 'in', label: 'Signal', type: 'audio' }],
-        outputs: []
-    },
-    'logic_euclidean': {
-        label: 'Euclidean Seq',
-        category: 'logic',
-        params: { steps: 16, pulses: 4, rotate: 0 },
-        inputs: [{ id: 'clock', label: 'Clock', type: 'signal' }],
-        outputs: [{ id: 'trig', label: 'Trig', type: 'signal' }]
-    },
-    'script_js': {
-        label: 'Script PRO', category: 'script',
-        inputs: [{ id: 'in1', label: 'In 1', type: 'data' }],
-        outputs: [{ id: 'out1', label: 'Out 1', type: 'data' }],
-        params: {},
-        script: `// JSFX-Style Script
-// Inputs: inputs[0] (Audio Buffer)
-// Memory: memory[0]...memory[1024]
-// API: gfx.rect(x,y,w,h)
+    // SCRIPT
+    'script_js': { label: 'JS Script PRO', category: 'script', params: {}, script: '// Write DSP here\nfunction process(ins, outs) {}' },
 
-function init() {
-  memory[0] = 0; // State
-}
-
-function process(inputs, output) {
-  // Simple Gain Example
-  for (let i = 0; i < inputs.length; i++) {
-     output[i] = inputs[i] * 0.5;
-  }
-}`
-    },
-    'ai_gen': {
-        label: 'Texture Gen', category: 'ai',
-        inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }],
-        outputs: [{ id: 'url', label: 'URL', type: 'data' }],
-        params: { prompt: 'liquid metal textures' }
-    },
-    'ai_chat': {
-        label: 'AI Agent', category: 'ai',
-        inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }],
-        outputs: [{ id: 'action', label: 'Action', type: 'data' }],
-        params: { context: 'Create a bassline' }
-    }
-}
-
-// Export Edge alias
-export type NodeEdge = Edge
+    // LIB
+    'lib_bass': { label: 'Bass Preset', category: 'audio', params: { model: 'analog' }, outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'lib_lead': { label: 'Lead Preset', category: 'audio', params: { model: 'fm' }, outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'lib_pad': { label: 'Pad Synth', category: 'audio', params: { model: 'poly' }, outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+    'lib_perc': { label: 'Percussion', category: 'audio', params: { model: 'digital' }, outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
+};
 
 export const useNodeStore = create<NodeState>((set, get) => ({
-    // Initial State
-    context: 'poly', // Default context
+    context: 'poly',
     nodes: [],
     edges: [],
-
     setContext: (context) => set({ context }),
-
-    // React Flow handlers
     onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes) }),
     onEdgesChange: (changes) => set({ edges: applyEdgeChanges(changes, get().edges) }),
     onConnect: (connection) => set({ edges: addEdge(connection, get().edges) }),
-
-    // Custom Actions
     addNode: (type, x, y) => {
         const def = NODE_DEFS[type]
         if (!def) return
-
-        const id = uuid()
-        const newNode: Node<NodeData> = {
-            id,
-            type: 'custom',
-            position: { x, y },
-            data: {
-                label: def.label!,
-                type: type,
-                category: def.category!,
-                inputs: def.inputs!,
-                outputs: def.outputs!,
-                params: { ...def.params },
-                script: def.script
-            }
+        const id = crypto.randomUUID()
+        const defaultParams = {
+            inputGain: 1.0,
+            outputGain: 1.0,
+            bypass: false,
+            ...def.params
         }
-
-        set(state => ({ nodes: [...state.nodes, newNode] }))
-    },
-
-    removeNode: (id) => {
         set(state => ({
-            nodes: state.nodes.filter(n => n.id !== id),
-            edges: state.edges.filter(e => e.source !== id && e.target !== id)
+            nodes: [...state.nodes, {
+                id, type: 'custom', position: { x, y },
+                data: { label: def.label!, type: type as NodeType, category: def.category!, inputs: def.inputs || [], outputs: def.outputs || [], params: defaultParams, script: def.script }
+            }]
         }))
     },
-
+    removeNode: (id) => set(state => ({ nodes: state.nodes.filter(n => n.id !== id), edges: state.edges.filter(e => e.source !== id && e.target !== id) })),
     updateNodeParam: (id, param, value) => {
         set(state => ({
-            nodes: state.nodes.map(n => {
-                if (n.id === id) {
-                    return {
-                        ...n,
-                        data: {
-                            ...n.data,
-                            params: { ...n.data.params, [param]: value }
-                        }
-                    }
-                }
-                return n
-            })
+            nodes: state.nodes.map(n => n.id === id ? {
+                ...n,
+                data: { ...n.data, params: { ...n.data.params, [param]: value } }
+            } : n)
         }))
     },
-
-    updateNodeScript: (id, code) => {
-        set(state => ({
-            nodes: state.nodes.map(n => {
-                if (n.id === id) {
-                    return {
-                        ...n,
-                        data: { ...n.data, script: code }
-                    }
-                }
-                return n
-            })
-        }))
-    },
-
-    loadDevice: (json) => {
-        try {
-            const data = JSON.parse(json)
-            set({ nodes: data.nodes || [], edges: data.edges || [], context: data.context || 'poly' })
-        } catch (e) {
-            console.error('Failed to load device', e)
-        }
-    },
-
-    saveDevice: () => {
-        const { nodes, edges, context } = get()
-        return JSON.stringify({ context, nodes, edges })
-    },
-
+    updateNodeScript: (id, code) => set(state => ({ nodes: state.nodes.map(n => n.id === id ? { ...n, data: { ...n.data, script: code } } : n) })),
+    loadDevice: (json) => { try { const d = JSON.parse(json); set({ nodes: d.nodes || [], edges: d.edges || [], context: d.context || 'poly' }) } catch (e) { } },
+    saveDevice: () => JSON.stringify({ context: get().context, nodes: get().nodes, edges: get().edges }),
     setNodes: (nodes) => set({ nodes }),
     setEdges: (edges) => set({ edges }),
 }))
