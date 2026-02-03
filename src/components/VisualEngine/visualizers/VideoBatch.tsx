@@ -3,36 +3,9 @@ import { useFrame } from '@react-three/fiber'
 import { useVisualStore } from '../../../store/visualStore'
 import * as THREE from 'three'
 
-// Simple hook to get webcam texture
+// Shared global webcam hook
 function useWebcam() {
-    const [video] = React.useState(() => {
-        const v = document.createElement('video')
-        v.autoplay = true
-        v.playsInline = true
-        v.muted = true
-        return v
-    })
-
-    const [texture, setTexture] = React.useState<THREE.VideoTexture | null>(null)
-
-    useEffect(() => {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
-                .then(stream => {
-                    video.srcObject = stream
-                    video.play()
-                    setTexture(new THREE.VideoTexture(video))
-                })
-                .catch(err => console.error('Webcam error:', err))
-        }
-        return () => {
-            if (video.srcObject) {
-                (video.srcObject as MediaStream).getTracks().forEach(t => t.stop())
-            }
-        }
-    }, [video])
-
-    return texture
+    return useVisualStore(s => s.webcamTexture)
 }
 
 // 51: Mirror Mask
@@ -148,28 +121,48 @@ export function ThermalVision() {
 }
 
 // 54: ASCII Mirror
+// 54: ASCII Mirror (Enhanced for Gamepad)
 export function AsciiMirror() {
     const texture = useWebcam()
-    const intensity = useVisualStore(s => s.globalAudioIntensity)
+    const store = useVisualStore()
+    const { globalAudioIntensity, visualModifier, visualPalette, visualInvert, visualDetail } = store
+
     const uniforms = useMemo(() => ({
         uTexture: { value: null as THREE.VideoTexture | null },
         uIntensity: { value: 0 },
-        uResolution: { value: new THREE.Vector2(80, 60) }
+        uResolution: { value: new THREE.Vector2(80, 60) },
+        uColor: { value: new THREE.Color('#00ff00') },
+        uInvert: { value: 0.0 },
+        uCharSet: { value: 0.0 }
     }), [])
 
     useEffect(() => {
         uniforms.uTexture.value = texture
     }, [texture, uniforms])
 
-    useFrame(() => {
-        uniforms.uIntensity.value = intensity
+    useFrame((state) => {
+        uniforms.uIntensity.value = globalAudioIntensity
+
+        // Map visualModifier (Stick) to resolution
+        // Modifiers are usually -1 to 1
+        const resX = 80 + visualModifier.x * 60
+        const resY = 60 + visualModifier.y * 40
+        uniforms.uResolution.value.set(resX, resY)
+
+        // Palette logic
+        const colors = ['#00ff00', '#ffcc00', '#00ffff', '#ff3300', '#ffffff']
+        const targetColor = new THREE.Color(colors[visualPalette % colors.length])
+        uniforms.uColor.value.lerp(targetColor, 0.1)
+
+        uniforms.uInvert.value = visualInvert ? 1.0 : 0.0
+        uniforms.uCharSet.value = visualDetail // 0 to 1
     })
 
     if (!texture) return null
 
     return (
         <mesh>
-            <planeGeometry args={[16, 9]} />
+            <planeGeometry args={[16 * 1.2, 9 * 1.2]} />
             <shaderMaterial
                 uniforms={uniforms}
                 vertexShader={`
@@ -183,21 +176,46 @@ export function AsciiMirror() {
                     uniform sampler2D uTexture;
                     uniform vec2 uResolution;
                     uniform float uIntensity;
+                    uniform vec3 uColor;
+                    uniform float uInvert;
+                    uniform float uCharSet;
                     varying vec2 vUv;
 
                     void main() {
-                        vec2 gridUv = floor(vUv * uResolution) / uResolution;
-                        vec4 tex = texture2D(uTexture, vec2(1.0 - gridUv.x, gridUv.y));
+                        vec2 flippedUv = vec2(1.0 - vUv.x, vUv.y);
+                        vec2 gridUv = floor(flippedUv * uResolution) / uResolution;
+                        vec4 tex = texture2D(uTexture, gridUv);
+                        
                         float luma = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
                         
-                        float char = 0.0;
-                        if (luma > 0.8) char = 0.9;
-                        else if (luma > 0.6) char = 0.6;
-                        else if (luma > 0.4) char = 0.3;
-                        else if (luma > 0.2) char = 0.1;
+                        // Glitch effect on intensity
+                        if (uIntensity > 0.8) {
+                            luma = fract(luma * 10.0);
+                        }
                         
-                        vec3 col = vec3(0.0, 1.0, 0.0) * char;
-                        gl_FragColor = vec4(col + uIntensity * 0.2, 1.0);
+                        if (uInvert > 0.5) luma = 1.0 - luma;
+                        
+                        float char = 0.0;
+                        // Dynamic char set based on uCharSet
+                        if (uCharSet < 0.3) {
+                             if (luma > 0.5) char = 1.0;
+                        } else if (uCharSet < 0.7) {
+                             if (luma > 0.8) char = 1.0;
+                             else if (luma > 0.4) char = 0.5;
+                        } else {
+                             if (luma > 0.8) char = 1.0;
+                             else if (luma > 0.6) char = 0.7;
+                             else if (luma > 0.4) char = 0.4;
+                             else if (luma > 0.2) char = 0.1;
+                        }
+                        
+                        vec3 finalCol = uColor * char;
+                        
+                        // Post-processing: slight scanline
+                        float scanline = sin(vUv.y * uResolution.y * 3.1415) * 0.1;
+                        finalCol -= scanline;
+
+                        gl_FragColor = vec4(finalCol + uIntensity * 0.1, 1.0);
                     }
                 `}
             />

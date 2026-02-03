@@ -12,13 +12,28 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import { useNodeStore, NodeType, NODE_DEFS } from '../../store/nodeStore'
 import { CustomNode } from '../Nodes/CustomNode'
+import { MathNode } from '../Nodes/MathNode'
+import { PortalSend, PortalReceive } from '../Nodes/PortalNodes'
+import { ActiveEdge } from '../Nodes/ActiveEdge'
+import { EdgeTypes, DefaultEdgeOptions } from 'reactflow'
 import { X, Settings, Code, Bot, Calculator, Wand2, Music, Zap, Layers, Maximize2, Search } from 'lucide-react'
 import './NodeEditor.css'
 import { ContextMenu } from './ContextMenu'
 import { NodeInspector } from './NodeInspector'
 
 const nodeTypes: NodeTypes = {
-    custom: CustomNode
+    custom: CustomNode,
+    math: MathNode,
+    portal_send: PortalSend,
+    portal_receive: PortalReceive
+}
+
+const edgeTypes: EdgeTypes = {
+    active: ActiveEdge
+}
+
+const defaultEdgeOptions: DefaultEdgeOptions = {
+    type: 'active'
 }
 
 function DraggableNode({ type, label, icon }: { type: NodeType, label: string, icon: any }) {
@@ -240,6 +255,8 @@ function NodeEditorContent({ onClose }: { onClose: () => void }) {
                     onEdgesChange={onEdgesChange}
                     onConnect={onConnect}
                     nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    defaultEdgeOptions={defaultEdgeOptions}
                     onNodeDoubleClick={onNodeDoubleClick}
                     onNodeContextMenu={onNodeContextMenu}
                     onPaneContextMenu={onPaneContextMenu}

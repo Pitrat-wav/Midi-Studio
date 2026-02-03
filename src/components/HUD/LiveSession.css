@@ -34,9 +34,34 @@
 .live-grid-pro {
     flex: 1;
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr 0.8fr;
-    gap: 15px;
-    padding: 15px 0;
+    /* Use minmax to ensure columns don't shrink too much, forcing scroll if needed */
+    grid-template-columns: minmax(420px, 2fr) minmax(240px, 0.8fr) minmax(320px, 1fr) minmax(280px, 1fr);
+    gap: 12px;
+    padding: 10px 0;
+    overflow-x: auto;
+    /* Restored horizontal scroll */
+    overflow-y: hidden;
+    height: 100%;
+    align-items: stretch;
+}
+
+/* Custom Scrollbar for Pro Dashboard */
+.live-grid-pro::-webkit-scrollbar {
+    height: 6px;
+}
+
+.live-grid-pro::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 3px;
+}
+
+.live-grid-pro::-webkit-scrollbar-thumb {
+    background: #1a1a25;
+    border-radius: 3px;
+}
+
+.live-grid-pro::-webkit-scrollbar-thumb:hover {
+    background: #2a2a35;
 }
 
 .live-card {
@@ -105,13 +130,23 @@
 }
 
 .fader-track-pro {
-    flex: 1;
+    /* Stop flex stretching; use fixed height for consistency */
+    flex: 0 0 220px;
+    width: 32px;
+    background: #0a0a0f;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    /* Stop flex stretching; use fixed height for consistency */
+    flex: 0 0 220px;
     width: 32px;
     background: #0a0a0f;
     border-radius: 16px;
     position: relative;
     overflow: hidden;
     border: 1px solid #1a1a25;
+    margin: auto 0;
+    /* Center vertically in the strip */
 }
 
 .fader-track-pro input[type="range"] {
@@ -119,11 +154,15 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) rotate(-90deg);
+    transform: translate(-50%, -50%) rotate(-90deg);
     width: 220px;
+    /* MATCHES fader-track-pro height exactly */
     height: 32px;
     opacity: 0;
     cursor: pointer;
     z-index: 2;
+    margin: 0;
+    padding: 0;
 }
 
 .fader-fill-pro {
@@ -271,9 +310,11 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-right: 25px;
+    padding-right: 32px;
+    /* Make room for scene buttons */
     position: relative;
     flex: 1;
+    overflow: hidden;
 }
 
 .clip-row {
@@ -296,6 +337,18 @@
     gap: 5px;
     flex: 1;
     height: 100%;
+}
+
+/* Force scene column inside the clip matrix relative container */
+.clip-matrix {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 32px;
+    /* Make room for scene buttons */
+    position: relative;
+    flex: 1;
+    overflow: hidden;
 }
 
 .clip-cell {
@@ -345,20 +398,24 @@
     box-shadow: 0 0 5px #fff;
 }
 
-.scene-launch-col {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
+.scene-launch-row {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 10px;
-    justify-content: space-around;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #1a1a25;
+}
+
+.scene-cells {
+    display: flex;
+    gap: 5px;
+    flex: 1;
 }
 
 .scene-btn {
-    width: 20px;
-    height: 34px;
+    flex: 1;
+    height: 30px;
     background: #111;
     border: 1px solid #222;
     color: #444;

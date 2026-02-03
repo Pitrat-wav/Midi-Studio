@@ -43,6 +43,7 @@ import { GraphEngine } from './logic/GraphEngine'
 import { VisualEngine } from './components/VisualEngine/VisualEngine'
 import { launchControlXL } from './lib/controllers/LaunchControlXL'
 import { VisualizerShop } from './components/VisualEngine/VisualizerShop'
+import { TerminalOverlay } from './components/HUD/TerminalOverlay'
 import './App.css'
 
 function App() {
@@ -296,6 +297,9 @@ function App() {
                 {(focusedInstrument === 'sequencer' || focusedInstrument === 'ml185') && <SequencerScreen />}
                 {focusedInstrument === 'drone' && <DroneScreen />}
                 {focusedInstrument === 'master' && <MasterScreen />}
+
+                {/* Live Coding Terminal */}
+                <TerminalOverlay />
 
                 {/* Help hint (bottom right) */}
             </div>

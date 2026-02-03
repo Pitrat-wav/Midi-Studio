@@ -15,7 +15,7 @@ export interface BuchlaParams {
     amIndex: number
     timbre: number
     order: number
-    harmonics: number // symmetry/harmonics distribution
+    harmonics: number
     pitchMod: boolean
     ampMod: boolean
     timbreMod: boolean
@@ -53,6 +53,9 @@ class HarmVoice {
     public fmGain: Tone.Gain
     public amGain: Tone.Gain
     public amNode: Tone.Gain
+
+    public activeNote: string | null = null
+    public startTime: number = 0
 
     constructor(fxBus: Tone.ToneAudioNode, directBus: Tone.ToneAudioNode) {
         // OSC 1
@@ -96,18 +99,14 @@ class HarmVoice {
         this.amGain = new Tone.Gain(0)
         this.amNode = new Tone.Gain(1)
 
-        // Wavefolder transfer function (approximating Buchla harmonics)
         this.folder = new Tone.WaveShaper((val) => {
-            // Simple recursive folding logic
-            let x = val * 5 // Increase Gain for more folds
+            let x = val * 5
             for (let i = 0; i < 3; i++) {
                 if (x > 1) x = 2 - x
                 if (x < -1) x = -2 - x
             }
             return x
         }, 4096)
-
-        // Patching for Complex Mode will be done dynamically or in trig
     }
 
     trigger(note: string, duration: string, time: number, velocity: number, settings: any) {
@@ -116,76 +115,23 @@ class HarmVoice {
         let modFreq = Tone.Frequency(note).transpose(settings.complex.modPitch || 0).toFrequency()
 
         if (settings.complex.modOscRange === 'low') {
-            // LFO mode: 0.1Hz to 30Hz based on 'pitch' param
             modFreq = 0.1 + (Math.abs(settings.complex.modPitch) * 1.5)
         }
+
+        this.activeNote = note
+        this.startTime = time
 
         this.osc1.frequency.setValueAtTime(principalFreq, time)
         this.osc2.frequency.setValueAtTime(modFreq, time)
         this.osc2.type = settings.complex.modOscShape || 'triangle'
         this.osc3.frequency.setValueAtTime(freq, time)
 
-        if (settings.complex.phaseLock) {
-            // Hard Sync approximation: reset phase of mod osc when principal triggers
-            this.osc2.stop(time)
-            this.osc2.start(time)
-        }
-
-        if (settings.complex.complexMode) {
-            this.osc1.disconnect()
-            this.osc2.disconnect()
-
-            if (settings.complex.pitchMod) {
-                this.fmGain.gain.setValueAtTime(settings.complex.fmIndex * 500 * (principalFreq / 440), time)
-                this.osc2.connect(this.fmGain)
-                this.fmGain.connect(this.osc1.frequency)
-            } else {
-                this.fmGain.disconnect()
-            }
-
-            if (settings.complex.ampMod) {
-                this.amGain.gain.setValueAtTime(settings.complex.amIndex, time)
-                this.osc2.connect(this.amGain)
-                this.osc1.connect(this.amNode)
-                this.amGain.connect(this.amNode.gain)
-            } else {
-                this.amGain.disconnect()
-                this.amNode.gain.setValueAtTime(1, time)
-                this.osc1.connect(this.amNode)
-            }
-
-            if (settings.complex.timbreMod) {
-                const modGain = new Tone.Gain(settings.complex.fmIndex * 0.5)
-                this.osc2.connect(modGain)
-                modGain.connect(this.amNode)
-            }
-
-            this.amNode.connect(this.folder)
-
-            if (settings.complex.vcaBypass) {
-                this.folder.disconnect()
-                // Open envelope indefinitely for droning
-                this.osc1Env.triggerAttack(time)
-                this.folder.connect(this.osc1Env)
-            } else {
-                this.folder.connect(this.osc1Env)
-            }
-
-        } else {
-            // Normal Mode
-            this.fmGain.disconnect()
-            this.amGain.disconnect()
-            this.amNode.disconnect()
-            this.folder.disconnect()
-            this.osc1.disconnect()
-            this.osc2.disconnect()
-
-            this.osc1.connect(this.osc1Env)
-            this.osc2.connect(this.osc2Env)
-        }
+        this.applyComplexRouting(time, principalFreq, settings)
 
         if (!settings.complex.vcaBypass) {
             if (settings.osc1.enabled) this.osc1Env.triggerAttackRelease(duration, time, velocity)
+        } else {
+            this.osc1Env.triggerAttack(time, velocity)
         }
 
         if (!settings.complex.complexMode) {
@@ -195,46 +141,79 @@ class HarmVoice {
         if (settings.noise.enabled) this.noiseEnv.triggerAttackRelease(duration, time, velocity)
     }
 
+    private applyComplexRouting(time: number, principalFreq: number, settings: any) {
+        const s = settings.complex
+        if (s.complexMode) {
+            this.osc1.disconnect()
+            this.osc2.disconnect()
+
+            if (s.pitchMod) {
+                this.fmGain.gain.setValueAtTime(s.fmIndex * 500 * (principalFreq / 440), time)
+                this.osc2.connect(this.fmGain)
+                this.fmGain.connect(this.osc1.frequency)
+            } else {
+                this.fmGain.disconnect()
+            }
+
+            if (s.ampMod) {
+                this.amGain.gain.setValueAtTime(s.amIndex, time)
+                this.osc2.connect(this.amGain)
+                this.osc1.connect(this.amNode)
+                this.amGain.connect(this.amNode.gain)
+            } else {
+                this.amGain.disconnect()
+                this.amNode.gain.setValueAtTime(1, time)
+                this.osc1.connect(this.amNode)
+            }
+
+            if (s.timbreMod) {
+                const modGain = new Tone.Gain(s.fmIndex * 0.5)
+                this.osc2.connect(modGain)
+                modGain.connect(this.amNode)
+            }
+
+            this.amNode.connect(this.folder)
+            this.folder.connect(this.osc1Env)
+        } else {
+            this.fmGain.disconnect()
+            this.amGain.disconnect()
+            this.amNode.disconnect()
+            this.folder.disconnect()
+            this.osc1.disconnect()
+            this.osc2.disconnect()
+            this.osc1.connect(this.osc1Env)
+            this.osc2.connect(this.osc2Env)
+        }
+    }
+
     dispose() {
-        this.osc1.dispose()
-        this.osc1Env.dispose()
-        this.osc1Direct.dispose()
-        this.osc1Fx.dispose()
-        this.osc2.dispose()
-        this.osc2Env.dispose()
-        this.osc2Direct.dispose()
-        this.osc2Fx.dispose()
-        this.osc3.dispose()
-        this.osc3Env.dispose()
-        this.osc3Direct.dispose()
-        this.osc3Fx.dispose()
-        this.noise.dispose()
-        this.noiseEnv.dispose()
-        this.noiseDirect.dispose()
-        this.noiseFx.dispose()
+        this.osc1.dispose(); this.osc1Env.dispose(); this.osc1Direct.dispose(); this.osc1Fx.dispose()
+        this.osc2.dispose(); this.osc2Env.dispose(); this.osc2Direct.dispose(); this.osc2Fx.dispose()
+        this.osc3.dispose(); this.osc3Env.dispose(); this.osc3Direct.dispose(); this.osc3Fx.dispose()
+        this.noise.dispose(); this.noiseEnv.dispose(); this.noiseDirect.dispose(); this.noiseFx.dispose()
+        this.fmGain.dispose(); this.amGain.dispose(); this.amNode.dispose(); this.folder.dispose()
     }
 }
 
 export class HarmSynth {
-    private voices: Map<string, HarmVoice> = new Map()
-    private maxVoices = 4
     private voicePool: HarmVoice[] = []
+    private activeVoices: Set<HarmVoice> = new Set()
+    private maxVoices = 16
 
-    // Global Routing Nodes
+    // Routing
     private fxBus: Tone.Gain | undefined
     private directBus: Tone.Gain | undefined
     private filter1: Tone.Filter | undefined
     private filter2: Tone.Filter | undefined
+    public outputGain: Tone.Volume | undefined
 
-    // Global FX Rack
+    // FX
     private distortion: Tone.Distortion | undefined
     private phaser: Tone.Phaser | undefined
     private chorus: Tone.Chorus | undefined
     private delay: Tone.FeedbackDelay | undefined
     private reverb: Tone.Reverb | undefined
-    public outputGain: Tone.Volume | undefined
 
-    // Global Settings (applied to all voices)
     private settings = {
         osc1: { type: 'sawtooth' as HarmOscType, detune: 0, env: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.5 }, send: 0, enabled: true },
         osc2: { type: 'square' as HarmOscType, detune: 10, env: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.5 }, send: 0, enabled: true },
@@ -242,107 +221,91 @@ export class HarmSynth {
         noise: { env: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }, send: 0, enabled: true },
         f1: { freq: 2000, q: 1, type: 'lowpass' as BiquadFilterType, enabled: true },
         f2: { freq: 5000, q: 1, type: 'lowpass' as BiquadFilterType, enabled: true },
-        complex: { // Complex Params
-            complexMode: false,
-            fmIndex: 0,
-            amIndex: 0,
-            timbre: 0.5,
-            order: 0.5,
-            harmonics: 0.5,
-            pitchMod: true,
-            ampMod: false,
-            timbreMod: true,
-            modOscRange: 'high' as 'low' | 'high',
-            modPitch: 0,
-            principalPitch: 0,
-            modOscShape: 'triangle' as HarmOscType,
-            vcaBypass: false,
-            phaseLock: false
+        complex: {
+            complexMode: false, fmIndex: 0, amIndex: 0, timbre: 0.5, order: 0.5, harmonics: 0.5,
+            pitchMod: true, ampMod: false, timbreMod: true, modOscRange: 'high' as any,
+            modPitch: 0, principalPitch: 0, modOscShape: 'triangle' as any, vcaBypass: false, phaseLock: false
         }
     }
 
     private initialized = false
-
     constructor() { }
 
     public init() {
         if (this.initialized) return
+        this.fxBus = new Tone.Gain(1)
+        this.directBus = new Tone.Gain(1)
+        this.filter1 = new Tone.Filter(this.settings.f1.freq, this.settings.f1.type)
+        this.filter2 = new Tone.Filter(this.settings.f2.freq, this.settings.f2.type)
+        this.distortion = new Tone.Distortion(0.4)
+        this.phaser = new Tone.Phaser({ frequency: 0.5, octaves: 5, baseFrequency: 1000 })
+        this.chorus = new Tone.Chorus(4, 2.5, 0.5).start()
+        this.delay = new Tone.FeedbackDelay('8n', 0.5)
+        this.reverb = new Tone.Reverb(2)
+        this.outputGain = new Tone.Volume(0)
 
-        try {
-            this.fxBus = new Tone.Gain(1)
-            this.directBus = new Tone.Gain(1)
+        this.directBus.chain(this.filter1, this.filter2, this.outputGain)
+        this.fxBus.chain(this.distortion, this.phaser, this.chorus, this.delay, this.reverb, this.outputGain)
 
-            this.filter1 = new Tone.Filter(this.settings.f1.freq, this.settings.f1.type)
-            this.filter2 = new Tone.Filter(this.settings.f2.freq, this.settings.f2.type)
-
-            this.distortion = new Tone.Distortion(0.4)
-            this.phaser = new Tone.Phaser({ frequency: 0.5, octaves: 5, baseFrequency: 1000 })
-            this.chorus = new Tone.Chorus(4, 2.5, 0.5).start()
-            this.delay = new Tone.FeedbackDelay('8n', 0.5)
-            this.reverb = new Tone.Reverb(2)
-
-            this.outputGain = new Tone.Volume(0)
-
-            // Main routing: voices -> directBus -> filter1 -> filter2 -> output
-            this.directBus.chain(this.filter1, this.filter2, this.outputGain)
-
-            // FX routing: voices -> fxBus -> rack -> output
-            this.fxBus.chain(this.distortion, this.phaser, this.chorus, this.delay, this.reverb, this.outputGain)
-
-            // Pre-warm voice pool
-            for (let i = 0; i < this.maxVoices; i++) {
-                const v = new HarmVoice(this.fxBus, this.directBus)
-                this.voicePool.push(v)
-            }
-
-            this.initialized = true
-        } catch (e) {
-            console.error('HarmSynth: init failed', e)
+        for (let i = 0; i < this.maxVoices; i++) {
+            this.voicePool.push(new HarmVoice(this.fxBus, this.directBus))
         }
+        this.initialized = true
     }
 
-    private applyVoiceSettings(voice: HarmVoice) {
-        // Apply Global OSC Settings to specific voice
-        voice.osc1.type = this.settings.osc1.type
-        voice.osc1.detune.value = this.settings.osc1.detune
-        voice.osc1Env.set(this.settings.osc1.env)
-        voice.osc1Fx.gain.setValueAtTime(this.settings.osc1.send, Tone.now())
-        voice.osc1Direct.gain.setValueAtTime(1 - this.settings.osc1.send, Tone.now())
+    triggerNote(note: string, duration: string, time: number, velocity: number = 0.8) {
+        if (!this.initialized) this.init()
 
-        voice.osc2.type = this.settings.osc2.type
-        voice.osc2.detune.value = this.settings.osc2.detune
-        voice.osc2Env.set(this.settings.osc2.env)
-        voice.osc2Fx.gain.setValueAtTime(this.settings.osc2.send, Tone.now())
-        voice.osc2Direct.gain.setValueAtTime(1 - this.settings.osc2.send, Tone.now())
+        let voice = this.voicePool.find(v => !this.activeVoices.has(v))
 
-        voice.osc3.type = this.settings.osc3.type
-        voice.osc3.detune.value = this.settings.osc3.detune
-        voice.osc3Env.set(this.settings.osc3.env)
-        voice.osc3Fx.gain.setValueAtTime(this.settings.osc3.send, Tone.now())
-        voice.osc3Direct.gain.setValueAtTime(1 - this.settings.osc3.send, Tone.now())
-
-        voice.noiseEnv.set(this.settings.noise.env)
-        voice.noiseFx.gain.setValueAtTime(this.settings.noise.send, Tone.now())
-        voice.noiseDirect.gain.setValueAtTime(1 - this.settings.noise.send, Tone.now())
-
-        // Complex settings
-        if (this.settings.complex.complexMode) {
-            const { timbre, order, harmonics } = this.settings.complex
-
-            // Modulation Oscillator (OSC 2) Frequency Range
-            if (this.settings.complex.modOscRange === 'low') {
-                // scale down to LFO territory if range is low
-                const currentFreq = voice.osc2.frequency.value as number
-                voice.osc2.frequency.setValueAtTime(currentFreq * 0.01, Tone.now())
+        if (!voice) {
+            const sorted = Array.from(this.activeVoices).sort((a, b) => a.startTime - b.startTime)
+            voice = sorted[0]
+            if (voice) {
+                voice.osc1Env.triggerRelease(time)
+                this.activeVoices.delete(voice)
             }
+        }
 
-            // Buchla 259 Timbre Circuit approximation
-            this.updateWavefolder(voice, timbre, order, harmonics)
+        if (voice) {
+            this.activeVoices.add(voice)
+
+            voice.osc1.type = this.settings.osc1.type
+            voice.osc1.detune.value = this.settings.osc1.detune
+            voice.osc1Env.set(this.settings.osc1.env)
+            voice.osc1Fx.gain.setValueAtTime(this.settings.osc1.send, time)
+            voice.osc1Direct.gain.setValueAtTime(1 - this.settings.osc1.send, time)
+
+            voice.osc2.type = this.settings.osc2.type
+            voice.osc2.detune.value = this.settings.osc2.detune
+            voice.osc2Env.set(this.settings.osc2.env)
+            voice.osc2Fx.gain.setValueAtTime(this.settings.osc2.send, time)
+            voice.osc2Direct.gain.setValueAtTime(1 - this.settings.osc2.send, time)
+
+            voice.osc3.type = this.settings.osc3.type
+            voice.osc3.detune.value = this.settings.osc3.detune
+            voice.osc3Env.set(this.settings.osc3.env)
+            voice.osc3Fx.gain.setValueAtTime(this.settings.osc3.send, time)
+            voice.osc3Direct.gain.setValueAtTime(1 - this.settings.osc3.send, time)
+
+            voice.noiseEnv.set(this.settings.noise.env)
+            voice.noiseFx.gain.setValueAtTime(this.settings.noise.send, time)
+            voice.noiseDirect.gain.setValueAtTime(1 - this.settings.noise.send, time)
+
+            this.updateWavefolder(voice, this.settings.complex.timbre, this.settings.complex.order, this.settings.complex.harmonics)
+
+            voice.trigger(note, duration, time, velocity, this.settings)
+
+            const release = Math.max(this.settings.osc1.env.release, this.settings.osc2.env.release, 0.5)
+            const dur = Tone.Time(duration).toSeconds()
+
+            setTimeout(() => {
+                if (voice!.activeNote === note) this.activeVoices.delete(voice!)
+            }, (dur + release) * 1000)
         }
     }
 
     private updateWavefolder(voice: HarmVoice, timbre: number, order: number, harmonics: number) {
-        // Ensure inputs are clamped
         const cTimbre = Math.max(0, Math.min(1, timbre))
         const cOrder = Math.max(0, Math.min(1, order))
         const cHarmonics = Math.max(0, Math.min(1, harmonics))
@@ -352,8 +315,6 @@ export class HarmSynth {
                 let x = val * (1 + cTimbre * 10)
                 let symmetry = (cHarmonics - 0.5) * 0.8
                 x += symmetry
-
-                // Multi-stage folding based on 'order'
                 for (let i = 0; i < 4; i++) {
                     let stageIntensity = Math.max(0, Math.min(1, cOrder * 5 - i))
                     if (stageIntensity > 0) {
@@ -368,153 +329,36 @@ export class HarmSynth {
         })
     }
 
-    triggerNote(note: string, duration: string, time: number, velocity: number = 0.8) {
-        if (!this.initialized) this.init()
-
-        // Find an unused voice (FIFO or simple recycle)
-        const voice = this.voicePool.shift()
-        if (voice) {
-            // Only apply per-note dynamic settings here
-            voice.osc1.type = this.settings.osc1.type
-            voice.osc1.detune.value = this.settings.osc1.detune
-            voice.osc1Env.set(this.settings.osc1.env)
-
-            voice.osc2.type = this.settings.osc2.type
-            voice.osc2.detune.value = this.settings.osc2.detune
-            voice.osc2Env.set(this.settings.osc2.env)
-
-            voice.osc3.type = this.settings.osc3.type
-            voice.osc3.detune.value = this.settings.osc3.detune
-            voice.osc3Env.set(this.settings.osc3.env)
-
-            voice.noiseEnv.set(this.settings.noise.env)
-
-            voice.trigger(note, duration, time, velocity, this.settings)
-
-            // Put it back later (duration + release)
-            const release = Math.max(
-                this.settings.osc1.env.release,
-                this.settings.osc2.env.release,
-                this.settings.osc3.env.release,
-                this.settings.noise.env.release
-            )
-
-            setTimeout(() => {
-                this.voicePool.push(voice)
-            }, (Tone.Time(duration).toSeconds() + release) * 1000)
-        }
-    }
-
-    // Proxy setters for global modules
-    setDistortion(drive: number, wet: number) {
-        if (this.distortion) {
-            this.distortion.distortion = drive
-            this.distortion.wet.value = wet
-        }
-    }
-    setPhaser(freq: number, depth: number, stages: number, wet: number) {
-        if (this.phaser) {
-            this.phaser.frequency.value = freq
-            this.phaser.octaves = stages
-            this.phaser.wet.value = wet
-        }
-    }
-    setChorus(freq: number, delay: number, depth: number, wet: number) {
-        if (this.chorus) {
-            this.chorus.frequency.value = freq
-            this.chorus.delayTime = delay
-            this.chorus.depth = depth
-            this.chorus.wet.value = wet
-        }
-    }
-    setDelay(time: string, feedback: number, wet: number) {
-        if (this.delay) {
-            this.delay.delayTime.value = time
-            this.delay.feedback.value = feedback
-            this.delay.wet.value = wet
-        }
-    }
-    setReverb(decay: number, wet: number) {
-        if (this.reverb) {
-            this.reverb.decay = decay
-            this.reverb.wet.value = wet
-        }
-    }
-
-    setFilter(idx: 1 | 2, freq: number, q: number, type: BiquadFilterType) {
-        const f = idx === 1 ? this.filter1 : this.filter2
-        if (f) {
-            f.frequency.value = freq
-            f.Q.value = q
-            f.type = type
-        }
-    }
+    setDistortion(drive: number, wet: number) { if (this.distortion) { this.distortion.distortion = drive; this.distortion.wet.value = wet } }
+    setPhaser(freq: number, depth: number, stages: number, wet: number) { if (this.phaser) { this.phaser.frequency.value = freq; this.phaser.octaves = stages; this.phaser.wet.value = wet } }
+    setChorus(freq: number, delay: number, depth: number, wet: number) { if (this.chorus) { this.chorus.frequency.value = freq; this.chorus.delayTime = delay; this.chorus.depth = depth; this.chorus.wet.value = wet } }
+    setDelay(time: string, feedback: number, wet: number) { if (this.delay) { this.delay.delayTime.value = time; this.delay.feedback.value = feedback; this.delay.wet.value = wet } }
+    setReverb(decay: number, wet: number) { if (this.reverb) { this.reverb.decay = decay; this.reverb.wet.value = wet } }
+    setFilter(idx: 1 | 2, freq: number, q: number, type: BiquadFilterType) { const f = idx === 1 ? this.filter1 : this.filter2; if (f) { f.frequency.value = freq; f.Q.value = q; f.type = type } }
+    setVolume(db: number) { this.outputGain?.volume.rampTo(db, 0.1) }
+    setOscType(idx: 1 | 2 | 3, type: HarmOscType) { (this.settings as any)[`osc${idx}`].type = type }
+    setOscDetune(idx: 1 | 2 | 3, detune: number) { (this.settings as any)[`osc${idx}`].detune = detune }
+    setEnv(target: 'osc1' | 'osc2' | 'osc3' | 'noise', params: ADSRParams) { (this.settings as any)[target].env = params }
+    setFxSend(idx: 'osc1' | 'osc2' | 'osc3' | 'noise', level: number) { (this.settings as any)[idx].send = level }
 
     toggleModule(id: 'osc1' | 'osc2' | 'osc3' | 'noise' | 'f1' | 'f2', enabled: boolean) {
-        if (id === 'f1' && this.filter1) {
-            this.settings.f1.enabled = enabled
-            // Simple bypass logic: if disabled, set freq high and Q low (or reconnect around)
-            // Re-rebuilding routing is safer
-            this.rebuildBypass()
-        }
-        if (id === 'f2' && this.filter2) {
-            this.settings.f2.enabled = enabled
-            this.rebuildBypass()
-        }
-        // Oscllators are handled in applyVoiceSettings
-        const oscMap = { osc1: 'osc1', osc2: 'osc2', osc3: 'osc3', noise: 'noise' }
-        if (id in oscMap) {
+        if (id === 'f1' || id === 'f2') {
             (this.settings as any)[id].enabled = enabled
-        }
+            this.rebuildBypass()
+        } else (this.settings as any)[id].enabled = enabled
     }
 
     private rebuildBypass() {
         if (!this.directBus || !this.filter1 || !this.filter2 || !this.outputGain) return
-        this.directBus.disconnect()
-        this.filter1.disconnect()
-        this.filter2.disconnect()
-
+        this.directBus.disconnect(); this.filter1.disconnect(); this.filter2.disconnect()
         let last: Tone.ToneAudioNode = this.directBus
-        if (this.settings.f1.enabled) {
-            last.connect(this.filter1)
-            last = this.filter1
-        }
-        if (this.settings.f2.enabled) {
-            last.connect(this.filter2)
-            last = this.filter2
-        }
+        if (this.settings.f1.enabled) { last.connect(this.filter1); last = this.filter1 }
+        if (this.settings.f2.enabled) { last.connect(this.filter2); last = this.filter2 }
         last.connect(this.outputGain)
     }
 
-    setOscType(idx: 1 | 2 | 3, type: HarmOscType) {
-        (this.settings as any)[`osc${idx}`].type = type
-    }
-    setOscDetune(idx: 1 | 2 | 3, detune: number) {
-        (this.settings as any)[`osc${idx}`].detune = detune
-    }
-    setEnv(target: 'osc1' | 'osc2' | 'osc3' | 'noise', params: ADSRParams) {
-        (this.settings as any)[target].env = params
-    }
-    setFxSend(idx: 'osc1' | 'osc2' | 'osc3' | 'noise', level: number) {
-        (this.settings as any)[idx].send = level
-    }
-    setVolume(db: number) {
-        this.outputGain?.volume.rampTo(db, 0.1)
-    }
-
     setComplexParams(params: Partial<BuchlaParams>) {
-        // Clamp critical values defensively
-        const clamped = { ...params }
-        if (clamped.fmIndex !== undefined) clamped.fmIndex = Math.max(0, Math.min(1, clamped.fmIndex))
-        if (clamped.amIndex !== undefined) clamped.amIndex = Math.max(0, Math.min(1, clamped.amIndex))
-        if (clamped.timbre !== undefined) clamped.timbre = Math.max(0, Math.min(1, clamped.timbre))
-        if (clamped.order !== undefined) clamped.order = Math.max(0, Math.min(1, clamped.order))
-
-        this.settings.complex = { ...this.settings.complex, ...clamped }
-
-        // Update all voices in the pool and active voices
-        const { timbre, order, harmonics } = this.settings.complex
-        this.voicePool.forEach(v => this.updateWavefolder(v, timbre, order, harmonics))
-        this.voices.forEach(v => this.updateWavefolder(v, timbre, order, harmonics))
+        this.settings.complex = { ...this.settings.complex, ...params }
+        this.activeVoices.forEach(v => this.updateWavefolder(v, this.settings.complex.timbre, this.settings.complex.order, this.settings.complex.harmonics))
     }
 }

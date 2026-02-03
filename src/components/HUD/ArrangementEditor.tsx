@@ -5,6 +5,8 @@ import { useArrangementStore, ArrangementClip } from '../../store/arrangementSto
 import { useVisualStore } from '../../store/visualStore'
 import { useThemeStore } from '../../store/themeStore'
 import { SNAPSHOT_LIBRARY } from '../../data/snapshotLibrary'
+import { audioTrackManager } from '../../logic/AudioTrackManager'
+import { indexedDbManager } from '../../logic/IndexedDbManager'
 import {
     Clock,
     Play,
@@ -21,84 +23,163 @@ import {
 } from 'lucide-react'
 import './ArrangementEditor.css'
 
+// --- HELPERS ---
+const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 0, 0'
+}
+
 // --- OPTIMIZED SUB-COMPONENTS ---
 
-const ArrangementClipItem = memo(({ clip, isSelected, trackColor, TPP, onDrag, onResize, onDelete }: any) => {
-    const snapshot = SNAPSHOT_LIBRARY[clip.trackId]?.[clip.snapshotId] || {}
+const ArrangementRuler = memo(({ TPP, markers, isLooping, loopStart, loopEnd, onRemoveMarker }: any) => {
+    // 128 bars loop
+    const bars = Array.from({ length: 128 })
 
     return (
-        <div
-            className={`arr-clip-pro ${isSelected ? 'selected' : ''}`}
-            style={{
-                left: clip.startTick * TPP,
-                width: clip.durationTicks * TPP,
-                '--track-color': trackColor,
-                '--track-color-rgb': trackColor.replace('#', '')
-            } as any}
-            onMouseDown={(e) => onDrag(e, clip)}
-        >
-            <div className="clip-handle-left" onMouseDown={(e) => onResize(e, clip, 'left')} />
+        <div className="arr-ruler" onClick={(e: any) => {
+            if (e.target.className === 'arr-ruler') {
+                const rect = e.currentTarget.getBoundingClientRect()
+                const tick = Math.floor((e.clientX - rect.left) / TPP)
+                Tone.Transport.ticks = tick * 48
+            }
+        }}>
+            {bars.map((_, barIdx) => {
+                const x = barIdx * 16 * TPP
+                return (
+                    <React.Fragment key={barIdx}>
+                        {/* Bar Marker */}
+                        <div className="ruler-marker-pro bar" style={{ left: x }} />
+                        <div className="ruler-label-pro" style={{ left: x }}>{barIdx + 1}</div>
 
-            <div className="clip-preview">
-                {clip.trackId === 'drums' && snapshot.kick?.pulses !== undefined && (
-                    <div className="preview-dots">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className={`dot ${i < snapshot.kick.pulses ? 'active' : ''}`} />
+                        {/* Quarter Beat Markers */}
+                        {[4, 8, 12].map(beat => (
+                            <div key={beat} className="ruler-marker-pro major" style={{ left: x + beat * TPP }} />
                         ))}
-                    </div>
-                )}
-                {clip.trackId !== 'drums' && (
-                    <div className="preview-waves">
-                        {[30, 70, 40, 60].map((h, i) => (
-                            <div key={i} className="wave-bar" style={{ height: `${h}%` }} />
-                        ))}
-                    </div>
-                )}
-            </div>
+                    </React.Fragment>
+                )
+            })}
 
-            <span className="clip-text">SN {clip.snapshotId + 1}</span>
-            <div className="clip-handle-right" onMouseDown={(e) => onResize(e, clip, 'right')} />
+            {markers.map((m: any) => (
+                <div key={m.id} className="song-marker-v7" style={{ left: m.tick * TPP }}>
+                    <div className="marker-flag-v7" style={{ borderColor: m.color || '#555' }} onClick={() => Tone.Transport.ticks = m.tick * 48}>
+                        <span>{m.label}</span>
+                        <button className="marker-del-v7" onClick={(e) => { e.stopPropagation(); onRemoveMarker(m.id); }}>×</button>
+                    </div>
+                </div>
+            ))}
 
-            {isSelected && (
-                <button className="clip-del-btn" onClick={(e) => { e.stopPropagation(); onDelete(clip.id); }}>×</button>
+            {isLooping && (
+                <div className="loop-bracket" style={{ left: loopStart * TPP, width: (loopEnd - loopStart) * TPP }} />
             )}
         </div>
     )
 })
 
-const TrackHeader = memo(({ track, settings, vuRef, onMute, onSolo, onVolume, onToggleAuto }: any) => {
+
+const WaveformPreview = memo(({ peaks, color }: { peaks: number[], color: string }) => {
+    if (!peaks || peaks.length === 0) return (
+        <div className="preview-waves">
+            {[30, 70, 40, 60].map((h, i) => <div key={i} className="wave-bar" style={{ height: `${h}%` }} />)}
+        </div>
+    )
     return (
-        <div className="arr-track-header">
-            <div className="track-info">
-                <div className="track-dot" style={{ background: track.color }} />
-                <span className="track-name">{track.label}</span>
-                <div className="track-vu">
-                    <div className="vu-bar" ref={vuRef} style={{ background: track.color }} />
-                </div>
-                <button
-                    className={`auto-toggle ${settings.showAutomation ? 'active' : ''}`}
-                    onClick={() => onToggleAuto(track.id)}
-                    title="Toggle Automation"
-                >
-                    <Zap size={10} />
-                </button>
+        <svg className="waveform-svg" viewBox={`0 0 ${peaks.length} 100`} preserveAspectRatio="none">
+            <path
+                d={peaks.map((p, i) => `M ${i} ${50 - p * 50} L ${i} ${50 + p * 50}`).join(' ')}
+                stroke={color}
+                strokeWidth="1"
+            />
+        </svg>
+    )
+})
+
+const ArrangementClipItem = memo(({ clip, isSelected, isGhost, trackColor, TPP, onDrag, onResize, onDelete }: any) => {
+    const snapshot = clip.type === 'midi' ? (SNAPSHOT_LIBRARY[clip.trackId]?.[clip.snapshotId] || {}) : null
+
+    return (
+        <div
+            className={`arr-clip-pro ${isSelected ? 'selected' : ''} ${isGhost ? 'is-ghost' : ''} clip-${clip.type}`}
+            style={{
+                left: clip.startTick * TPP,
+                width: clip.durationTicks * TPP,
+                '--track-color': trackColor,
+                '--track-color-rgb': hexToRgb(trackColor)
+            } as any}
+            onMouseDown={!isGhost ? ((e) => onDrag(e, clip)) : undefined}
+        >
+            <div className="clip-hdr-pro">
+                <span>{clip.type === 'audio' ? (clip.name || 'AUDIO SOURCE') : `PATTERN ${clip.snapshotId + 1}`}</span>
+                {isSelected && !isGhost && (
+                    <button className="clip-del-btn-pro" style={{ opacity: 0.6 }} onClick={(e) => { e.stopPropagation(); onDelete(clip.id); }}>×</button>
+                )}
             </div>
-            <div className="track-mixer-mini">
-                <button
-                    className={`mixer-btn m ${settings.mute ? 'active' : ''}`}
-                    onClick={() => onMute(track.id, !settings.mute)}
-                >M</button>
-                <button
-                    className={`mixer-btn s ${settings.solo ? 'active' : ''}`}
-                    onClick={() => onSolo(track.id, !settings.solo)}
-                >S</button>
-                <input
-                    type="range"
-                    className="mini-fader"
-                    min="0" max="1" step="0.01"
-                    value={settings.volume}
-                    onChange={(e) => onVolume(track.id, Number(e.target.value))}
-                />
+
+            <div className="clip-body-pro">
+                {!isGhost && <div className="clip-handle-left" onMouseDown={(e) => onResize(e, clip, 'left')} />}
+
+                <div className="clip-visualization">
+                    {clip.type === 'audio' ? (
+                        <div className="waveform-hdr">
+                            <WaveformPreview peaks={clip.audioData?.peaks || []} color={trackColor} />
+                        </div>
+                    ) : (
+                        <div className="midi-dots-preview">
+                            {clip.type === 'midi' && snapshot?.kick?.pulses !== undefined && (
+                                <div className="preview-row">
+                                    {Array.from({ length: Math.min(24, clip.durationTicks / 4) }).map((_, i) => (
+                                        <div key={i} className={`mini-dot ${i < (snapshot.kick.pulses * 3) ? 'active' : ''}`} style={{ background: trackColor, color: trackColor }} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {!isGhost && <div className="clip-handle-right" onMouseDown={(e) => onResize(e, clip, 'right')} />}
+            </div>
+        </div>
+    )
+})
+
+const TrackHeader = memo(({ track, settings, vuRef, onMute, onSolo, onVolume, onToggleAuto, onToggleCollapse }: any) => {
+    const isGroup = settings.isGroup
+    const isChild = !!settings.parentId
+
+    return (
+        <div className={`arr-track-header-v7 ${isGroup ? 'is-group' : ''} ${isChild ? 'is-child' : ''}`}>
+            <div className="track-head-top">
+                <div className="track-info">
+                    {isGroup && (
+                        <button className="group-fold-btn" onClick={() => onToggleCollapse(track.id)}>
+                            <Anchor size={10} style={{ transform: settings.isCollapsed ? 'rotate(-90deg)' : 'none' }} />
+                        </button>
+                    )}
+                    <div className="track-id-strip" style={{ background: track.color }} />
+                    <span className="track-title-v7">{track.label}</span>
+                </div>
+
+                {!isGroup && (
+                    <div className="track-mixer-v7">
+                        <button className={`mixer-tgl m ${settings.mute ? 'active' : ''}`} onClick={() => onMute(track.id, !settings.mute)}>M</button>
+                        <button className={`mixer-tgl s ${settings.solo ? 'active' : ''}`} onClick={() => onSolo(track.id, !settings.solo)}>S</button>
+                        <div className="mini-fader-v7">
+                            <div className="fader-fill-v7" style={{ width: `${settings.volume * 100}%`, background: track.color }} />
+                            <input type="range" min="0" max="1" step="0.01" value={settings.volume} onChange={(e) => onVolume(track.id, Number(e.target.value))} />
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="track-head-bottom">
+                {!isGroup && (
+                    <div className="vu-meter-v7">
+                        <div className="vu-fill-v7" ref={vuRef} style={{ width: '0%', background: track.color }} />
+                    </div>
+                )}
+                <div className="track-utility-v7">
+                    {!isGroup && <button className={`util-btn ${settings.isFrozen ? 'frozen' : ''}`} onClick={() => onMute(track.id, 'freeze')}><Clock size={10} /></button>}
+                    {!isGroup && <button className={`util-btn ${settings.showAutomation ? 'active' : ''}`} onClick={() => onToggleAuto(track.id)}><Zap size={10} /></button>}
+                </div>
             </div>
         </div>
     )
@@ -122,9 +203,9 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
     const loopEnd = useArrangementStore(s => s.loopEnd)
 
     const {
-        setZoom, setLooping, setTrackSetting, updateClip, removeClip, splitClip,
+        setZoom, setLooping, setTrackSetting, addClip, updateClip, removeClip, splitClip,
         setSelectedClips, moveSelectedClips, deleteSelectedClips, duplicateSelectedClips,
-        addMarker, removeMarker, setAutomationPoint
+        addMarker, removeMarker, setAutomationPoint, toggleGroupCollapsed
     } = useArrangementStore.getState()
 
     const playheadRef = useRef<HTMLDivElement>(null)
@@ -147,6 +228,7 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
     const [marqueeRect, setMarqueeRect] = useState<any>(null)
 
     const tracks = useMemo(() => [
+        { id: 'group_drums', label: 'DRUM GROUP', color: '#00ffaa' },
         { id: 'drums', label: 'DRUMS', color: '#00ffaa' },
         { id: 'bass', label: 'BASS', color: '#00ccff' },
         { id: 'lead', label: 'LEAD', color: '#ffcc00' },
@@ -154,6 +236,14 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
         { id: 'sampler', label: 'SAMPLER', color: '#ffaa00' },
         { id: 'harm', label: 'HARMONY', color: '#ffffff' }
     ], [])
+
+    // Seed initial group structure if not present
+    useEffect(() => {
+        if (!tracksState['group_drums']) {
+            setTrackSetting('group_drums', { isGroup: true, isCollapsed: false } as any)
+            setTrackSetting('drums', { parentId: 'group_drums' } as any)
+        }
+    }, [tracksState])
 
     useEffect(() => {
         // Initialize Theme
@@ -226,11 +316,21 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
         }
     }, [deleteSelectedClips, duplicateSelectedClips])
 
+    // Sync Audio Players with Clips
+    useEffect(() => {
+        const audioClips = clips.filter(c => c.type === 'audio')
+        audioClips.forEach(clip => {
+            audioTrackManager.createPlayer(clip)
+        })
+    }, [clips])
+
     const snapValue = (x: number) => {
-        const snap = {
+        const snapMap: Record<string, number> = {
             '1n': 16, '4n': 4, '8n': 2, '16n': 1,
             '4t': 4 * (2 / 3), '8t': 2 * (2 / 3)
-        }[snapRes as any] || 4
+        }
+        const resKey = snapRes as string
+        const snap = snapMap[resKey] || 4
         const ticks = Math.floor(x / TPP)
         return Math.floor(ticks / snap) * snap
     }
@@ -257,10 +357,11 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
 
     const onMouseMove = (e: React.MouseEvent) => {
         const { dragging, resizing, marqueeStart, startX, startY, oldStart, oldDur } = interaction.current
-        const snap = {
+        const snapMap: Record<string, number> = {
             '1n': 16, '4n': 4, '8n': 2, '16n': 1,
             '4t': 4 * (2 / 3), '8t': 2 * (2 / 3)
-        }[snapRes as any] || 4
+        }
+        const snap = snapMap[snapRes as string] || 4
 
         if (dragging) {
             const deltaTicks = snapValue(e.clientX - startX)
@@ -312,6 +413,56 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
         setMarqueeRect(null)
     }
 
+    const onDrop = async (e: React.DragEvent) => {
+        e.preventDefault()
+        const file = e.dataTransfer.files[0]
+        if (!file || (!file.type.includes('audio') && !file.name.endsWith('.mp3') && !file.name.endsWith('.wav'))) return
+
+        const rect = timelineRef.current!.getBoundingClientRect()
+        const dropX = e.clientX - rect.left + timelineRef.current!.scrollLeft - 180
+        const dropY = e.clientY - rect.top + timelineRef.current!.scrollTop
+        const startTick = snapValue(dropX)
+        const trackIdx = Math.floor(dropY / 80)
+        const trackId = tracks[Math.min(tracks.length - 1, Math.max(0, trackIdx))].id
+
+        const buffer = await file.arrayBuffer()
+        const audioBuffer = await Tone.context.decodeAudioData(buffer)
+
+        // Calculate peaks for waveform
+        const rawData = audioBuffer.getChannelData(0)
+        const samplesPerPixel = Math.floor(rawData.length / 100)
+        const peaks = []
+        for (let i = 0; i < 100; i++) {
+            let max = 0
+            for (let j = 0; j < samplesPerPixel; j++) {
+                const val = Math.abs(rawData[i * samplesPerPixel + j])
+                if (val > max) max = val
+            }
+            peaks.push(max)
+        }
+
+        const durationTicks = Math.ceil(audioBuffer.duration * (useAudioStore.getState().bpm / 60) * 4)
+
+        // Generate persistent ID
+        const blobId = `audio_${Date.now()}_${Math.random().toString(36).substring(7)}`
+        await indexedDbManager.saveBlob(blobId, file)
+
+        addClip({
+            type: 'audio',
+            trackId,
+            startTick,
+            durationTicks,
+            name: file.name.toUpperCase(),
+            audioData: {
+                bufferUrl: URL.createObjectURL(file),
+                blobId,
+                originalBpm: useAudioStore.getState().bpm,
+                warpMode: 'Stretch',
+                peaks
+            }
+        } as any)
+    }
+
     const inspectorClip = clips.find(c => c.id === inspectorClipId)
 
     return (
@@ -320,64 +471,60 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
 
             <div className="arr-header">
                 <div className="arr-logo">
-                    <Clock size={16} className="arr-pulse" />
-                    <span>ARRANGEMENT ELITE 4.0</span>
+                    <div className="pro-badge">PRO</div>
+                    <span className="arr-title">Arrangement Elite v6.0</span>
                 </div>
 
                 <div className="arr-transport-pro">
-                    {/* THEME CONTROLS */}
-                    <div className="theme-selector" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <select
-                            style={{ background: 'transparent', color: 'var(--primary-color)', border: 'none', fontSize: '10px', fontWeight: 'bold', outline: 'none', maxWidth: '80px' }}
-                            value={useThemeStore(s => s.currentTheme.id)}
-                            onChange={(e) => useThemeStore.getState().setTheme(e.target.value)}
-                        >
-                            {useThemeStore.getState().presets.map(p => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
-                        <button className="arr-tool" onClick={() => useThemeStore.getState().randomizeTheme()} title="Shuffle Theme">
-                            <Zap size={12} />
+                    <div className="tool-palette-v6">
+                        <button className={`tool-btn-v6 ${!isScissorsMode ? 'active' : ''}`} onClick={() => setIsScissorsMode(false)} title="Pointer Tool (V)">
+                            <Play size={10} />
+                        </button>
+                        <button className={`tool-btn-v6 ${isScissorsMode ? 'active' : ''}`} onClick={() => setIsScissorsMode(true)} title="Scissors Tool (S)">
+                            <Scissors size={10} />
                         </button>
                     </div>
+
                     <div className="v-separator" />
 
-                    <button className={`arr-tool ${isLooping ? 'active' : ''}`} onClick={() => {
-                        setLooping(!isLooping)
-                        Tone.Transport.loop = !isLooping
-                        Tone.Transport.loopStart = loopStart * 48
-                        Tone.Transport.loopEnd = loopEnd * 48
-                    }}>
-                        <Repeat size={14} /> LOOP
+                    <button className={`arr-btn ${audioPlaying ? 'active' : ''}`} onClick={toggleAudioPlay}>
+                        <Play size={16} fill={audioPlaying ? 'currentColor' : 'none'} />
                     </button>
+                    <button className="arr-btn" onClick={() => Tone.Transport.stop()}>
+                        <Square size={16} />
+                    </button>
+
                     <div className="v-separator" />
-                    <div className="snap-selector">
+
+                    <button className="arr-btn" onClick={() => setLooping(!isLooping)} title="Toggle Loop">
+                        <Repeat size={14} color={isLooping ? 'var(--primary-neon)' : '#555'} />
+                    </button>
+
+                    <div className="snap-selector-v6">
                         <Anchor size={12} />
-                        <select value={snapRes} onChange={(e: any) => useArrangementStore.setState({ snapResolution: e.target.value })}>
-                            <option value="1n">BAR</option>
+                        <select className="premium-select" value={snapRes} onChange={(e) => useArrangementStore.getState().setSnapResolution(e.target.value as any)}>
+                            <option value="1n">1 Bar</option>
                             <option value="4n">1/4</option>
-                            <option value="4t">1/4T</option>
                             <option value="8n">1/8</option>
-                            <option value="8t">1/8T</option>
                             <option value="16n">1/16</option>
+                            <option value="32n">1/32</option>
                         </select>
                     </div>
+
                     <div className="v-separator" />
-                    <button className="arr-btn play" onClick={toggleAudioPlay}>
-                        {audioPlaying ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+                    <button className="arr-btn plus-marker" onClick={() => addMarker(Tone.Transport.ticks / 48, 'NEW MARKER')} title="Add Song Marker">
+                        <Plus size={14} />
                     </button>
                     <div className="v-separator" />
-                    <button className={`arr-tool ${isScissorsMode ? 'active' : ''}`} onClick={() => setIsScissorsMode(!isScissorsMode)} title="Scissors (S)">
-                        <Scissors size={14} />
-                    </button>
-                    <button className="arr-tool" onClick={duplicateSelectedClips} title="Duplicate (Cmd+D)"><Copy size={14} /></button>
-                    <button className="arr-tool" onClick={deleteSelectedClips} title="Delete (Del)"><Trash2 size={14} /></button>
+
+                    <button className="arr-btn" onClick={duplicateSelectedClips} title="Duplicate (Cmd+D)"><Copy size={13} /></button>
+                    <button className="arr-btn" onClick={deleteSelectedClips} title="Delete (Del)"><Trash2 size={13} /></button>
                 </div>
 
                 <div className="arr-zoom-controls">
-                    <Minimize2 size={12} />
+                    <Minimize2 size={12} color="#444" />
                     <input type="range" min="2" max="32" step="1" value={TPP} onChange={(e) => setZoom(Number(e.target.value))} />
-                    <Maximize2 size={12} />
+                    <Maximize2 size={12} color="#444" />
                 </div>
 
                 <button className="arr-btn close" onClick={onClose}>EXIT</button>
@@ -387,53 +534,99 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
                 <div className="arr-main-container">
                     <div className="arr-track-list">
                         <div className="track-list-ruler-corner">
-                            <button className="add-marker-btn" onClick={() => addMarker(Tone.Transport.ticks / 48, 'NEW MARKER')}>
-                                <Plus size={10} /> MARKER
-                            </button>
+                            <div className="corner-info">TRACKS</div>
                         </div>
-                        {tracks.map(t => (
-                            <TrackHeader
-                                key={t.id} track={t}
-                                settings={tracksState[t.id] || {}}
-                                vuRef={(el: any) => vuRefs.current[t.id] = el}
-                                onMute={(id: any, v: any) => setTrackSetting(id, { mute: v })}
-                                onSolo={(id: any, v: any) => setTrackSetting(id, { solo: v })}
-                                onVolume={(id: any, v: any) => setTrackSetting(id, { volume: v })}
-                                onToggleAuto={(id: any) => setTrackSetting(id, { showAutomation: !(tracksState[id]?.showAutomation) })}
-                            />
-                        ))}
+                        {tracks.map(t => {
+                            const settings = tracksState[t.id] || {}
+                            const parentSettings = settings.parentId ? tracksState[settings.parentId] : null
+                            if (parentSettings?.isCollapsed) return null
+
+                            return (
+                                <TrackHeader
+                                    key={t.id} track={t}
+                                    settings={settings}
+                                    vuRef={(el: any) => vuRefs.current[t.id] = el}
+                                    onMute={(id: any, v: any) => {
+                                        if (v === 'freeze') {
+                                            useAudioStore.getState().freezeTrack(id)
+                                        } else {
+                                            setTrackSetting(id, { mute: v })
+                                        }
+                                    }}
+                                    onSolo={(id: any, v: any) => setTrackSetting(id, { solo: v })}
+                                    onVolume={(id: any, v: any) => setTrackSetting(id, { volume: v })}
+                                    onToggleAuto={(id: any) => setTrackSetting(id, { showAutomation: !(tracksState[id]?.showAutomation) })}
+                                    onToggleCollapse={(id: any) => toggleGroupCollapsed(id)}
+                                />
+                            )
+                        })}
                     </div>
 
-                    <div className="arr-timeline" ref={timelineRef}>
-                        <div className="arr-ruler-pro" style={{ '--grid-size': `${16 * TPP}px` } as any}>
-                            {Array.from({ length: 256 }).map((_, i) => i % 4 === 0 && (
-                                <div key={i} className="ruler-number" style={{ left: i * TPP }}>
-                                    {Math.floor(i / 16) + 1}.{(Math.floor(i / 4) % 4) + 1}
-                                </div>
-                            ))}
-                            {markers.map(m => (
-                                <div key={m.id} className="song-marker" style={{ left: m.tick * TPP, borderColor: m.color || '#555' }}>
-                                    <span>{m.label}</span>
-                                    <div className="marker-line" style={{ background: m.color || '#555' }} />
-                                    <button className="marker-del" onClick={() => removeMarker(m.id)}>×</button>
-                                </div>
-                            ))}
-                            {isLooping && <div className="loop-bracket" style={{ left: loopStart * TPP, width: (loopEnd - loopStart) * TPP }} />}
-                        </div>
+                    <div className="arr-timeline"
+                        ref={timelineRef}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={onDrop}
+                        style={{ '--tpp': TPP } as any}
+                    >
+                        <ArrangementRuler
+                            TPP={TPP}
+                            markers={markers}
+                            isLooping={isLooping}
+                            loopStart={loopStart}
+                            loopEnd={loopEnd}
+                            onRemoveMarker={removeMarker}
+                        />
 
-                        <div className="arr-lanes" style={{ '--grid-size': `${16 * TPP}px` } as any}>
+                        <div className="arr-lanes">
                             {tracks.map(t => {
-                                const showAuto = tracksState[t.id]?.showAutomation
-                                const param = tracksState[t.id]?.automationParam || 'volume'
+                                const settings = tracksState[t.id] || {}
+                                const parentSettings = settings.parentId ? tracksState[settings.parentId] : null
+                                if (parentSettings?.isCollapsed) return null
+
+                                const showAuto = settings.showAutomation
+                                const param = settings.automationParam || 'volume'
                                 const points = automations[t.id]?.[param] || []
 
+                                // --- GHOST NOTES LOGIC ---
+                                const otherSelectedTrackIds = Array.from(new Set(
+                                    clips.filter(c => selectedIds.includes(c.id) && c.trackId !== t.id).map(c => c.trackId)
+                                ))
+
                                 return (
-                                    <div key={t.id} className={`track-lane-pro ${showAuto ? 'show-auto' : ''}`}>
-                                        {clips.filter(c => c.trackId === t.id).map(c => (
+                                    <div key={t.id} className={`track-lane-pro ${showAuto ? 'show-auto' : ''} ${settings.isGroup ? 'group-lane' : ''} ${settings.isFrozen ? 'frozen-lane' : ''}`}>
+                                        {/* Group Summary Blocks */}
+                                        {settings.isGroup && (
+                                            clips.filter(c => {
+                                                const childSettings = tracksState[c.trackId]
+                                                return childSettings?.parentId === t.id
+                                            }).map(c => (
+                                                <div
+                                                    key={`summary-${c.id}`}
+                                                    className="group-summary-clip"
+                                                    style={{ left: c.startTick * TPP, width: c.durationTicks * TPP }}
+                                                />
+                                            ))
+                                        )}
+
+                                        {/* Ghost Notes Layer */}
+                                        {!settings.isGroup && otherSelectedTrackIds.map(otherTid => (
+                                            clips.filter(c => c.trackId === otherTid).map(c => (
+                                                <ArrangementClipItem
+                                                    key={`ghost-${c.id}`} clip={c}
+                                                    isGhost={true}
+                                                    trackColor={tracks.find(tr => tr.id === otherTid)?.color || '#555'}
+                                                    TPP={TPP}
+                                                />
+                                            ))
+                                        ))}
+
+                                        {/* Actual Clips */}
+                                        {!settings.isGroup && clips.filter(c => c.trackId === t.id).map(c => (
                                             <ArrangementClipItem
                                                 key={c.id} clip={c} isSelected={selectedIds.includes(c.id)}
                                                 trackColor={t.color} TPP={TPP}
                                                 onDrag={(e: any, clip: any) => {
+                                                    if (settings.isFrozen) return
                                                     if (isScissorsMode) {
                                                         const rect = timelineRef.current!.getBoundingClientRect()
                                                         splitClip(clip.id, snapValue(e.clientX - rect.left + timelineRef.current!.scrollLeft - 180))
@@ -443,6 +636,7 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
                                                     }
                                                 }}
                                                 onResize={(e: any, clip: any, side: any) => {
+                                                    if (settings.isFrozen) return
                                                     e.stopPropagation()
                                                     interaction.current = { ...interaction.current, resizing: { id: clip.id, side }, startX: e.clientX, oldStart: clip.startTick, oldDur: clip.durationTicks }
                                                 }}
@@ -451,12 +645,7 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
                                         ))}
 
                                         {showAuto && (
-                                            <div className="automation-canvas" onClick={(e) => {
-                                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                                                const tick = snapValue(e.clientX - rect.left + timelineRef.current!.scrollLeft - 180)
-                                                const value = 1 - (e.clientY - rect.top) / rect.height
-                                                setAutomationPoint(t.id, param, tick, value)
-                                            }}>
+                                            <div className="automation-canvas">
                                                 <svg width="10000" height="80">
                                                     <path
                                                         d={points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.tick * TPP} ${(1 - p.value) * 80}`).join(' ')}
@@ -472,16 +661,16 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
                                 )
                             })}
 
-                            {marqueeRect && <div className="marquee-box" style={marqueeRect} />}
-
-                            <div className="arr-playhead-pro" ref={playheadRef}>
-                                <div className="playhead-line" /><div className="playhead-top" />
+                            {/* MASTER BUS LANE */}
+                            <div className="track-lane-pro master">
+                                <div className="master-label-pro">MASTER BUS OUTPUT</div>
                             </div>
                         </div>
 
-                        {/* MASTER TRACK LANE */}
-                        <div className="track-lane-pro master">
-                            <div className="master-label">MASTER BUS</div>
+                        {marqueeRect && <div className="marquee-box" style={marqueeRect} />}
+
+                        <div className="arr-playhead-v6" ref={playheadRef}>
+                            <div className="playhead-top-v6" />
                         </div>
                     </div>
                 </div>
@@ -502,7 +691,7 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
                                 <input
                                     type="text"
                                     value={inspectorClip.name || ''}
-                                    placeholder={`SN ${inspectorClip.snapshotId + 1}`}
+                                    placeholder={`SN ${(inspectorClip as any).snapshotId + 1}`}
                                     onChange={(e) => updateClip(inspectorClip.id, { name: e.target.value })}
                                 />
                             </div>
@@ -514,17 +703,46 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
                                     onChange={(e) => updateClip(inspectorClip.id, { gain: Number(e.target.value) })}
                                 />
                             </div>
-                            <div className="ins-row">
-                                <label>SNAPSHOT</label>
-                                <select
-                                    value={inspectorClip.snapshotId}
-                                    onChange={(e) => updateClip(inspectorClip.id, { snapshotId: Number(e.target.value) })}
-                                >
-                                    {Object.keys(SNAPSHOT_LIBRARY[inspectorClip.trackId] || {}).map(id => (
-                                        <option key={id} value={id}>Snapshot {Number(id) + 1}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            {inspectorClip.type === 'midi' && (
+                                <div className="ins-row">
+                                    <label>SNAPSHOT</label>
+                                    <select
+                                        value={(inspectorClip as any).snapshotId ?? 0}
+                                        onChange={(e) => updateClip(inspectorClip.id, { snapshotId: Number(e.target.value) })}
+                                    >
+                                        {Object.keys(SNAPSHOT_LIBRARY[inspectorClip.trackId] || {}).map(snapId => (
+                                            <option key={snapId} value={snapId}>Snapshot {Number(snapId) + 1}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                            {inspectorClip.type === 'audio' && (
+                                <>
+                                    <div className="ins-row">
+                                        <label>WARP MODE</label>
+                                        <select
+                                            value={inspectorClip.audioData?.warpMode}
+                                            onChange={(e) => updateClip(inspectorClip.id, {
+                                                audioData: { ...inspectorClip.audioData!, warpMode: e.target.value as any }
+                                            })}
+                                        >
+                                            <option value="Stretch">STRETCH</option>
+                                            <option value="Repitch">REPITCH</option>
+                                            <option value="None">NONE</option>
+                                        </select>
+                                    </div>
+                                    <div className="ins-row">
+                                        <label>ORIGINAL BPM</label>
+                                        <input
+                                            type="number"
+                                            value={inspectorClip.audioData?.originalBpm}
+                                            onChange={(e) => updateClip(inspectorClip.id, {
+                                                audioData: { ...inspectorClip.audioData!, originalBpm: Number(e.target.value) }
+                                            })}
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 )}
@@ -532,10 +750,12 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
 
             <div className="arr-footer-pro">
                 <div className="footer-stat">
-                    <span>TRACKS: {tracks.length}</span><span>CLIPS: {clips.length}</span><span>SELECTED: {selectedIds.length}</span>
+                    <span>TRACKS: {tracks.length}</span>
+                    <span style={{ marginLeft: '12px' }}>CLIPS: {clips.length}</span>
+                    <span style={{ marginLeft: '12px' }}>SELECTED: {selectedIds.length}</span>
                 </div>
-                <div className="footer-msg">STUDIO ELITE V5.0 • {isScissorsMode ? 'SCISSORS TOOL ACTIVE' : 'ARRANGEMENT MODE'}</div>
-                <div className="footer-seek" ref={seekTextRef}>1 : 1 : 0</div>
+                <div className="footer-msg">ENGINE V6.0 • HYPER-PREMIUM RENDERER</div>
+                <div className="footer-seek-pro" ref={seekTextRef}>001 : 01 : 000</div>
             </div>
         </div>
     )

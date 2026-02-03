@@ -16,6 +16,7 @@ class GamepadManagerClass {
     private gamepadIndex: number | null = null
     private rafId: number | null = null
     private lastButtons: boolean[] = []
+    private lastButtonTimes: number[] = [] // Debounce tracking
 
     // DualSense Mapping (Standard API)
     // 0: Cross, 1: Circle, 2: Square, 3: Triangle
@@ -55,14 +56,22 @@ class GamepadManagerClass {
         const visual = useVisualStore.getState()
 
         // Handle Buttons
+        const now = Date.now()
         gp.buttons.forEach((btn, i) => {
             const pressed = btn.pressed
             const wasPressed = this.lastButtons[i]
-            if (pressed && !wasPressed) {
-                if (visual.appView === 'VISUALIZER') {
-                    this.handleVisualizerButtons(i, visual)
+            const lastTime = this.lastButtonTimes[i] || 0
+
+            // Trigger on edge AND check debounce (150ms)
+            if (pressed && !wasPressed && (now - lastTime > 150)) {
+                this.lastButtonTimes[i] = now
+
+                // Get fresh state to avoid race conditions mid-frame
+                const currentVisual = useVisualStore.getState()
+                if (currentVisual.appView === 'VISUALIZER') {
+                    this.handleVisualizerButtons(i, currentVisual)
                 } else {
-                    this.handleStudioButtons(i, audio, visual)
+                    this.handleStudioButtons(i, audio, currentVisual)
                 }
             }
             this.lastButtons[i] = pressed
@@ -115,11 +124,11 @@ class GamepadManagerClass {
                 audio.panic()
                 this.vibrate(100, 1.0)
                 break
-            case 4: // L1 - Prev instrument
-                this.cycleInstrument(-1, visual)
+            case 4: // L1 - Prev instrument / Cycle Hotbar
+                visual.cycleVisualizerQuickSlots(-1)
                 break
-            case 5: // R1 - Next instrument
-                this.cycleInstrument(1, visual)
+            case 5: // R1 - Next instrument / Cycle Hotbar
+                visual.cycleVisualizerQuickSlots(1)
                 break
             case 8: // Share/Create - Prev View (removed, now only Options cycles)
             case 9: // Options - Cycle View (3D > Nodes > Live > Arrange > Visualizer)
@@ -145,12 +154,20 @@ class GamepadManagerClass {
 
     private handleVisualizerButtons(index: number, visual: any) {
         switch (index) {
-            case 0: // Cross (X) - TRIGGER: SHIFT COLORS
-                visual.triggerPulse('visual_shift', 1.0)
+            case 0: // Cross (X) - TRIGGER: SHIFT COLORS / CYCLE PALETTE
+                if (visual.visualizerIndex === 54 || visual.visualizerIndex === 20) {
+                    visual.setVisualParams({ palette: (visual.visualPalette + 1) % 5 })
+                } else {
+                    visual.triggerPulse('visual_shift', 1.0)
+                }
                 this.vibrate(30, 0.3)
                 break
-            case 1: // Circle (O) - TRIGGER: FEEDBACK SCALE
-                visual.triggerPulse('visual_scale', 1.0)
+            case 1: // Circle (O) - TRIGGER: FEEDBACK SCALE / TOGGLE INVERT
+                if (visual.visualizerIndex === 54 || visual.visualizerIndex === 20) {
+                    visual.setVisualParams({ invert: !visual.visualInvert })
+                } else {
+                    visual.triggerPulse('visual_scale', 1.0)
+                }
                 this.vibrate(30, 0.3)
                 break
             case 2: // Square (□) - RESET ALL CHANGES
@@ -161,12 +178,12 @@ class GamepadManagerClass {
                 visual.setAudioIntensity(1.5)
                 this.vibrate(100, 1.0)
                 break
-            case 4: // L1 - Prev Visualizer
-                visual.cycleVisualizer(-1)
+            case 4: // L1 - Prev Visualizer Hotbar Slot
+                visual.cycleVisualizerQuickSlots(-1)
                 this.vibrate(40, 0.4)
                 break
-            case 5: // R1 - Next Visualizer
-                visual.cycleVisualizer(1)
+            case 5: // R1 - Next Visualizer Hotbar Slot
+                visual.cycleVisualizerQuickSlots(1)
                 this.vibrate(40, 0.4)
                 break
             case 9: // Options - Return to 3D
@@ -227,10 +244,13 @@ class GamepadManagerClass {
             visual.setVisualModifier(lsX, lsY)
         }
 
-        // Right Stick Y (Axis 3) for Zoom modulation
+        // Right Stick Y (Axis 3) for Zoom modulation / Detail
         const rsY = gp.axes[3]
         if (Math.abs(rsY) > 0.05) {
-            // Can be mapped to a specific uniform in shaders
+            if (visual.visualizerIndex === 54 || visual.visualizerIndex === 20) {
+                // Map -1..1 to 0..1 for detail
+                visual.setVisualParams({ detail: (rsY + 1) / 2 })
+            }
         }
     }
 

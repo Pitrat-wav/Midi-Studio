@@ -65,6 +65,10 @@ export function KeyboardController({
                     e.preventDefault()
                     visual.cycleView()
                     break
+                case 'Backquote':
+                    e.preventDefault()
+                    visual.toggleTerminal()
+                    break
 
                 // --- NAVIGATION / VISUALIZER SWITCH ---
                 case 'Digit0':

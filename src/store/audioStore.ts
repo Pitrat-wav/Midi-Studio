@@ -8,8 +8,10 @@ import { HarmSynth } from '../logic/HarmSynth'
 import { SamplerInstrument } from '../logic/SamplerInstrument'
 import { generateBassPattern } from '../logic/StingGenerator'
 import { useBassStore, useDrumStore, useSamplerStore, usePadStore, useSequencerStore, useHarmStore } from './instrumentStore'
+import { useArrangementStore } from './arrangementStore'
 import sampleManifest from '../data/sampleManifest.json'
 import { SNAPSHOT_LIBRARY } from '../data/snapshotLibrary'
+import { audioTrackManager } from '../logic/AudioTrackManager'
 
 export interface AudioState {
     isInitializing: boolean
@@ -40,6 +42,16 @@ export interface AudioState {
     micGain: Tone.Volume | null
     isMicOpen: boolean
     isMicMonitor: boolean
+    // Routing & Effects
+    channels: Record<string, Tone.Channel>
+    buses: { reverb: Tone.Channel, delay: Tone.Channel }
+    sidechain: Tone.Compressor | null
+    // Audio Tracks
+    audioPlayers: Record<string, Tone.GrainPlayer | Tone.Player>
+    addAudioPlayer: (clipId: string, player: Tone.GrainPlayer | Tone.Player) => void
+    removeAudioPlayer: (clipId: string) => void
+    syncAudioClips: () => void
+    // Methods
     initialize: () => Promise<void>
     togglePlay: () => void
     toggleMic: () => Promise<void>
@@ -64,6 +76,7 @@ export interface AudioState {
     queuedSnapshots: Record<string, number | null>
     triggerSnapshot: (instId: string, index: number) => void
     commitSnapshots: () => void
+    freezeTrack: (trackId: string) => Promise<void>
 }
 
 export const useAudioStore = create<AudioState>((set, get) => ({
@@ -96,10 +109,37 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     isMicOpen: false,
     isMicMonitor: false,
 
+    channels: {},
+    buses: { reverb: null as any, delay: null as any },
+    sidechain: null,
+
     activeSnapshots: { drums: 0, bass: 0, lead: 0, pads: 0, sampler: 0, harm: 0 },
     queuedSnapshots: { drums: null, bass: null, lead: null, pads: null, sampler: null, harm: null },
 
     masterEQ: { low: 0, lowMid: 0, highMid: 0, high: 0 },
+
+    // Audio Tracks Implementation
+    audioPlayers: {},
+    addAudioPlayer: (clipId, player) => set(state => ({
+        audioPlayers: { ...state.audioPlayers, [clipId]: player }
+    })),
+    removeAudioPlayer: (clipId) => set(state => {
+        const player = state.audioPlayers[clipId]
+        if (player) player.dispose()
+        const newPlayers = { ...state.audioPlayers }
+        delete newPlayers[clipId]
+        return { audioPlayers: newPlayers }
+    }),
+    syncAudioClips: () => {
+        const { clips } = useArrangementStore.getState()
+        const { audioPlayers, bpm } = get()
+        clips.forEach(clip => {
+            if (clip.type === 'audio' && audioPlayers[clip.id]) {
+                const player = audioPlayers[clip.id]
+                player.sync().start(clip.startTick * (60 / bpm / 4))
+            }
+        })
+    },
 
     initialize: async () => {
         if (get().isInitialized || get().isInitializing) return
@@ -123,41 +163,64 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             console.log('[Audio] Step 3: Global FX')
             set({ loadingStep: 'Initializing Effects Chain...' })
 
-            // Global FX Chain
+            // 1. Master Bus & Channels
             const masterBus = new Tone.Gain(1)
 
-            // 4-Band EQ Chain
-            // Low Shelf (< 150Hz)
+            // Create Channels for each instrument
+            const channelNames = ['drums', 'bass', 'lead', 'pads', 'harm', 'sampler', 'mic']
+            const channels: Record<string, Tone.Channel> = {}
+            channelNames.forEach(name => {
+                channels[name] = new Tone.Channel().connect(masterBus)
+                const vol = (get().volumes as any)[name] || 1
+                channels[name].volume.value = Tone.gainToDb(vol)
+            })
+
+            // 2. Effect Buses (Send/Return)
+            const reverbBus = new Tone.Channel().connect(masterBus)
+            const delayBus = new Tone.Channel().connect(masterBus)
+
+            const reverb = new Tone.Reverb({ decay: get().fx.reverb.decay, preDelay: 0.01 })
+            await reverb.ready
+            reverb.generate()
+            reverb.connect(reverbBus)
+
+            const delay = new Tone.FeedbackDelay(get().fx.delay.delayTime, get().fx.delay.feedback)
+            delay.connect(delayBus)
+
+            // 3. Sidechain Ducking (Kick -> Bass)
+            // Compressor on Bass channel, input 0 is audio, input 1 is sidechain
+            const sidechain = new Tone.Compressor({
+                threshold: -30,
+                ratio: 12,
+                attack: 0.01,
+                release: 0.2
+            })
+            // In Tone.js, to use sidechain on a compressor, we need to bypass the internal connection 
+            // or use a native AudioNode if Tone doesn't expose it easily. 
+            // Actually, Tone.Compressor has a 'sidechain' source but it's tricky.
+            // A common way in Tone is to use a Gain node modulated by a signal, but a real compressor is better.
+            // Let's use Tone.Compressor and connect the kick signal to its 'threshold' or similar? 
+            // No, Tone.Compressor doesn't have a direct sidechain input port in the standard way.
+            // However, we can use a native compressor node.
+
+            const bassChannel = channels['bass']
+            // Insert compressor into bass channel
+            // channel -> sidechain (static comp) -> (sidechainGain will be connected in kick block)
+            bassChannel.disconnect()
+            bassChannel.connect(sidechain)
+            // Note: sidechain is connected to masterBus (or sidechainGain) later in the initializer
+
+            // 4-Band EQ Chain (on Master)
             const eqLow = new Tone.Filter(150, "lowshelf")
-            // Low Mid Peaking (400Hz)
             const eqLowMid = new Tone.Filter(400, "peaking")
-            eqLowMid.Q.value = 1
-            // High Mid Peaking (2.5kHz)
             const eqHighMid = new Tone.Filter(2500, "peaking")
-            eqHighMid.Q.value = 1
-            // High Shelf (> 8kHz)
             const eqHigh = new Tone.Filter(8000, "highshelf")
 
             const distortion = new Tone.Distortion(get().fx.distortion.amount)
-            const delay = new Tone.FeedbackDelay(get().fx.delay.delayTime, get().fx.delay.feedback)
-
-            // USE LIGHTWEIGHT REVERB FOR NOW
-            const reverb = new Tone.Reverb({ decay: 1.5, preDelay: 0.01 })
-            await reverb.ready
-
-            console.log('[Audio] Step 4: FX Params')
-            // Apply initial EQ gains
-            eqLow.gain.value = get().masterEQ.low
-            eqLowMid.gain.value = get().masterEQ.lowMid
-            eqHighMid.gain.value = get().masterEQ.highMid
-            eqHigh.gain.value = get().masterEQ.high
-
             distortion.wet.value = get().fx.distortion.wet
-            delay.wet.value = get().fx.delay.wet
-            reverb.wet.value = get().fx.reverb.wet
 
-            // Chain: Bus -> EQ -> Dist -> Delay -> Reverb -> Destination
-            masterBus.chain(eqLow, eqLowMid, eqHighMid, eqHigh, distortion, delay, reverb, Tone.getDestination())
+            // Update Master Chain: masterBus -> EQ -> Dist -> Destination
+            masterBus.chain(eqLow, eqLowMid, eqHighMid, eqHigh, distortion, Tone.getDestination())
 
             // Initialize Microphone Chain
             // Mic -> Gate (remove background noise) -> Compressor (even levels) -> Gain -> MasterBus
@@ -167,12 +230,12 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             const micGain = new Tone.Volume(0)
 
             mic.chain(micGate, micComp, micGain)
-            micGain.connect(masterBus)
+            micGain.connect(channels['mic'])
 
                 // Store nodes on window for global access
                 ; (window as any).masterFX = {
                     distortion, delay, reverb, masterBus, mic, micGate, micGain,
-                    eqLow, eqLowMid, eqHighMid, eqHigh
+                    eqLow, eqLowMid, eqHighMid, eqHigh, channels, reverbBus, delayBus, sidechain
                 }
 
             console.log('[Audio] Step 5: Instruments')
@@ -213,32 +276,53 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             set({ loadingStep: 'Connecting Modules...' })
             console.log('[Audio] Step 6: Connecting Modules')
 
-            // Bass & Lead
-            if ((bass as any).outputGain) (bass as any).outputGain.connect(masterBus)
-            if ((lead as any).outputGain) (lead as any).outputGain.connect(masterBus)
+            // Connect instruments to their respective channels
+            if ((bass as any).outputGain) (bass as any).outputGain.connect(channels['bass'])
+            if ((lead as any).outputGain) (lead as any).outputGain.connect(channels['lead'])
 
-            // Drums
-            if ((drums as any).output) (drums as any).output.connect(masterBus)
+            // Drums - Connect main output to drums channel
+            if ((drums as any).output) (drums as any).output.connect(channels['drums'])
+
+            // Sidechain connection: Kick -> sidechain compressor
+            // We use the raw kick signal to drive the compressor
+            if (drums.kick) {
+                // To drive a compressor's sidechain in web audio, we connect to the 'threshold' or use a dedicated node.
+                const sidechainGain = new Tone.Gain(1)
+                sidechain.connect(sidechainGain)
+                sidechainGain.connect(masterBus)
+
+                const follower = new Tone.Follower(0.1)
+                const inverter = new Tone.Gain(-1)
+                const offset = new Tone.Signal(1)
+
+                drums.kick.connect(follower)
+                follower.connect(inverter)
+                inverter.connect(sidechainGain.gain)
+                offset.connect(sidechainGain.gain)
+
+                    ; (window as any).masterFX.sidechainNodes = { follower, inverter, offset, sidechainGain }
+            } else {
+                sidechain.connect(masterBus)
+            }
 
             // Pads
-            if (pads?.synth) pads.synth.connect(masterBus)
+            if (pads?.synth) pads.synth.connect(channels['pads'])
 
             // Harm
-            if ((harm as any).outputGain) (harm as any).outputGain.connect(masterBus)
-            else if ((harm as any).output) (harm as any).output.connect(masterBus)
+            if ((harm as any).outputGain) (harm as any).outputGain.connect(channels['harm'])
+            else if ((harm as any).output) (harm as any).output.connect(channels['harm'])
 
             // Sampler
-            sampler.volume.connect(masterBus)
+            sampler.volume.connect(channels['sampler'])
 
 
-            // Apply initial volumes
-            const currentVols = get().volumes
-            bass?.setVolume(Tone.gainToDb(currentVols.bass))
-            lead?.setVolume(Tone.gainToDb(currentVols.lead))
-            drums?.setVolume(Tone.gainToDb(currentVols.drums))
-            if (pads?.synth?.volume) pads.synth.volume.value = Tone.gainToDb(currentVols.pads)
-            harm?.setVolume(Tone.gainToDb(currentVols.harm))
-            sampler.setVolume(Tone.gainToDb(currentVols.sampler))
+            // Apply initial volumes (already set during channel creation, but let's be sure for instrument internal levels)
+            bass?.setVolume(0) // Let channels handle the actual mix
+            lead?.setVolume(0)
+            drums?.setVolume(0)
+            if (pads?.synth?.volume) pads.synth.volume.value = 0
+            harm?.setVolume(0)
+            sampler.setVolume(0)
 
             Tone.Transport.bpm.value = get().bpm
             Tone.Transport.swing = get().swing
@@ -269,7 +353,10 @@ export const useAudioStore = create<AudioState>((set, get) => ({
                 samplerInstrument: sampler,
                 mic: mic,
                 micGate: micGate,
-                micGain: micGain
+                micGain: micGain,
+                channels: channels,
+                buses: { reverb: reverbBus, delay: delayBus },
+                sidechain: sidechain
             })
 
             useDrumStore.getState().togglePlay()
@@ -322,11 +409,12 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     },
 
     togglePlay: () => {
-        const { isPlaying } = get()
+        const { isPlaying, syncAudioClips } = get()
         if (isPlaying) {
-            Tone.Transport.stop()
+            Tone.Transport.pause()
             set({ isPlaying: false })
         } else {
+            syncAudioClips()
             Tone.Transport.start()
             set({ isPlaying: true })
         }
@@ -367,19 +455,11 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
     setVolume: (channel: 'drums' | 'bass' | 'lead' | 'pads' | 'harm' | 'mic' | 'sampler', value: number) => {
         set((state) => ({ volumes: { ...state.volumes, [channel]: value } }))
-        const { bassSynth, leadSynth, drumMachine, padSynth, harmSynth, samplerInstrument, micGain, mutes } = get()
-        if (mutes[channel as keyof typeof mutes]) return
+        const { channels, mutes } = get()
+        if (mutes[channel]) return
         const db = Tone.gainToDb(value)
-        try {
-            if (channel === 'bass' && bassSynth) bassSynth.setVolume(db)
-            if (channel === 'lead' && leadSynth) leadSynth.setVolume(db)
-            if (channel === 'drums' && drumMachine) drumMachine.setVolume(db)
-            if (channel === 'pads' && padSynth?.synth?.volume) padSynth.synth.volume.value = db
-            if (channel === 'harm' && harmSynth) harmSynth.setVolume(db)
-            if (channel === 'sampler' && samplerInstrument) samplerInstrument.setVolume(db)
-            if (channel === 'mic' && micGain) micGain.volume.value = db
-        } catch (e) {
-            console.warn(`Volume update failed for ${channel}`, e)
+        if (channels[channel]) {
+            channels[channel].volume.rampTo(db, 0.1)
         }
     },
 
@@ -392,20 +472,9 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         const currentMutes = get().mutes
         const newMutes = { ...currentMutes, [channel]: !currentMutes[channel] }
         set({ mutes: newMutes })
-        const { bassSynth, leadSynth, drumMachine, padSynth, harmSynth, samplerInstrument, micGain, volumes } = get()
-        const isMuted = newMutes[channel]
-        const db = isMuted ? -Infinity : Tone.gainToDb(volumes[channel])
-
-        try {
-            if (channel === 'bass' && bassSynth) bassSynth.setVolume(db)
-            if (channel === 'lead' && leadSynth) leadSynth.setVolume(db)
-            if (channel === 'drums' && drumMachine) drumMachine.setVolume(db)
-            if (channel === 'pads' && padSynth?.synth?.volume) padSynth.synth.volume.value = db
-            if (channel === 'harm' && harmSynth) harmSynth.setVolume(db)
-            if (channel === 'sampler' && samplerInstrument) samplerInstrument.setVolume(db)
-            if (channel === 'mic' && micGain) micGain.volume.value = db
-        } catch (e) {
-            console.warn(`Mute update failed for ${channel}`, e)
+        const { channels } = get()
+        if (channels[channel]) {
+            channels[channel].mute = newMutes[channel]
         }
     },
 
@@ -414,26 +483,11 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         const newSolos = { ...currentSolos, [channel]: !currentSolos[channel] }
         set({ solos: newSolos })
 
-        const hasAnySolo = Object.values(newSolos).some(v => v)
-        const channels: ('drums' | 'bass' | 'lead' | 'pads' | 'harm' | 'sampler' | 'mic')[] = ['drums', 'bass', 'lead', 'pads', 'harm', 'sampler', 'mic']
-
-        channels.forEach(ch => {
-            const isSoloed = newSolos[ch]
-            const isMuted = get().mutes[ch]
-
-            // If any solo is active, non-soloed tracks should be silent unless they are also soloed
-            // Logic: play if (it is soloed) OR (no solos are active AND it is not muted)
-            const shouldBeSilent = hasAnySolo ? !isSoloed : isMuted
-            const db = shouldBeSilent ? -Infinity : Tone.gainToDb(get().volumes[ch])
-
-            const { bassSynth, leadSynth, drumMachine, padSynth, harmSynth, samplerInstrument, micGain } = get()
-            if (ch === 'bass' && bassSynth) bassSynth.setVolume(db)
-            if (ch === 'lead' && leadSynth) leadSynth.setVolume(db)
-            if (ch === 'drums' && drumMachine) drumMachine.setVolume(db)
-            if (ch === 'pads' && padSynth?.synth?.volume) padSynth.synth.volume.value = db
-            if (ch === 'harm' && harmSynth) harmSynth.setVolume(db)
-            if (ch === 'sampler' && samplerInstrument) samplerInstrument.setVolume(db)
-            if (ch === 'mic' && micGain) micGain.volume.value = db
+        const { channels } = get()
+        Object.keys(newSolos).forEach(ch => {
+            if (channels[ch]) {
+                channels[ch].solo = newSolos[ch as keyof typeof newSolos]
+            }
         })
     },
 
@@ -477,9 +531,11 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         }
     },
 
-    setBpm: (bpm: number) => {
-        if (Tone.Transport.bpm) Tone.Transport.bpm.value = bpm
+    setBpm: (bpm) => {
         set({ bpm })
+        Tone.Transport.bpm.value = bpm
+        const { clips } = useArrangementStore.getState()
+        audioTrackManager.onBpmChange(bpm, clips)
     },
 
     setSwing: (swing: number) => {
@@ -518,36 +574,33 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             Tone.Transport.stop()
             Tone.Transport.cancel()
 
-            const { bassSynth, fmBass, leadSynth, drumMachine, padSynth, harmSynth, samplerInstrument } = get()
-
-            if (bassSynth) bassSynth.setVolume(-Infinity)
-            if (leadSynth) leadSynth.setVolume(-Infinity)
-            if (drumMachine) drumMachine.setVolume(-Infinity)
-            if (padSynth?.synth?.volume) padSynth.synth.volume.value = -Infinity
-            if (harmSynth) harmSynth.setVolume(-Infinity)
-            if (samplerInstrument) samplerInstrument.setVolume(-Infinity)
+            const { channels } = get()
+            Object.values(channels).forEach(ch => {
+                ch.volume.rampTo(-Infinity, 0.05)
+            })
 
             Tone.Destination.volume.rampTo(-Infinity, 0.05)
-
             set({ isPlaying: false, currentStep: 0 })
-
             setTimeout(() => {
                 Tone.Destination.volume.value = 0
             }, 100)
-
-            console.log('PANIC: Audio engine forced to stop')
         } catch (e) {
             console.error('Panic failed', e)
         }
     },
 
     dispose: () => {
-        const { bassSynth, fmBass, leadSynth, drumMachine, padSynth, harmSynth, samplerInstrument } = get()
+        const { bassSynth, fmBass, leadSynth, drumMachine, padSynth, harmSynth, samplerInstrument, channels, buses, sidechain } = get()
         Tone.Transport.stop()
         Tone.Transport.cancel()
         if (bassSynth && 'dispose' in bassSynth) (bassSynth as any).dispose()
         if (fmBass && 'dispose' in fmBass) (fmBass as any).dispose()
         if (samplerInstrument) samplerInstrument.dispose()
+
+        Object.values(channels).forEach(ch => ch.dispose())
+        buses.reverb.dispose()
+        buses.delay.dispose()
+        sidechain?.dispose()
 
         const nodes = (window as any).masterFX
         if (nodes) {
@@ -555,6 +608,9 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             nodes.delay.dispose()
             nodes.reverb.dispose()
             nodes.masterBus.dispose()
+            if (nodes.sidechainNodes) {
+                Object.values(nodes.sidechainNodes).forEach((n: any) => n.dispose?.())
+            }
         }
 
         sessionStorage.removeItem('midi_app_has_started')
@@ -568,66 +624,81 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         const nodes = (window as any).masterFX
         if (!nodes) return
 
+        // --- CYCLE DETECTION HELPER ---
+        const hasCycle = (edgesToTest: any[]): boolean => {
+            const adj = new Map<string, string[]>()
+            edgesToTest.forEach(e => {
+                if (!adj.has(e.source)) adj.set(e.source, [])
+                adj.get(e.source)!.push(e.target)
+            })
+
+            const visited = new Set<string>()
+            const recStack = new Set<string>()
+
+            const check = (v: string): boolean => {
+                if (!visited.has(v)) {
+                    visited.add(v)
+                    recStack.add(v)
+                    for (const neighbor of (adj.get(v) || [])) {
+                        if (!visited.has(neighbor) && check(neighbor)) return true
+                        if (recStack.has(neighbor)) return true
+                    }
+                }
+                recStack.delete(v)
+                return false
+            }
+            for (const source of adj.keys()) {
+                if (check(source)) return true
+            }
+            return false
+        }
+        // ------------------------------
+
         console.log('[Audio] Recalculating Routing...', edges)
 
-            // 2. Disconnect everything from everywhere to start fresh
-            // Instruments
-            ; (state.bassSynth as any)?.outputGain?.disconnect()
-            ; (state.leadSynth as any)?.outputGain?.disconnect()
-            ; (state.drumMachine as any)?.output?.disconnect()
-        if (state.padSynth?.synth) state.padSynth.synth.disconnect()
-            ; (state.harmSynth as any)?.outputGain?.disconnect()
-            ; (state.samplerInstrument as any)?.volume?.disconnect()
-        state.micGain?.disconnect()
+        // 1. Disconnect channels from masterBus to start fresh
+        Object.values(state.channels).forEach(ch => ch.disconnect())
+        nodes.reverbBus.disconnect()
+        nodes.delayBus.disconnect()
 
-        // Effects
-        nodes.distortion.disconnect()
-        nodes.delay.disconnect()
-        nodes.reverb.disconnect()
-        nodes.masterBus.disconnect()
-
-        // 3. Map Node IDs to Tone Nodes
+        // 2. Map Node IDs to Tone Nodes
         const getToneNode = (id: string) => {
-            if (id === 'drums') return (state.drumMachine as any)?.output
-            if (id === 'bass') return (state.bassSynth as any)?.outputGain
-            if (id === 'lead') return (state.leadSynth as any)?.outputGain
-            if (id === 'pads') return state.padSynth?.synth
-            if (id === 'harm') return (state.harmSynth as any)?.outputGain
-            if (id === 'sampler') return (state.samplerInstrument as any)?.volume
-            if (id === 'mic') return state.micGain
-            if (id === 'distortion') return nodes.distortion
-            if (id === 'delay') return nodes.delay
-            if (id === 'reverb') return nodes.reverb
+            if (state.channels[id]) return state.channels[id]
+            if (id === 'reverb') return nodes.reverbBus
+            if (id === 'delay') return nodes.delayBus
             if (id === 'master') return Tone.getDestination()
             return null
         }
 
-        // 4. Apply connections from edges
-        edges.forEach((edge: any) => {
-            const source = getToneNode(edge.source)
-            const target = getToneNode(edge.target)
-
-            if (source && target) {
-                try {
-                    console.log(`[Audio] Connecting ${edge.source} -> ${edge.target}`)
-                    source.connect(target)
-                } catch (err) {
-                    console.warn(`[Audio] Connection failed: ${edge.source} -> ${edge.target}`, err)
+        // 3. Apply connections from edges (with safety check)
+        if (edges.length > 0) {
+            const safeEdges: any[] = []
+            edges.forEach(edge => {
+                const testEdges = [...safeEdges, edge]
+                if (!hasCycle(testEdges)) {
+                    safeEdges.push(edge)
+                } else {
+                    console.warn(`[Audio] Blocked feedback loop: ${edge.source} -> ${edge.target}`)
                 }
-            }
-        })
+            })
 
-        // 5. Connect untargeted instruments to Master by default? 
-        // No, let the user decide. But we need a way to hear things if no edges.
-        if (edges.length === 0) {
-            // Restore default linear chain if no connections
-            ; (state.bassSynth as any)?.outputGain?.connect(nodes.masterBus)
-                ; (state.leadSynth as any)?.outputGain?.connect(nodes.masterBus)
-                ; (state.drumMachine as any)?.output?.connect(nodes.masterBus)
-                ; (state.padSynth as any)?.synth?.connect(nodes.masterBus)
-                ; (state.harmSynth as any)?.outputGain?.connect(nodes.masterBus)
-                ; (state.samplerInstrument as any)?.volume?.connect(nodes.masterBus)
-            nodes.masterBus.chain(nodes.eqLow, nodes.eqLowMid, nodes.eqHighMid, nodes.eqHigh, nodes.distortion, nodes.delay, nodes.reverb, Tone.Destination)
+            safeEdges.forEach((edge: any) => {
+                const source = getToneNode(edge.source)
+                const target = getToneNode(edge.target)
+
+                if (source && target) {
+                    try {
+                        source.connect(target)
+                    } catch (err) {
+                        console.warn(`[Audio] Connection failed: ${edge.source} -> ${edge.target}`, err)
+                    }
+                }
+            })
+        } else {
+            // Default routing: all channels to master, buses to master
+            Object.values(state.channels).forEach(ch => ch.connect(nodes.masterBus))
+            nodes.reverbBus.connect(nodes.masterBus)
+            nodes.delayBus.connect(nodes.masterBus)
         }
     },
 
@@ -673,4 +744,61 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             })
         }
     },
+
+    freezeTrack: async (trackId) => {
+        const { clips, setTrackFrozen } = useArrangementStore.getState()
+        const { bpm } = get()
+        const trackClips = clips.filter(c => c.trackId === trackId && c.type === 'midi')
+        if (trackClips.length === 0) return
+
+        const totalLengthTicks = useArrangementStore.getState().totalLengthTicks
+        const totalLengthSeconds = (60 / bpm) * 4 * (totalLengthTicks / 16)
+
+        console.log(`❄️ Freezing track ${trackId} (${totalLengthSeconds.toFixed(2)}s)...`)
+
+        try {
+            const buffer = await Tone.Offline(async () => {
+                let synth: any
+                if (trackId === 'bass') synth = new AcidSynth()
+                else if (trackId === 'lead') synth = new AcidSynth()
+                else if (trackId === 'pads') synth = new PadSynth()
+                else if (trackId === 'harm') synth = new HarmSynth()
+                else if (trackId === 'drums') synth = new DrumMachine()
+
+                if (synth && 'init' in synth) synth.init()
+                if (synth) {
+                    const out = synth.outputGain || synth.output || synth.synth || synth.volume
+                    if (out) out.toDestination()
+                }
+
+                trackClips.forEach(clip => {
+                    const startTime = clip.startTick * (60 / bpm / 4)
+                    const snapshot = SNAPSHOT_LIBRARY[trackId]?.[clip.snapshotId ?? 0]
+                    if (snapshot && synth && 'setParams' in synth) {
+                        Tone.Transport.schedule(() => {
+                            synth.setParams(snapshot)
+                        }, startTime)
+                    }
+                })
+            }, totalLengthSeconds)
+
+            const wavBlob = await bufferToWav(buffer as any)
+            const url = URL.createObjectURL(wavBlob)
+            setTrackFrozen(trackId, true, url)
+        } catch (e) {
+            console.error('Freeze failed', e)
+        }
+    }
 }))
+
+async function bufferToWav(buffer: AudioBuffer): Promise<Blob> {
+    const worker = new Worker(new URL('../logic/WavWorker.js', import.meta.url))
+    return new Promise((resolve) => {
+        worker.onmessage = (e) => resolve(e.data)
+        const channelData = []
+        for (let i = 0; i < buffer.numberOfChannels; i++) {
+            channelData.push(buffer.getChannelData(i))
+        }
+        worker.postMessage({ channelData, sampleRate: buffer.sampleRate })
+    })
+}

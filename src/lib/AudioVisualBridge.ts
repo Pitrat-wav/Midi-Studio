@@ -173,7 +173,11 @@ class AudioVisualBridgeClass {
             let lowSum = 0, midSum = 0, highSum = 0
 
             for (let i = 0; i < totalBins; i++) {
-                const val = Math.abs(fftData[i])
+                // Tone.Analyser FFT returns values in decibels (usually -100 to 0)
+                // Broader range: -110dB (silence) -> 0.0, -20dB (loud peak) -> 1.0
+                const db = fftData[i]
+                const val = Math.max(0, (db + 110) / 90) * 2.0 // 2x Gain boost
+
                 if (i < lowBins) lowSum += val
                 else if (i < midBins) midSum += val
                 else highSum += val

@@ -27,21 +27,127 @@ export function Hypercube() {
 
 // 20: Glitch World
 export function GlitchWorld() {
-    const intensity = useVisualStore(s => s.globalAudioIntensity)
-    const meshRef = useRef<THREE.Mesh>(null!)
+    const store = useVisualStore()
+    const { globalAudioIntensity, visualModifier, visualDetail, visualPalette, visualInvert } = store
+
+    const uniforms = useMemo(() => ({
+        uTime: { value: 0 },
+        uIntensity: { value: 0 },
+        uModifier: { value: new THREE.Vector2(0, 0) },
+        uDetail: { value: 0.5 },
+        uPalette: { value: 0 },
+        uInvert: { value: 0 }
+    }), [])
+
     useFrame((state) => {
-        if (intensity > 0.6) {
-            meshRef.current.position.x = (Math.random() - 0.5) * 0.5
-            meshRef.current.scale.y = 1 + Math.random()
-        } else {
-            meshRef.current.position.x = 0
-            meshRef.current.scale.y = 1
-        }
+        uniforms.uTime.value = state.clock.getElapsedTime()
+        uniforms.uIntensity.value = globalAudioIntensity
+        uniforms.uModifier.value.set(visualModifier.x, visualModifier.y)
+        uniforms.uDetail.value = visualDetail
+        uniforms.uPalette.value = visualPalette
+        uniforms.uInvert.value = visualInvert ? 1.0 : 0.0
     })
+
     return (
-        <mesh ref={meshRef}>
-            <sphereGeometry args={[2, 8, 8]} />
-            <meshBasicMaterial wireframe color="#00ff00" />
+        <mesh>
+            <planeGeometry args={[16, 9]} />
+            <shaderMaterial
+                uniforms={uniforms}
+                transparent
+                vertexShader={`
+                    varying vec2 vUv;
+                    uniform float uTime;
+                    uniform float uIntensity;
+                    uniform vec2 uModifier;
+                    
+                    void main() {
+                        vUv = uv;
+                        vec3 pos = position;
+                        
+                        // Small positional jitter based on chaos/intensity
+                        if (uIntensity > 0.4) {
+                            pos.x += sin(uTime * 50.0) * uIntensity * 0.1 * uModifier.x;
+                            pos.y += cos(uTime * 45.0) * uIntensity * 0.1 * uModifier.y;
+                        }
+                        
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                    }
+                `}
+                fragmentShader={`
+                    varying vec2 vUv;
+                    uniform float uTime;
+                    uniform float uIntensity;
+                    uniform vec2 uModifier;
+                    uniform float uDetail;
+                    uniform float uPalette;
+                    uniform float uInvert;
+
+                    float random(vec2 st) {
+                        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+                    }
+
+                    void main() {
+                        vec2 uv = vUv;
+                        
+                        // 1. Slicing Glitch (Right Stick / Detail)
+                        float sliceCount = 10.0 + uDetail * 60.0;
+                        float sliceId = floor(uv.y * sliceCount);
+                        float sliceOffset = random(vec2(sliceId, floor(uTime * 15.0))) - 0.5;
+                        
+                        // Increase slice chance based on intensity and X-modifier
+                        float sliceChance = 0.02 + uIntensity * 0.2 + abs(uModifier.x) * 0.4;
+                        if (random(vec2(sliceId, floor(uTime * 10.0))) < sliceChance) {
+                            uv.x += sliceOffset * (0.05 + abs(uModifier.x) * 0.3);
+                        }
+
+                        // 2. Procedural Glitch Patterns
+                        float stripes = step(0.1, sin(uv.y * (100.0 + uDetail * 200.0) + uTime * 5.0));
+                        float noise = random(uv + uTime);
+                        float block = random(floor(uv * (10.0 + uIntensity * 10.0)) + floor(uTime * 8.0));
+                        
+                        // 3. Chromatic Shift (Simulated)
+                        float shift = 0.005 + abs(uModifier.x) * 0.05 + uIntensity * 0.02;
+                        float rMod = random(uv + vec2(shift, 0.0) + uTime);
+                        float gMod = random(uv + uTime);
+                        float bMod = random(uv - vec2(shift, 0.0) + uTime);
+                        
+                        // 4. Palettes
+                        vec3 p[5];
+                        p[0] = vec3(0.0, 1.0, 0.0); // Classic Terminal
+                        p[1] = vec3(1.0, 0.0, 1.0); // Cyberpunk
+                        p[2] = vec3(0.0, 1.0, 1.0); // Ice
+                        p[3] = vec3(1.0, 0.5, 0.0); // Amber
+                        p[4] = vec3(1.0, 1.0, 1.0); // White
+                        
+                        vec3 targetCol = p[int(mod(uPalette, 5.0))];
+                        
+                        // Pattern Mix based on Y-modifier (Up = Noise, Down = Stripes)
+                        float pattern = mix(stripes, noise, 0.5 + uModifier.y * 0.5);
+                        
+                        // Glitch Blocks
+                        if (block < 0.05 * uIntensity) {
+                            pattern = 1.0 - pattern;
+                        }
+                        
+                        vec3 finalCol = targetCol * pattern;
+                        
+                        // Apply chromatic-like splitting to the brightness
+                        finalCol.r *= 0.5 + rMod * 0.5;
+                        finalCol.g *= 0.8;
+                        finalCol.b *= 0.5 + bMod * 0.5;
+                        
+                        // Scanlines
+                        finalCol *= 0.85 + 0.15 * sin(uv.y * 500.0);
+                        
+                        // Audio reactive brightness
+                        finalCol += uIntensity * 0.3;
+
+                        if (uInvert > 0.5) finalCol = 1.0 - finalCol;
+
+                        gl_FragColor = vec4(finalCol, 1.0);
+                    }
+                `}
+            />
         </mesh>
     )
 }

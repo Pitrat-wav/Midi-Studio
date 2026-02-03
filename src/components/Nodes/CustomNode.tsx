@@ -5,12 +5,14 @@ import { useNodeStore } from '../../store/nodeStore'
 import { X, Code, Sparkles, Play, Settings, Terminal, Maximize2 } from 'lucide-react'
 import './CustomNode.css'
 import { GraphEngine } from '../../logic/GraphEngine'
+import { PortScope } from './PortScope'
 
 export const CustomNode = memo(({ id, data, selected }: NodeProps<NodeData>) => {
     const updateParam = useNodeStore(s => s.updateNodeParam)
     const updateScript = useNodeStore(s => s.updateNodeScript)
     const removeNode = useNodeStore(s => s.removeNode)
     const [isExpanded, setIsExpanded] = useState(false)
+    const [hoveredPort, setHoveredPort] = useState<string | null>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
 
     // JSFX-style Graphics Loop
@@ -263,14 +265,25 @@ export const CustomNode = memo(({ id, data, selected }: NodeProps<NodeData>) => 
             <div className="node-body">
                 <div className="io-column inputs">
                     {data.inputs.map((port, i) => (
-                        <div key={port.id} className="io-port input">
+                        <div
+                            key={port.id}
+                            className="io-port input"
+                            onMouseEnter={() => {
+                                setHoveredPort(port.id)
+                                GraphEngine.connectRover(id, port.id)
+                            }}
+                            onMouseLeave={() => {
+                                setHoveredPort(null)
+                                GraphEngine.disconnectRover()
+                            }}
+                        >
                             <Handle
                                 type="target"
                                 position={Position.Left}
                                 id={port.id}
                                 className={`handle-${port.type}`}
                             />
-                            {/* <span className="port-label">{port.label}</span> Tooltip style? */}
+                            {hoveredPort === port.id && <PortScope />}
                         </div>
                     ))}
                 </div>
@@ -281,14 +294,25 @@ export const CustomNode = memo(({ id, data, selected }: NodeProps<NodeData>) => 
 
                 <div className="io-column outputs">
                     {data.outputs.map((port, i) => (
-                        <div key={port.id} className="io-port output">
-                            {/* <span className="port-label">{port.label}</span> */}
+                        <div
+                            key={port.id}
+                            className="io-port output"
+                            onMouseEnter={() => {
+                                setHoveredPort(port.id)
+                                GraphEngine.connectRover(id, port.id)
+                            }}
+                            onMouseLeave={() => {
+                                setHoveredPort(null)
+                                GraphEngine.disconnectRover()
+                            }}
+                        >
                             <Handle
                                 type="source"
                                 position={Position.Right}
                                 id={port.id}
                                 className={`handle-${port.type}`}
                             />
+                            {hoveredPort === port.id && <PortScope />}
                         </div>
                     ))}
                 </div>

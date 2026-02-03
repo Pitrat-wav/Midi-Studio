@@ -1,12 +1,13 @@
 import * as Tone from 'tone'
 import { useNodeStore, NodeData, NodeType } from '../store/nodeStore'
-import { Edge } from 'reactflow'
+import { Edge, Node } from 'reactflow'
 
 // Map visual Node IDs to Tone AudioNodes AND their inputs
 interface AudioNodeWrapper {
     node: Tone.ToneAudioNode | AudioNode | any
     inputs: Record<string, any>
     outputs?: Record<string, any> // Handle-specific outputs
+    meters?: Record<string, Tone.Meter> // Meter for each output handle
     isLogic?: boolean
 }
 
@@ -14,12 +15,32 @@ const audioNodes = new Map<string, AudioNodeWrapper>()
 
 export class GraphEngine {
     static initialized = false
+    private static roverAnalyser: Tone.Waveform | null = null
+    private static currentRoverSource: any = null
+
+    static getRoverAnalyser() {
+        if (!this.roverAnalyser) this.roverAnalyser = new Tone.Waveform(128)
+        return this.roverAnalyser
+    }
+    static async initWorklet() {
+        const ctx = Tone.getContext().rawContext
+        try {
+            // Note: In development we use the source path. In build we might need a different strategy.
+            await ctx.audioWorklet.addModule('/src/audio/worklets/WasmProcessor.js')
+            await ctx.audioWorklet.addModule('/src/audio/worklets/ExpressionProcessor.js')
+            console.log('✅ AudioWorklet: Engines loaded')
+        } catch (e) {
+            console.warn('⚠️ AudioWorklet: Failed to load WasmProcessor. WebGL Studio will fallback to JS DSP.', e)
+        }
+    }
+
     static unsubscribe: () => void
 
     static init() {
         if (this.initialized) return
         this.initialized = true
         console.log('🔌 GraphEngine: Initializing Deep Core DSP...')
+        this.initWorklet()
 
         this.unsubscribe = useNodeStore.subscribe((state, prevState) => {
             // 1. Manage Nodes
@@ -49,11 +70,15 @@ export class GraphEngine {
                 }
             })
 
-            // 2. Rebuild Connections (Blind rebuild for robustness in this phase)
-            // Optimization: Only rebuild if edge list changed
+            // 2. Rebuild Connections
             const edgesChanged = JSON.stringify(state.edges) !== JSON.stringify(prevState.edges)
-            if (edgesChanged) {
-                this.rebuildConnections(state.edges)
+            const portalParamsChanged = state.nodes.some((n) => {
+                const prev = prevState.nodes.find(p => p.id === n.id)
+                return prev && (n.data.params.portalId !== prev.data.params.portalId)
+            })
+
+            if (edgesChanged || portalParamsChanged) {
+                this.rebuildConnections(state.nodes, state.edges)
             }
         })
     }
@@ -197,6 +222,27 @@ export class GraphEngine {
             else if (data.type === 'audio_pan') {
                 const panner = new Tone.Panner(data.params.pan || 0)
                 wrapper = { node: panner, inputs: { 'in': panner, 'pan': panner.pan } }
+            }
+            else if (data.type === 'wasm_node') {
+                const ctx = Tone.getContext().rawContext
+                try {
+                    const node = new AudioWorkletNode(ctx, 'wasm-processor')
+                    // Load WASM if URL provided
+                    if (data.params.url) {
+                        fetch(data.params.url)
+                            .then(r => r.arrayBuffer())
+                            .then(bytes => {
+                                node.port.postMessage({ type: 'init', wasmBytes: bytes })
+                            })
+                            .catch(err => console.error('WASM Loading Error:', err))
+                    }
+                    wrapper = { node: node, inputs: { 'in': node } }
+                } catch (e) {
+                    console.error('AudioWorkletNode Creation Error:', e)
+                    // Fallback to gain (silent or passthrough)
+                    const fallback = new Tone.Gain(1)
+                    wrapper = { node: fallback, inputs: { 'in': fallback } }
+                }
             }
             else if (data.type === 'inst_kick') {
                 const kick = new Tone.MembraneSynth({
@@ -570,7 +616,7 @@ export class GraphEngine {
                 wrapper = { node: comp, inputs: { 'in': comp } }
             }
             else if (data.type === 'fx_env_follower') {
-                const follower = new Tone.Follower(data.params.attack || 0.01, data.params.release || 0.1);
+                const follower = new Tone.Follower(data.params.smoothing || 0.05);
                 wrapper = { node: follower, inputs: { 'in': follower }, outputs: { 'cv': follower } }
             }
             else if (data.type === 'fx_freq_shifter') {
@@ -619,28 +665,32 @@ export class GraphEngine {
                 }).toDestination();
                 wrapper = { node: synth, inputs: { 'trig': synth, 'note': synth } }
             }
-            else if (data.type === 'audio_compressor') {
-                const comp = new Tone.Compressor({
-                    threshold: data.params.threshold || -20,
-                    ratio: data.params.ratio || 4,
-                    attack: data.params.attack || 0.003,
-                    release: data.params.release || 0.25,
-                    knee: data.params.knee || 10
-                });
-                wrapper = { node: comp, inputs: { 'in': comp } }
-            }
-            else if (data.type === 'fx_reverb') {
-                const reverb = new Tone.Reverb(data.params.decay || 1.5).generate();
-                wrapper = { node: reverb, inputs: { 'in': reverb } }
-            }
+
             else if (data.type === 'adv_math_exp') {
-                const script = this.createScriptNode(`
-                    function process(inputs, output) {
-                        const x = inputs[0][0]; const y = inputs[1] ? inputs[1][0] : 0;
-                        output[0][0] = Math.sin(x * Math.PI) + y;
+                const ctx = Tone.getContext().rawContext
+                try {
+                    const node = new AudioWorkletNode(ctx, 'expression-processor', {
+                        numberOfInputs: 1,
+                        numberOfOutputs: 1,
+                        outputChannelCount: [2]
+                    })
+                        ; (node as any).nodeRole = 'expression'
+                    // Initial compile
+                    node.port.postMessage({ type: 'compile', formula: data.script || 'in1' })
+                    wrapper = {
+                        node: node,
+                        inputs: {
+                            'in1': node, // For ReactFlow we might need to map different handles to different WORKLET inputs
+                            'in2': node,
+                            'in3': node,
+                            'in4': node
+                        }
                     }
-                `)
-                wrapper = { node: script, inputs: { 'x': script, 'y': script } }
+                } catch (e) {
+                    console.error('Expression Worklet error', e)
+                    const fallback = new Tone.Gain(0)
+                    wrapper = { node: fallback, inputs: { 'in': fallback } }
+                }
             }
             else if (data.type === 'adv_fm_op') {
                 const car = new Tone.Oscillator(440, 'sine').start();
@@ -654,10 +704,30 @@ export class GraphEngine {
             }
 
             if (wrapper) {
+                this.attachMeters(wrapper)
                 audioNodes.set(id, wrapper)
             }
         } catch (e) {
             console.error(`GraphEngine Create Error ${id}`, e)
+        }
+    }
+
+    private static attachMeters(wrapper: AudioNodeWrapper) {
+        wrapper.meters = {}
+        if (wrapper.node instanceof Tone.ToneAudioNode) {
+            const meter = new Tone.Meter()
+            wrapper.node.connect(meter)
+            wrapper.meters['default'] = meter
+        }
+        if (wrapper.outputs) {
+            Object.keys(wrapper.outputs).forEach(handle => {
+                const outNode = wrapper.outputs![handle]
+                if (outNode instanceof Tone.ToneAudioNode) {
+                    const meter = new Tone.Meter()
+                    outNode.connect(meter)
+                    wrapper.meters![handle] = meter
+                }
+            })
         }
     }
 
@@ -668,6 +738,11 @@ export class GraphEngine {
     static destroyNode(id: string) {
         const wrap = audioNodes.get(id)
         if (wrap) {
+            // Dispose meters
+            if (wrap.meters) {
+                Object.values(wrap.meters).forEach(m => m.dispose())
+            }
+
             if ((wrap.node as any)._onDown) {
                 window.removeEventListener('keydown', (wrap.node as any)._onDown)
                 window.removeEventListener('keyup', (wrap.node as any)._onUp)
@@ -755,7 +830,14 @@ export class GraphEngine {
 
     static updateScript(id: string, code: string) {
         const wrap = audioNodes.get(id)
-        if (!wrap || !(wrap.node instanceof ScriptProcessorNode)) return
+        if (!wrap) return
+
+        if (wrap.node instanceof AudioWorkletNode && (wrap.node as any).nodeRole === 'expression') {
+            wrap.node.port.postMessage({ type: 'compile', formula: code })
+            return
+        }
+
+        if (!(wrap.node instanceof ScriptProcessorNode)) return
         try {
             const factory = new Function('memory', 'console', `
                 ${code}
@@ -769,7 +851,77 @@ export class GraphEngine {
         }
     }
 
-    static rebuildConnections(edges: Edge<any>[]) {
+    static hasCycle(nodes: string[], edges: Edge<any>[]): boolean {
+        const adj = new Map<string, string[]>()
+        nodes.forEach(id => adj.set(id, []))
+        edges.forEach(e => {
+            if (adj.has(e.source)) adj.get(e.source)!.push(e.target)
+        })
+
+        const visited = new Set<string>()
+        const recStack = new Set<string>()
+
+        const check = (v: string): boolean => {
+            if (!visited.has(v)) {
+                visited.add(v)
+                recStack.add(v)
+                const neighbors = adj.get(v) || []
+                for (const neighbor of neighbors) {
+                    if (!visited.has(neighbor) && check(neighbor)) return true
+                    if (recStack.has(neighbor)) return true
+                }
+            }
+            recStack.delete(v)
+            return false
+        }
+
+        for (const node of nodes) {
+            if (check(node)) return true
+        }
+        return false
+    }
+
+    static getSignalLevel(nodeId: string, handleId?: string): number {
+        const wrap = audioNodes.get(nodeId)
+        if (!wrap || !wrap.meters) return 0
+        const meter = wrap.meters[handleId || 'out'] || wrap.meters['default']
+        if (!meter) return 0
+        const val = meter.getValue()
+        if (Array.isArray(val)) return Math.max(...val.map(v => Math.abs(v)))
+        return Math.abs(val as number)
+    }
+
+    static connectRover(nodeId: string, handleId?: string) {
+        const wrap = audioNodes.get(nodeId)
+        if (!wrap) return
+        let source = wrap.node
+        if (handleId && wrap.outputs && wrap.outputs[handleId]) {
+            source = wrap.outputs[handleId]
+        }
+        if (source instanceof Tone.ToneAudioNode || source instanceof AudioNode) {
+            try {
+                source.connect(this.getRoverAnalyser() as any)
+                this.currentRoverSource = source
+            } catch (e) { }
+        }
+    }
+
+    static disconnectRover() {
+        if (this.currentRoverSource && this.roverAnalyser) {
+            try {
+                this.currentRoverSource.disconnect(this.roverAnalyser as any)
+            } catch (e) { }
+            this.currentRoverSource = null
+        }
+    }
+
+    static getRoverData(): Float32Array {
+        if (!this.roverAnalyser) return new Float32Array(0)
+        return this.roverAnalyser.getValue() as Float32Array
+    }
+
+    static rebuildConnections(nodes: Node<NodeData>[], edges: Edge<any>[]) {
+        // Safe rebuild: Disconnect all
         audioNodes.forEach(wrap => {
             if (wrap.node instanceof Tone.ToneAudioNode) wrap.node.disconnect()
             else if (wrap.node instanceof AudioNode) wrap.node.disconnect()
@@ -781,7 +933,46 @@ export class GraphEngine {
                 })
             }
         })
-        edges.forEach(edge => {
+
+        // 1. Collect Virtual Edges from Portals
+        const portals: Record<string, { senders: string[], receivers: string[] }> = {}
+        nodes.forEach(n => {
+            if (n.data.type === 'io_portal_send') {
+                const pid = n.data.params.portalId || 'default'
+                if (!portals[pid]) portals[pid] = { senders: [], receivers: [] }
+                portals[pid].senders.push(n.id)
+            } else if (n.data.type === 'io_portal_receive') {
+                const pid = n.data.params.portalId || 'default'
+                if (!portals[pid]) portals[pid] = { senders: [], receivers: [] }
+                portals[pid].receivers.push(n.id)
+            }
+        })
+
+        const virtualEdges: Edge<any>[] = []
+        Object.values(portals).forEach(p => {
+            p.senders.forEach(sId => {
+                p.receivers.forEach(rId => {
+                    virtualEdges.push({ id: `v-${sId}-${rId}`, source: sId, target: rId })
+                })
+            })
+        })
+
+        // 2. Combine with Visual Edges and check for cycles
+        const allEdges = [...edges, ...virtualEdges]
+        const safeEdges: Edge<any>[] = []
+        const nodeIds = Array.from(audioNodes.keys())
+
+        allEdges.forEach(edge => {
+            const testEdges = [...safeEdges, edge]
+            if (!this.hasCycle(nodeIds, testEdges)) {
+                safeEdges.push(edge)
+            } else {
+                console.warn(`🚫 GraphEngine: Blocked feedback loop (possibly wireless) involving ${edge.source}`)
+            }
+        })
+
+        // 3. Establish Physical Connections
+        safeEdges.forEach(edge => {
             const srcWrap = audioNodes.get(edge.source)
             const destWrap = audioNodes.get(edge.target)
             if (srcWrap && destWrap) {

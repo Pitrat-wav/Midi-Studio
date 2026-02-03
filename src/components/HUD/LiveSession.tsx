@@ -1,13 +1,15 @@
 import React, { useState, useRef } from 'react'
 import { useAudioStore } from '../../store/audioStore'
 import { useVisualStore } from '../../store/visualStore'
-import { Play, Square, Zap, RefreshCw, Layout } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { useSessionStore, InstrumentId } from '../../store/sessionStore'
+import { Play, Square, Zap, RefreshCw, Layout, Save } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import './LiveSession.css'
 
 export function LiveSession() {
     const audio = useAudioStore()
     const visual = useVisualStore()
+    const session = useSessionStore()
     const [delayXy, setDelayXy] = useState({ x: 0.5, y: 0.5 })
     const [filterXy, setFilterXy] = useState({ x: 0.5, y: 0.5 })
     const delayRef = useRef<HTMLDivElement>(null)
@@ -34,13 +36,12 @@ export function LiveSession() {
         audio.setFxParam('distortion', { amount: x * 0.8, wet: y })
     }
 
-    const instruments = [
+    const instruments: { id: InstrumentId, label: string, color: string }[] = [
         { id: 'drums', label: 'DRUMS', color: '#00ffaa' },
         { id: 'bass', label: 'BASS', color: '#00ccff' },
-        { id: 'lead', label: 'LEAD', color: '#ffcc00' },
+        { id: 'harm', label: 'HARMONY', color: '#ffffff' },
         { id: 'pads', label: 'PADS', color: '#ff00ff' },
-        { id: 'sampler', label: 'SAMPLER', color: '#ffaa00' },
-        { id: 'harm', label: 'HARMONY', color: '#ffffff' }
+        { id: 'sampler', label: 'SAMPLER', color: '#ffaa00' }
     ]
 
     const perfFx = [
@@ -79,33 +80,45 @@ export function LiveSession() {
                             <div key={inst.id} className="clip-row">
                                 <span className="row-label">{inst.label}</span>
                                 <div className="clip-cells">
-                                    {[0, 1, 2, 3].map(i => {
-                                        const isActive = audio.activeSnapshots[inst.id] === i
-                                        const isQueued = audio.queuedSnapshots[inst.id] === i
+                                    {[0, 1, 2, 3, 4, 5, 6, 7].map(i => {
+                                        const clip = session.clips[inst.id][i]
+                                        const isActive = session.activeClips[inst.id] === i
+                                        const isPending = session.pendingClips[inst.id] === i
+                                        const isStopping = session.pendingClips[inst.id] === -1 && isActive
+
                                         return (
                                             <button
                                                 key={i}
-                                                className={`clip-cell ${isActive ? 'active' : ''} ${isQueued ? 'queued' : ''}`}
+                                                className={`clip-cell ${clip ? 'has-clip' : ''} ${isActive ? 'active' : ''} ${isPending ? 'pending' : ''} ${isStopping ? 'stopping' : ''}`}
                                                 style={{ '--inst-color': inst.color } as any}
-                                                onClick={() => audio.triggerSnapshot(inst.id, i)}
+                                                onClick={() => {
+                                                    if (clip) session.triggerClip(inst.id, i)
+                                                    else session.captureClip(inst.id, i)
+                                                }}
+                                                onContextMenu={(e) => {
+                                                    e.preventDefault()
+                                                    session.stopClip(inst.id)
+                                                }}
                                             >
-                                                {isActive && <div className="play-dot" />}
+                                                {isActive && !isStopping && <div className="play-dot" />}
+                                                {isPending && <div className="pending-ring" />}
+                                                {!clip && <div className="empty-indicator">+</div>}
                                             </button>
                                         )
                                     })}
                                 </div>
                             </div>
                         ))}
-                        {/* Scene Launchers */}
-                        <div className="scene-launch-col">
-                            <span className="row-label">SCENE</span>
-                            {[0, 1, 2, 3].map(i => (
+                    </div>
+                    {/* Scene Launchers (Horizontal Row) */}
+                    <div className="scene-launch-row">
+                        <span className="row-label">SCENE</span>
+                        <div className="scene-cells">
+                            {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
                                 <button
                                     key={i}
                                     className="scene-btn"
-                                    onClick={() => {
-                                        instruments.forEach(inst => audio.triggerSnapshot(inst.id, i))
-                                    }}
+                                    onClick={() => session.triggerScene(i)}
                                 >
                                     {i + 1}
                                 </button>
@@ -225,6 +238,6 @@ export function LiveSession() {
             <div className="live-footer">
                 TAB TO CYCLE • PRO PERFORMANCE MODE ACTIVE
             </div>
-        </div>
+        </div >
     )
 }

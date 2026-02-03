@@ -1,106 +1,54 @@
-# historyStore.ts Documentation
+# historyStore.ts
 
-## 1. Overview
-The `historyStore` is the central state management for the application's Undo/Redo system. It implements the **Memento** pattern combined with **Command** pattern principles, allowing the application to restore previous states across multiple independent Zustand stores.
+### 1. Глобальное Описание (File Overview)
+* **Назначение:** Глобальное хранилище истории действий для реализации функционала Отмены (Undo) и Повтора (Redo). Использует Zustand с Immer для управления стеками состояний. Обеспечивает независимость сторов через реестр (`storeRegistry`).
+* **Связи:** 
+    * Импортирует: `zustand`, `immer`.
+    * Экспортирует: `useHistoryStore`, `registerStore`.
+    * Взаимодействует с: Любым стором, обернутым в `withHistory` (через реестр).
 
-Key features:
-- **Centralized History**: Manages a single timeline of actions for all registered stores.
-- **Deep Diffing**: Uses a middleware to calculate deep differences between state updates.
-- **Transactions**: Supports grouping multiple state changes into a single atomic undo/redo action (batching).
-- **Memory Optimization**: Limits history stack size (default: 50) and supports ignoring high-frequency paths.
+### 2. Интерфейс и API (Core Logic API)
 
-## 2. Architecture
+* **Функция:** `registerStore(name, store)`
+* **Логика:** Регистрация API стора в глобальном реестре для последующего применения изменений через `setState`.
 
-### Key Interfaces
+* **Метод:** `pushAction(action)`
+* **Логика:** Добавляет новое действие в стек `past`. Сбрасывает стек `future`. Поддерживает батчинг (группировку).
+* **Ограничение:** Лимит стека — 50 действий (удаляет старые через `shift()`).
 
-#### `HistoryAction`
-Represents a single atomic change in a specific store.
-```typescript
-interface HistoryAction {
-    storeName: string;      // The unique identifier of the store
-    path: string[];         // Path to the changed property (e.g., ['kick', 'volume'])
-    previousValue: any;     // Value before the change
-    newValue: any;          // Value after the change
-}
-```
+* **Метод:** `undo()`
+* **Логика:** Извлекает последнее действие из `past`, применяет его инверсию через `applyAction(..., true)`, и переносит в `future`.
 
-#### `HistoryState`
-The Zustand store interface.
-```typescript
-interface HistoryState {
-    past: HistoryItem[];       // Stack of past actions (Undo stack)
-    future: HistoryItem[];     // Stack of future actions (Redo stack)
-    isTracking: boolean;       // Global switch to pause tracking (used during undo/redo)
-    isBatching: boolean;       // Flag for transaction mode
-    currentBatch: HistoryAction[]; // Temporary storage for active transaction
-    // ... methods
-}
-```
+* **Метод:** `redo()`
+* **Логика:** Извлекает действие из `future`, применяет его через `applyAction(..., false)`, и возвращает в `past`.
 
-## 3. Middleware: `withHistory`
+### 3. Логика и Математика (Logic & Math)
 
-The system relies on a custom middleware `withHistory` that wraps individual Zustand stores.
+* **Функция:** `setNestedValue(obj, path, value)`
+* **Что делает:** Рекурсивно проходит по объекту согласно массиву путей `path` и устанавливает значение в конечный узел.
+* **Построчный разбор:**
+    1. Идем циклом до предпоследнего элемента пути.
+    2. Если узел не существует, создаем пустой объект `{}`.
+    3. Присваиваем значение последнему ключу.
 
-### Usage
-```typescript
-import { create } from 'zustand';
-import { withHistory } from './middleware/withHistory';
+* **Функция:** `applyAction(action, isUndo)`
+* **Что делает:** Находит нужный стор в реестре и применяет к нему обновленный слепок состояния.
+* **Математическая модель (Apply):**
+    $$ State_{new} = Update(State_{old}, Path, \text{isUndo} ? PrevValue : NewValue) $$
+    Где $Update$ — функция глубокой мутации через клонирование (`{...state}`).
 
-const useMyStore = create(
-    withHistory(
-        (set) => ({ count: 0, ... }), 
-        { 
-            storeName: 'myStore', 
-            ignorePaths: ['tempValue', 'visual.fps'] 
-        }
-    )
-);
-```
+* **Построчный разбор (`undo`/`redo`):**
+    1. Устанавливаем `isTracking = false`, чтобы само действие отмены не попало в историю (защита от рекурсии).
+    2. Если действие — батч (`type: 'batch'`), проходим по списку `actions` в правильном (Redo) или обратном (Undo) порядке.
+    3. После выполнения восстанавливаем `isTracking = true`.
 
-### Configuration Options
-- **`storeName`** (Required): Unique string ID for the store. Used to route undo/redo actions back to the correct store.
-- **`ignorePaths`** (Optional): Array of path strings (e.g., `'param'`, `'nested.param'`) to exclude from tracking. Critical for performance with high-frequency data like audio analyzers or visualizer frames.
+---
+## [ИСТОРИЯ ИЗМЕНЕНИЙ]
+**Дата аудита:** 2026-02-02 18:56:00
+**Событие:** ПЕРВИЧНЫЙ ГЛУБОКИЙ АУДИТ (GENESIS)
 
-## 4. API Reference
-
-### `undo()`
-Reverts the last action (or batch of actions) from the `past` stack.
-- Moves the action to the `future` stack.
-- Temporarily disables tracking to prevent the undo operation itself from being recorded.
-
-### `redo()`
-Reapplies the last undone action from the `future` stack.
-- Moves the action back to the `past` stack.
-
-### `startTransaction()` / `endTransaction()`
-Used to group multiple state updates into a single "Undo" step.
-**Example:** Loading a preset that updates 10 different parameters.
-
-```typescript
-const history = useHistoryStore.getState();
-history.startTransaction();
-
-// ... perform multiple updates ...
-store.setFrequency(440);
-store.setWaveform('sine');
-
-history.endTransaction(); // These two updates are now one "Undo" step.
-```
-
-## 5. Implementation Details
-
-### Store Registration
-Stores are loosely coupled. The middleware automatically registers the store's `setState` API with the history system using `registerStore`. This allows `historyStore` to apply updates to any store without direct imports, preventing circular dependencies.
-
-### Deep Diff Strategy
-The middleware compares `oldState` and `newState` after every `set` call.
-- It recursively traverses objects.
-- It stops traversal if a path is in `ignorePaths`.
-- It records a `HistoryAction` only if values are strictly different.
-- Cloning is done via `JSON.parse(JSON.stringify(x))` to ensure immutable snapshots (note: this means functions and Symbols are not tracked, which is intentional for state persistence).
-
-## 6. Best Practices
-
-1.  **Ignore High-Frequency Data**: Always add analyzers, playback cursors, and animation frames to `ignorePaths`.
-2.  **Use Transactions for Presets**: When applying a full preset, wrap it in a transaction to ensure the user can undo the whole preset load in one click.
-3.  **Atomic Updates**: Prefer updating specific fields over replacing entire objects if possible, to keep diffs small and precise.
+**Детализация:**
+- Задокументировано ядро системы Undo/Redo.
+- Описана логика рекурсивного обновления вложенных свойств.
+- Зафиксирована защита от циклической записи истории.
+- Описан механизм регистрации внешних сторов.

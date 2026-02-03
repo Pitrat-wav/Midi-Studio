@@ -20,9 +20,9 @@ export type NodeType =
     | 'note_quantizer' | 'note_scale' | 'note_chord' | 'note_arp' | 'note_delay' | 'note_transpose' | 'note_velocity'
     // Instruments & IO
     | 'inst_kick' | 'inst_snare' | 'inst_hat'
-    | 'io_audio_in' | 'io_audio_out' | 'io_midi_in' | 'io_midi_out'
+    | 'io_audio_in' | 'io_audio_out' | 'io_midi_in' | 'io_midi_out' | 'io_portal_send' | 'io_portal_receive'
     // Advanced/AI
-    | 'script_js' | 'ai_gen' | 'ai_chat' | 'visual_scope' | 'visual_spectrum' | 'logic_euclidean'
+    | 'script_js' | 'wasm_node' | 'ai_gen' | 'ai_chat' | 'visual_scope' | 'visual_spectrum' | 'logic_euclidean'
     | 'fx_echo' | 'fx_graindelay' | 'fx_saturator' | 'fx_limiter' | 'fx_platereverb' | 'fx_reduce' | 'fx_phaser_pro' | 'fx_flanger' | 'fx_overdrive' | 'fx_hybrid' | 'fx_filterdelay' | 'fx_delay' | 'fx_reverb' | 'fx_chorus' | 'fx_dist'
     | 'fx_transient' | 'fx_env_follower' | 'fx_freq_shifter' | 'fx_exciter' | 'fx_formant' | 'fx_subgen' | 'fx_autopan' | 'fx_spectral_blur'
     | 'adv_granular' | 'adv_fm_op' | 'adv_wavefolder' | 'adv_chaos' | 'adv_convolver'
@@ -45,11 +45,22 @@ export interface NodeData {
     outputs: NodePort[]
     params: Record<string, any>
     script?: string
+    macroMappings?: Record<string, number> // paramName -> macroId (0-7)
+}
+
+export interface MacroKnob {
+    id: number // 0-7
+    label: string
+    value: number // 0..1
+    targetNodeId: string | null
+    targetParam: string | null
+    range: [number, number] // [min, max]
 }
 
 export interface NodeState {
     nodes: Node<NodeData>[]
     edges: Edge[]
+    macros: MacroKnob[]
     context: 'poly' | 'fx' | 'note'
     onNodesChange: OnNodesChange
     onEdgesChange: OnEdgesChange
@@ -58,6 +69,10 @@ export interface NodeState {
     removeNode: (id: string) => void
     updateNodeParam: (id: string, param: string, value: any) => void
     updateNodeScript: (id: string, code: string) => void
+    setMacroValue: (id: number, value: number) => void
+    assignMacro: (id: number, nodeId: string, param: string, range?: [number, number]) => void
+    updateMacroLabel: (id: number, label: string) => void
+    updateNodeInputs: (id: string, inputs: NodePort[]) => void
     setContext: (context: 'poly' | 'fx' | 'note') => void
     loadDevice: (json: string) => void
     saveDevice: () => string
@@ -133,6 +148,7 @@ export const NODE_DEFS: Record<string, Partial<NodeData>> = {
     'adv_vocoder': { label: 'Vocoder', category: 'audio', params: { bands: 16 }, inputs: [{ id: 'mod', label: 'Mod', type: 'audio' }, { id: 'car', label: 'Car', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
     'adv_chaos': { label: 'Chaos (Lorenz)', category: 'logic', params: { speed: 1 }, outputs: [{ id: 'x', label: 'X', type: 'signal' }, { id: 'y', label: 'Y', type: 'signal' }] },
     'adv_prob_seq': { label: 'Prob Seq', category: 'logic', params: { steps: 8 }, inputs: [{ id: 'clock', label: 'Clock', type: 'signal' }], outputs: [{ id: 'out', label: 'Gate', type: 'signal' }] },
+    'adv_math_exp': { label: 'Math Expression', category: 'logic', params: {}, script: 'in1 * Math.sin(time * 2 * Math.PI)', inputs: [{ id: 'in1', label: '1', type: 'signal' }], outputs: [{ id: 'out', label: 'Out', type: 'signal' }] },
 
     // VISUAL & IO
     'visual_scope': { label: 'Oscilloscope', category: 'visual', params: {}, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [] },
@@ -144,9 +160,12 @@ export const NODE_DEFS: Record<string, Partial<NodeData>> = {
     // AI
     'ai_gen': { label: 'AI Gen Lab', category: 'ai', params: { prompt: '' }, inputs: [{ id: 'trig', label: 'Trig', type: 'signal' }], outputs: [{ id: 'out', label: 'Data', type: 'data' }] },
     'ai_chat': { label: 'AI Composer', category: 'ai', params: {}, outputs: [{ id: 'out', label: 'Midi', type: 'data' }] },
+    'io_portal_send': { label: 'Portal Send', category: 'io', params: { portalId: 'portal-1' }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [] },
+    'io_portal_receive': { label: 'Portal Receive', category: 'io', params: { portalId: 'portal-1' }, inputs: [], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
 
     // SCRIPT
     'script_js': { label: 'JS Script PRO', category: 'script', params: {}, script: '// Write DSP here\nfunction process(ins, outs) {}' },
+    'wasm_node': { label: 'WASM Plugin', category: 'script', params: { url: '', mix: 1 }, inputs: [{ id: 'in', label: 'In', type: 'audio' }], outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
 
     // LIB
     'lib_bass': { label: 'Bass Preset', category: 'audio', params: { model: 'analog' }, outputs: [{ id: 'out', label: 'Out', type: 'audio' }] },
@@ -159,6 +178,14 @@ export const useNodeStore = create<NodeState>((set, get) => ({
     context: 'poly',
     nodes: [],
     edges: [],
+    macros: Array.from({ length: 8 }, (_, i) => ({
+        id: i,
+        label: `Macro ${i + 1}`,
+        value: 0.5,
+        targetNodeId: null,
+        targetParam: null,
+        range: [0, 1]
+    })),
     setContext: (context) => set({ context }),
     onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes) }),
     onEdgesChange: (changes) => set({ edges: applyEdgeChanges(changes, get().edges) }),
@@ -175,7 +202,12 @@ export const useNodeStore = create<NodeState>((set, get) => ({
         }
         set(state => ({
             nodes: [...state.nodes, {
-                id, type: 'custom', position: { x, y },
+                id,
+                type: type === 'adv_math_exp' ? 'math' :
+                    type === 'io_portal_send' ? 'portal_send' :
+                        type === 'io_portal_receive' ? 'portal_receive' :
+                            'custom',
+                position: { x, y },
                 data: { label: def.label!, type: type as NodeType, category: def.category!, inputs: def.inputs || [], outputs: def.outputs || [], params: defaultParams, script: def.script }
             }]
         }))
@@ -190,8 +222,87 @@ export const useNodeStore = create<NodeState>((set, get) => ({
         }))
     },
     updateNodeScript: (id, code) => set(state => ({ nodes: state.nodes.map(n => n.id === id ? { ...n, data: { ...n.data, script: code } } : n) })),
-    loadDevice: (json) => { try { const d = JSON.parse(json); set({ nodes: d.nodes || [], edges: d.edges || [], context: d.context || 'poly' }) } catch (e) { } },
-    saveDevice: () => JSON.stringify({ context: get().context, nodes: get().nodes, edges: get().edges }),
+    updateNodeInputs: (id, inputs) => set(state => ({
+        nodes: state.nodes.map(n => n.id === id ? { ...n, data: { ...n.data, inputs } } : n)
+    })),
+
+    setMacroValue: (id, value) => {
+        set(state => {
+            const macros = [...state.macros]
+            const macro = { ...macros[id], value }
+            macros[id] = macro
+
+            // Update targeted node param
+            if (macro.targetNodeId && macro.targetParam) {
+                const node = state.nodes.find(n => n.id === macro.targetNodeId)
+                if (node) {
+                    const [min, max] = macro.range
+                    // Handle log scale for freq
+                    let targetValue
+                    if (macro.targetParam.toLowerCase().includes('freq')) {
+                        // Simple log interpolation for frequency
+                        const logMin = Math.log(Math.max(1, min))
+                        const logMax = Math.log(max)
+                        targetValue = Math.exp(logMin + value * (logMax - logMin))
+                    } else {
+                        targetValue = min + value * (max - min)
+                    }
+
+                    // Trigger param update
+                    setTimeout(() => get().updateNodeParam(macro.targetNodeId!, macro.targetParam!, targetValue), 0)
+                }
+            }
+
+            return { macros }
+        })
+    },
+
+    assignMacro: (id, nodeId, param, range) => {
+        const node = get().nodes.find(n => n.id === nodeId)
+        if (!node) return
+
+        let defaultRange: [number, number] = range || [0, 1]
+
+        // Auto-detect range for freq/gain if not provided
+        if (!range) {
+            const p = param.toLowerCase()
+            if (p.includes('freq')) defaultRange = [20, 20000]
+            if (p.includes('gain') || p.includes('mix')) defaultRange = [0, 1]
+            if (p.includes('detune')) defaultRange = [-100, 100]
+            if (p.includes('q')) defaultRange = [0.1, 10]
+        }
+
+        set(state => {
+            const macros = [...state.macros]
+            macros[id] = {
+                ...macros[id],
+                label: `${node.data.label.substring(0, 6)} ${param.toUpperCase()}`,
+                targetNodeId: nodeId,
+                targetParam: param,
+                range: defaultRange
+            }
+
+            // Update node mapping for visual feedback
+            const nodes = state.nodes.map(n => n.id === nodeId ? {
+                ...n,
+                data: {
+                    ...n.data,
+                    macroMappings: { ...(n.data.macroMappings || {}), [param]: id }
+                }
+            } : n)
+
+            return { macros, nodes }
+        })
+    },
+
+    updateMacroLabel: (id, label) => set(state => {
+        const macros = [...state.macros]
+        macros[id] = { ...macros[id], label }
+        return { macros }
+    }),
+
+    loadDevice: (json) => { try { const d = JSON.parse(json); set({ nodes: d.nodes || [], edges: d.edges || [], context: d.context || 'poly', macros: d.macros || get().macros }) } catch (e) { } },
+    saveDevice: () => JSON.stringify({ context: get().context, nodes: get().nodes, edges: get().edges, macros: get().macros }),
     setNodes: (nodes) => set({ nodes }),
     setEdges: (edges) => set({ edges }),
 }))

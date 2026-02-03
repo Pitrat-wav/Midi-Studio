@@ -1,0 +1,122 @@
+.terminal-overlay {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 400px;
+    height: 300px;
+    background: rgba(0, 10, 0, 0.85);
+    border: 1px solid #00ff41;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Courier New', Courier, monospace;
+    color: #00ff41;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+    z-index: 10000;
+    overflow: hidden;
+    pointer-events: all;
+    backdrop-filter: blur(10px);
+}
+
+.terminal-overlay::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 10002;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+}
+
+.terminal-header {
+    background: #004400;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-transform: uppercase;
+}
+
+.terminal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    font-size: 0.85rem;
+    scrollbar-width: thin;
+    scrollbar-color: #004400 transparent;
+}
+
+.terminal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.terminal-content::-webkit-scrollbar-thumb {
+    background: #004400;
+}
+
+.terminal-line {
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.terminal-line.cmd {
+    color: #00ff41;
+}
+
+.terminal-line.msg {
+    color: #00cc33;
+    opacity: 0.8;
+}
+
+.terminal-input-area {
+    display: flex;
+    padding: 8px;
+    border-top: 1px solid #004400;
+    background: rgba(0, 20, 0, 0.5);
+}
+
+.terminal-prompt {
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+.terminal-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #00ff41;
+    font-family: inherit;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.terminal-blink {
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    from, to { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+@keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+
+.scanline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, rgba(0, 255, 65, 0.1), transparent);
+    animation: scanline 8s linear infinite;
+    z-index: 10001;
+    pointer-events: none;
+}

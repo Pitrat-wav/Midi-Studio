@@ -191,7 +191,8 @@ export const VISUALIZER_REGISTRY = [
     { name: 'BSOD Glitch', icon: '💻', id: 162, tags: 'retro, error, blue, screen' },
     { name: 'Cursor Sphere', icon: '🖱️', id: 163, tags: 'retro, mouse, 3d, sphere' },
     { name: 'XP Bliss Warp', icon: '🏞️', id: 164, tags: '2d, retro, xp, grass, sky' },
-    { name: 'Icon Storm', icon: '💿', id: 165, tags: 'retro, icons, chaos, 3d' }
+    { name: 'Icon Storm', icon: '💿', id: 165, tags: 'retro, icons, chaos, 3d' },
+    { name: 'Boomy3', icon: '💥', id: 166, tags: 'video, cam, anime, speech, clouds' }
 ]
 
 export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'
@@ -248,10 +249,17 @@ interface VisualState {
     visualModifier: { x: number, y: number }
     visualSpeed: number
     visualDetail: number
+    visualPalette: number
+    visualInvert: boolean
+    webcamAllowed: boolean
+    webcamTexture: any | null
     setVisualizerIndex: (index: number) => void
+    setWebcamTexture: (texture: any | null) => void
+    setWebcamAllowed: (allowed: boolean) => void
     cycleVisualizer: (dir: number) => void
+    cycleVisualizerQuickSlots: (dir: number) => void
     setVisualModifier: (x: number, y: number) => void
-    setVisualParams: (params: Partial<{ speed: number, detail: number }>) => void
+    setVisualParams: (params: Partial<{ speed: number, detail: number, palette: number, invert: boolean }>) => void
     resetVisuals: () => void
     setAppView: (view: AppView) => void
     cycleView: () => void
@@ -286,6 +294,11 @@ interface VisualState {
     setBackgroundPreset: (index: number) => void
     cycleBackgroundPreset: () => void
     setAestheticTheme: (theme: AestheticTheme) => void
+
+    showTerminal: boolean
+    terminalHistory: string[]
+    toggleTerminal: () => void
+    setTerminalHistory: (history: string[]) => void
 }
 
 export const useVisualStore = create<VisualState>((set) => ({
@@ -358,19 +371,49 @@ export const useVisualStore = create<VisualState>((set) => ({
     visualModifier: { x: 0, y: 0 },
     visualSpeed: 1.0,
     visualDetail: 0.5,
+    visualPalette: 0,
+    visualInvert: false,
+    webcamAllowed: false,
+    webcamTexture: null,
     setVisualizerIndex: (index: number) => set({ visualizerIndex: index }),
+    setWebcamTexture: (texture) => set({ webcamTexture: texture }),
+    setWebcamAllowed: (allowed) => set({ webcamAllowed: allowed }),
     cycleVisualizer: (dir) => set((state) => {
         const next = (state.visualizerIndex + dir + VISUALIZER_REGISTRY.length) % VISUALIZER_REGISTRY.length
         return { visualizerIndex: next }
     }),
+    cycleVisualizerQuickSlots: (dir) => set((state) => {
+        // Items: [Studio (0), Slot0 (1), ..., Slot8 (9)] - Total 10
+        let currentIndex = 0
+        if (state.appView === 'VISUALIZER') {
+            const slotIdx = state.visualizerQuickSlots.indexOf(state.visualizerIndex)
+            currentIndex = slotIdx !== -1 ? slotIdx + 1 : 1
+        }
+
+        const nextIndex = (currentIndex + dir + 10) % 10
+
+        if (nextIndex === 0) {
+            return { appView: '3D' }
+        } else {
+            const vid = state.visualizerQuickSlots[nextIndex - 1]
+            return {
+                appView: 'VISUALIZER',
+                visualizerIndex: vid
+            }
+        }
+    }),
     setVisualModifier: (x, y) => set({ visualModifier: { x, y } }),
     setVisualParams: (params) => set((state) => ({
         visualSpeed: params.speed !== undefined ? params.speed : state.visualSpeed,
-        visualDetail: params.detail !== undefined ? params.detail : state.visualDetail
+        visualDetail: params.detail !== undefined ? params.detail : state.visualDetail,
+        visualPalette: params.palette !== undefined ? params.palette : state.visualPalette,
+        visualInvert: params.invert !== undefined ? params.invert : state.visualInvert
     })),
     resetVisuals: () => set({
         visualSpeed: 1.0,
         visualDetail: 0.5,
+        visualPalette: 0,
+        visualInvert: false,
         visualModifier: { x: 0, y: 0 },
         globalAudioIntensity: 0
     }),
@@ -425,6 +468,11 @@ export const useVisualStore = create<VisualState>((set) => ({
         return { visualizerQuickSlots: slots }
     }),
     toggleMic: () => set((state) => ({ micEnabled: !state.micEnabled })),
+
+    showTerminal: false,
+    terminalHistory: [],
+    toggleTerminal: () => set((state) => ({ showTerminal: !state.showTerminal })),
+    setTerminalHistory: (history) => set({ terminalHistory: history }),
 
     decay: () => set((state) => {
         const d = (val: number, rate: number) => Math.max(0, (val || 0) - rate)

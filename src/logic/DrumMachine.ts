@@ -1,12 +1,12 @@
 import * as Tone from 'tone'
 
 export class DrumMachine {
-    kick: Tone.MembraneSynth
-    snare: Tone.NoiseSynth
-    hihat: Tone.NoiseSynth
-    hihatOpen: Tone.NoiseSynth
-    clap: Tone.NoiseSynth
-    ride: Tone.MetalSynth
+    public kick: Tone.MembraneSynth
+    public snare: Tone.NoiseSynth
+    public hihat: Tone.NoiseSynth
+    public hihatOpen: Tone.NoiseSynth
+    public clap: Tone.NoiseSynth
+    public ride: Tone.MetalSynth
     comp: Tone.Compressor
     public output: Tone.Volume
 

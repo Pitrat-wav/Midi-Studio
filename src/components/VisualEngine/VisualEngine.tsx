@@ -23,6 +23,8 @@ import * as Batch2D from './visualizers/VisualBatch2D'
 import * as VideoBatch from './visualizers/VideoBatch'
 import * as Batch2DMega from './visualizers/Batch2D_Mega'
 import * as RetroWindows from './visualizers/RetroWindowsBatch'
+import { Boomy3 } from './visualizers/Boomy3'
+import { GlobalWebcamManager } from './GlobalWebcamManager'
 
 export function VisualEngine() {
     const index = useVisualStore(s => s.visualizerIndex)
@@ -224,6 +226,7 @@ export function VisualEngine() {
             case 163: return <RetroWindows.CursorSphere />
             case 164: return <RetroWindows.XPBlissWarp />
             case 165: return <RetroWindows.IconStorm />
+            case 166: return <Boomy3 />
 
             default: return <Stars />
         }
@@ -247,6 +250,7 @@ export function VisualEngine() {
                         <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={75} />
                     )}
 
+                    <GlobalWebcamManager />
                     {renderVisualizer()}
 
                     {!is2D && (
