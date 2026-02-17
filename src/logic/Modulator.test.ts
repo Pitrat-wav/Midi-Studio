@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
-import { Modulator } from './Modulator'
+import { Modulator } from './Modulator.ts'
 
 describe('Modulator', () => {
     const assertClose = (actual: number, expected: number, epsilon: number = 0.000001) => {

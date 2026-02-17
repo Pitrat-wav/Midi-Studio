@@ -1,6 +1,6 @@
 import { test, describe, mock } from 'node:test'
 import assert from 'node:assert'
-import { TuringMachine } from './TuringMachine'
+import { TuringMachine } from './TuringMachine.ts'
 
 describe('TuringMachine', () => {
     test('initializes with given value', () => {

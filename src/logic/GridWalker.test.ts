@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
-import { GridWalker, SnakePattern } from './GridWalker'
+import { GridWalker, type SnakePattern } from './GridWalker.ts'
 
 describe('GridWalker', () => {
     describe('Traversals', () => {
