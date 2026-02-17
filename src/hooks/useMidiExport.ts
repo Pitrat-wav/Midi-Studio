@@ -4,6 +4,7 @@ import { useDrumStore, useBassStore, usePadStore, useHarmonyStore, useSequencerS
 import { useAudioStore } from '../store/audioStore'
 import { exportToMidi } from '../logic/MidiExporter'
 import { bjorklund } from '../logic/bjorklund'
+import { API_URL } from '../config'
 
 export function useMidiExport() {
     const [isExporting, setIsExporting] = useState(false)
@@ -44,8 +45,6 @@ export function useMidiExport() {
                 seq.turingBits || 8
             )
             const base64Midi = btoa(String.fromCharCode(...midiData))
-
-            const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3001'
 
             const response = await fetch(`${API_URL}/upload-midi`, {
                 method: 'POST',
