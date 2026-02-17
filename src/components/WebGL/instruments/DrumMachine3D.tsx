@@ -12,6 +12,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useDrumStore } from '../../../store/instrumentStore'
 import { useVisualStore } from '../../../store/visualStore'
+import { useAudioStore } from '../../../store/audioStore'
 import { useAudioVisualBridge } from '../../../lib/AudioVisualBridge'
 import { Text, Box, RoundedBox, MeshTransmissionMaterial, Instances, Instance } from '@react-three/drei'
 import { WhiskMaterial } from '../WhiskMaterial'
@@ -144,7 +145,8 @@ function HiHatParticles() {
 function InteractiveRing({ instrument, radius, color, yPos }: { instrument: 'kick' | 'snare' | 'hihat', radius: number, color: string, yPos: number }) {
     const steps = useDrumStore(s => s[instrument].steps)
     const pulses = useDrumStore(s => s[instrument].pulses)
-    const currentStep = useVisualStore(s => s.triggers[instrument])
+    const globalStep = useAudioStore(s => s.globalStep)
+    const currentStep = globalStep % steps
 
     const [isHovered, setIsHovered] = useState(false)
     const groupRef = useRef<THREE.Group>(null!)

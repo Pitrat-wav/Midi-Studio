@@ -11,9 +11,11 @@ import { generatePadProgression } from '../logic/PadGenerator'
 import { Modulator } from '../logic/Modulator'
 import { TuringMachine } from '../logic/TuringMachine'
 import { useVisualStore } from '../store/visualStore'
+import { useAudioVisualBridge } from '../lib/AudioVisualBridge'
 
 export function SequencerLoop() {
     const bassSynth = useAudioStore(s => s.bassSynth)
+    const bridge = useAudioVisualBridge()
     const fmBass = useAudioStore(s => s.fmBass)
     const leadSynth = useAudioStore(s => s.leadSynth)
     const drumMachine = useAudioStore(s => s.drumMachine)
@@ -121,32 +123,60 @@ export function SequencerLoop() {
             if (currentDrums.isPlaying && drumMachine) {
                 const patterns = currentDrums.activePatterns
                 const visual = useVisualStore.getState()
-                const stepIdx = step % 16
 
                 if (patterns) {
-                    if (!currentDrums.kick?.muted && patterns.kick?.[stepIdx]) {
+                    const kickStep = totalStep % (patterns.kick?.length || 16)
+                    if (!currentDrums.kick?.muted && patterns.kick?.[kickStep]) {
                         drumMachine.triggerDrum('kick', time)
-                        Tone.Draw.schedule(() => visual.triggerPulse('kick'), time)
+                        Tone.Draw.schedule(() => {
+                            visual.triggerPulse('kick')
+                            bridge.triggerPulse('kick')
+                        }, time)
                     }
-                    if (!currentDrums.snare?.muted && patterns.snare?.[stepIdx]) {
+
+                    const snareStep = totalStep % (patterns.snare?.length || 16)
+                    if (!currentDrums.snare?.muted && patterns.snare?.[snareStep]) {
                         drumMachine.triggerDrum('snare', time)
-                        Tone.Draw.schedule(() => visual.triggerPulse('snare'), time)
+                        Tone.Draw.schedule(() => {
+                            visual.triggerPulse('snare')
+                            bridge.triggerPulse('snare')
+                        }, time)
                     }
-                    if (!currentDrums.hihat?.muted && patterns.hihat?.[stepIdx]) {
+
+                    const hihatStep = totalStep % (patterns.hihat?.length || 16)
+                    if (!currentDrums.hihat?.muted && patterns.hihat?.[hihatStep]) {
                         drumMachine.triggerDrum('hihat', time)
-                        Tone.Draw.schedule(() => visual.triggerPulse('hihat'), time)
+                        Tone.Draw.schedule(() => {
+                            visual.triggerPulse('hihat')
+                            bridge.triggerPulse('hihat')
+                        }, time)
                     }
-                    if (!currentDrums.hihatOpen?.muted && patterns.hihatOpen?.[stepIdx]) {
+
+                    const hihatOpenStep = totalStep % (patterns.hihatOpen?.length || 16)
+                    if (!currentDrums.hihatOpen?.muted && patterns.hihatOpen?.[hihatOpenStep]) {
                         drumMachine.triggerDrum('hihatOpen', time)
-                        Tone.Draw.schedule(() => visual.triggerPulse('hihat'), time)
+                        Tone.Draw.schedule(() => {
+                            visual.triggerPulse('hihat') // Open hihat triggers hihat visual too
+                            bridge.triggerPulse('hihat')
+                        }, time)
                     }
-                    if (!currentDrums.clap?.muted && patterns.clap?.[stepIdx]) {
+
+                    const clapStep = totalStep % (patterns.clap?.length || 16)
+                    if (!currentDrums.clap?.muted && patterns.clap?.[clapStep]) {
                         drumMachine.triggerDrum('clap', time)
-                        Tone.Draw.schedule(() => visual.triggerPulse('clap'), time)
+                        Tone.Draw.schedule(() => {
+                            visual.triggerPulse('clap')
+                            bridge.triggerPulse('clap')
+                        }, time)
                     }
-                    if (!currentDrums.ride?.muted && patterns.ride?.[stepIdx]) {
+
+                    const rideStep = totalStep % (patterns.ride?.length || 16)
+                    if (!currentDrums.ride?.muted && patterns.ride?.[rideStep]) {
                         drumMachine.triggerDrum('ride', time)
-                        Tone.Draw.schedule(() => visual.triggerPulse('hihat'), time)
+                        Tone.Draw.schedule(() => {
+                            visual.triggerPulse('hihat') // Ride triggers hihat visual for now
+                            bridge.triggerPulse('hihat')
+                        }, time)
                     }
                 }
             }
@@ -313,6 +343,7 @@ export function SequencerLoop() {
             // Sync UI
             Tone.Draw.schedule(() => {
                 useAudioStore.getState().setCurrentStep(step)
+                useAudioStore.getState().setGlobalStep(totalStep)
             }, time)
 
             if (step === 15) loopCountRef.current++

@@ -16,6 +16,7 @@ import { WebGLScene } from './components/WebGL/WebGLScene'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { InstrumentNavigation } from './components/InstrumentNavigation'
 import { KeyboardController } from './components/KeyboardController'
+import { SequencerLoop } from './components/SequencerLoop'
 import { FAQ } from './components/FAQ'
 import { AudioVisualBridge } from './lib/AudioVisualBridge'
 import { useCompositionManager } from './logic/CompositionManager'
@@ -182,6 +183,7 @@ function App() {
     return (
         <ErrorBoundary>
             <div className="app-3d">
+                <SequencerLoop />
                 {/* Keyboard Shortcuts Control */}
                 <KeyboardController
                     showOverlay={showOverlay}

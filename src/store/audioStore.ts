@@ -40,6 +40,7 @@ export interface AudioState {
     bpm: number
     swing: number
     currentStep: number
+    globalStep: number
     bassSynth: AcidSynth | null
     fmBass: FMBass | null
     leadSynth: AcidSynth | null
@@ -84,6 +85,7 @@ export interface AudioState {
     setBpm: (bpm: number) => void
     setSwing: (swing: number) => void
     setCurrentStep: (currentStep: number) => void
+    setGlobalStep: (globalStep: number) => void
     setFxParam: (effect: 'reverb' | 'delay' | 'distortion', params: Partial<{ wet: number, decay: number, feedback: number, amount: number, delayTime: string }>) => void
     panic: () => void
     dispose: () => void
@@ -108,6 +110,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     bpm: 128,
     swing: 0,
     currentStep: 0,
+    globalStep: 0,
     bassSynth: null,
     fmBass: null,
     leadSynth: null,
@@ -572,6 +575,8 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     },
 
     setCurrentStep: (currentStep: number) => set({ currentStep }),
+
+    setGlobalStep: (globalStep: number) => set({ globalStep }),
 
     setFxParam: (effect: 'reverb' | 'delay' | 'distortion', params: Partial<{ wet: number, decay: number, feedback: number, amount: number, delayTime: string }>) => {
         set((state) => ({
