@@ -27,6 +27,37 @@ export interface BuchlaParams {
     phaseLock: boolean
 }
 
+export interface OscSettings {
+    type: HarmOscType
+    detune: number
+    env: ADSRParams
+    send: number
+    enabled: boolean
+}
+
+export interface NoiseSettings {
+    env: ADSRParams
+    send: number
+    enabled: boolean
+}
+
+export interface FilterSettings {
+    freq: number
+    q: number
+    type: BiquadFilterType
+    enabled: boolean
+}
+
+export interface HarmSynthSettings {
+    osc1: OscSettings
+    osc2: OscSettings
+    osc3: OscSettings
+    noise: NoiseSettings
+    f1: FilterSettings
+    f2: FilterSettings
+    complex: BuchlaParams
+}
+
 class HarmVoice {
     public osc1: Tone.Oscillator
     public osc1Env: Tone.AmplitudeEnvelope
@@ -109,7 +140,7 @@ class HarmVoice {
         }, 4096)
     }
 
-    trigger(note: string, duration: string, time: number, velocity: number, settings: any) {
+    trigger(note: string, duration: string, time: number, velocity: number, settings: HarmSynthSettings) {
         const freq = Tone.Frequency(note).toFrequency()
         const principalFreq = Tone.Frequency(note).transpose(settings.complex.principalPitch || 0).toFrequency()
         let modFreq = Tone.Frequency(note).transpose(settings.complex.modPitch || 0).toFrequency()
@@ -141,7 +172,7 @@ class HarmVoice {
         if (settings.noise.enabled) this.noiseEnv.triggerAttackRelease(duration, time, velocity)
     }
 
-    private applyComplexRouting(time: number, principalFreq: number, settings: any) {
+    private applyComplexRouting(time: number, principalFreq: number, settings: HarmSynthSettings) {
         const s = settings.complex
         if (s.complexMode) {
             this.osc1.disconnect()
@@ -214,7 +245,7 @@ export class HarmSynth {
     private delay: Tone.FeedbackDelay | undefined
     private reverb: Tone.Reverb | undefined
 
-    private settings = {
+    private settings: HarmSynthSettings = {
         osc1: { type: 'sawtooth' as HarmOscType, detune: 0, env: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.5 }, send: 0, enabled: true },
         osc2: { type: 'square' as HarmOscType, detune: 10, env: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.5 }, send: 0, enabled: true },
         osc3: { type: 'triangle' as HarmOscType, detune: -10, env: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.5 }, send: 0, enabled: true },
@@ -223,8 +254,8 @@ export class HarmSynth {
         f2: { freq: 5000, q: 1, type: 'lowpass' as BiquadFilterType, enabled: true },
         complex: {
             complexMode: false, fmIndex: 0, amIndex: 0, timbre: 0.5, order: 0.5, harmonics: 0.5,
-            pitchMod: true, ampMod: false, timbreMod: true, modOscRange: 'high' as any,
-            modPitch: 0, principalPitch: 0, modOscShape: 'triangle' as any, vcaBypass: false, phaseLock: false
+            pitchMod: true, ampMod: false, timbreMod: true, modOscRange: 'high',
+            modPitch: 0, principalPitch: 0, modOscShape: 'triangle', vcaBypass: false, phaseLock: false
         }
     }
 
@@ -336,16 +367,28 @@ export class HarmSynth {
     setReverb(decay: number, wet: number) { if (this.reverb) { this.reverb.decay = decay; this.reverb.wet.value = wet } }
     setFilter(idx: 1 | 2, freq: number, q: number, type: BiquadFilterType) { const f = idx === 1 ? this.filter1 : this.filter2; if (f) { f.frequency.value = freq; f.Q.value = q; f.type = type } }
     setVolume(db: number) { this.outputGain?.volume.rampTo(db, 0.1) }
-    setOscType(idx: 1 | 2 | 3, type: HarmOscType) { (this.settings as any)[`osc${idx}`].type = type }
-    setOscDetune(idx: 1 | 2 | 3, detune: number) { (this.settings as any)[`osc${idx}`].detune = detune }
-    setEnv(target: 'osc1' | 'osc2' | 'osc3' | 'noise', params: ADSRParams) { (this.settings as any)[target].env = params }
-    setFxSend(idx: 'osc1' | 'osc2' | 'osc3' | 'noise', level: number) { (this.settings as any)[idx].send = level }
+    setOscType(idx: 1 | 2 | 3, type: HarmOscType) {
+        const key = `osc${idx}` as 'osc1' | 'osc2' | 'osc3'
+        this.settings[key].type = type
+    }
+    setOscDetune(idx: 1 | 2 | 3, detune: number) {
+        const key = `osc${idx}` as 'osc1' | 'osc2' | 'osc3'
+        this.settings[key].detune = detune
+    }
+    setEnv(target: 'osc1' | 'osc2' | 'osc3' | 'noise', params: ADSRParams) {
+        this.settings[target].env = params
+    }
+    setFxSend(idx: 'osc1' | 'osc2' | 'osc3' | 'noise', level: number) {
+        this.settings[idx].send = level
+    }
 
     toggleModule(id: 'osc1' | 'osc2' | 'osc3' | 'noise' | 'f1' | 'f2', enabled: boolean) {
         if (id === 'f1' || id === 'f2') {
-            (this.settings as any)[id].enabled = enabled
+            this.settings[id].enabled = enabled
             this.rebuildBypass()
-        } else (this.settings as any)[id].enabled = enabled
+        } else {
+            this.settings[id].enabled = enabled
+        }
     }
 
     private rebuildBypass() {
