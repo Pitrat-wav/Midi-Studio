@@ -93,5 +93,25 @@ This project is optimized for AI-assisted development.
 - **Skills**: Located in `.agent/skills` (e.g., `AntigravityThinking`).
 - **Context**: Architecture documentation for autonomous agents.
 
+## 🔄 Synchronization
+
+The project includes a script to sync documentation and artifacts to a local Google Drive folder.
+
+### Setup
+1. Create a `.env` file in the root directory (you can use `.env.example` as a template).
+2. Set the following variables:
+   - `DRIVE_PATH`: The full path to your local Google Drive folder where you want to sync the files.
+   - `BRAIN_PATH`: (Optional) The path to your local Brain artifacts folder.
+
+### Usage
+Run the sync script using npm:
+```bash
+npm run sync-docs
+```
+Or directly:
+```bash
+./scripts/sync_to_drive.sh
+```
+
 ---
 *Built for the Telegram App Platform | 2026*
