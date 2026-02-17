@@ -13,7 +13,22 @@ if (!BOT_TOKEN || BOT_TOKEN === 'YOUR_BOT_TOKEN') {
 const bot = new Telegraf(BOT_TOKEN)
 const app = express()
 
-app.use(cors())
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+    : ['http://localhost:3000'];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+}));
 app.use(express.json({ limit: '10mb' }))
 
 /**
