@@ -58,6 +58,9 @@ export class TuringMachine {
         // We use a 16-bit mask to keep it within range
         this.register = ((this.register << 1) | nextBit) & 0xFFFF;
 
+        // Log for diagnostics
+        if (Math.random() < 0.1) console.log(`TuringMachine: Step (Prob ${probability}) -> New Register: ${this.register.toString(16)} (Bit: ${nextBit})`);
+        
         return this.register;
     }
 

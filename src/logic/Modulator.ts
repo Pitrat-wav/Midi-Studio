@@ -14,25 +14,32 @@ export class Modulator {
         this.phase += frequency * delta;
         if (this.phase > 1) this.phase -= 1;
 
+        let val = 0;
         switch (shape) {
             case 'sine':
-                return Math.sin(this.phase * Math.PI * 2);
+                val = Math.sin(this.phase * Math.PI * 2);
+                break;
             case 'triangle':
-                return 1 - Math.abs((this.phase * 2) - 1) * 2;
+                val = 1 - Math.abs((this.phase * 2) - 1) * 2;
+                break;
             case 'saw':
-                return (this.phase * 2) - 1;
+                val = (this.phase * 2) - 1;
+                break;
             case 'square':
-                return this.phase < 0.5 ? 1 : -1;
+                val = this.phase < 0.5 ? 1 : -1;
+                break;
             case 'random':
-                // We only change random value when phase wraps around approx.
-                // Or more simply, we can use frequency to determine "step" rate
-                // But for a continuous random, we can interpolate.
                 if (Math.random() < frequency * delta * 2) {
                     this.lastRandomValue = Math.random() * 2 - 1;
                 }
-                return this.lastRandomValue;
+                val = this.lastRandomValue;
+                break;
             default:
-                return 0;
+                val = 0;
         }
+        
+        // Diagnostic Log (sampled)
+        if (Math.random() < 0.01) console.log(`Modulator: ${shape} @ ${frequency}Hz -> ${val.toFixed(3)}`);
+        return val;
     }
 }

@@ -18,33 +18,8 @@ export class GraphEngine {
     static initialized = false
     private static roverAnalyser: Tone.Waveform | null = null
     private static currentRoverSource: any = null
-    private static aiGenNodes = new Map<string, Tone.Meter>()
-    private static aiGenInterval: any = null
-
-    private static registerAiGenNode(id: string, meter: Tone.Meter) {
-        this.aiGenNodes.set(id, meter)
-        if (this.aiGenInterval === null) {
-            this.aiGenInterval = setInterval(() => {
-                this.aiGenNodes.forEach((m, nodeId) => {
-                    const val = m.getValue() as number;
-                    if (val > 0.5 && !(m as any)._wasTriggered) {
-                        (m as any)._wasTriggered = true;
-                        window.dispatchEvent(new CustomEvent('AI_GEN_TRIGGER', { detail: { id: nodeId } }));
-                    }
-                    if (val < 0.5) (m as any)._wasTriggered = false;
-                })
-            }, 100)
-        }
-    }
-
-    private static unregisterAiGenNode(id: string) {
-        this.aiGenNodes.delete(id)
-        if (this.aiGenNodes.size === 0 && this.aiGenInterval !== null) {
-            clearInterval(this.aiGenInterval)
-            this.aiGenInterval = null
-        }
-    }
-
+    
+    // Unified AI Generation Logic
     private static aiGenStates = new Map<string, { meter: Tone.Meter, wasTriggered: boolean }>()
     private static aiGenTimer: any = null
 
@@ -157,8 +132,10 @@ export class GraphEngine {
     }
 
     private static registerAiGenNode(id: string, meter: Tone.Meter) {
+        console.log(`🤖 GraphEngine: Registering AI Node ${id}`)
         this.aiGenStates.set(id, { meter, wasTriggered: false })
         if (!this.aiGenTimer) {
+            console.log('🤖 GraphEngine: Starting AI Polling Loop')
             this.aiGenTimer = setInterval(() => this.pollAiGenNodes(), 100)
         }
     }
@@ -166,17 +143,23 @@ export class GraphEngine {
     private static unregisterAiGenNode(id: string) {
         this.aiGenStates.delete(id)
         if (this.aiGenStates.size === 0 && this.aiGenTimer) {
+            console.log('🤖 GraphEngine: Stopping AI Polling Loop')
             clearInterval(this.aiGenTimer)
             this.aiGenTimer = null
         }
     }
 
     private static pollAiGenNodes() {
+        if (this.aiGenStates.size > 0 && Math.random() < 0.05) {
+             // Occasional log to prove it's running without flooding console
+             console.log(`🤖 GraphEngine: Polling ${this.aiGenStates.size} AI nodes...`)
+        }
         this.aiGenStates.forEach((state, id) => {
             const val = state.meter.getValue()
             const level = Array.isArray(val) ? Math.max(...val.map(v => Math.abs(v))) : Math.abs(val as number)
 
             if (level > 0.5 && !state.wasTriggered) {
+                console.log(`🤖 GraphEngine: AI Trigger fired for ${id}`)
                 state.wasTriggered = true
                 window.dispatchEvent(new CustomEvent('AI_GEN_TRIGGER', { detail: { id } }))
             } else if (level < 0.5) {
@@ -1072,11 +1055,7 @@ export class GraphEngine {
         })
         audioNodes.clear()
 
-        if (this.aiGenInterval) {
-            clearInterval(this.aiGenInterval)
-            this.aiGenInterval = null
-        }
-        this.aiGenNodes.clear()
+        // Removed duplicative cleanup (aiGenInterval no longer exists)
 
         this.initialized = false
     }

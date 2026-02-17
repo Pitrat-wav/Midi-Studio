@@ -81,7 +81,10 @@ export class GridWalker {
                 this.moveRandom()
                 break
         }
-        return this.getIndex()
+        const idx = this.getIndex();
+        // Diagnostic Log
+        if (Math.random() < 0.05) console.log(`GridWalker: Pattern ${this.pattern} -> (${this.x}, ${this.y}) = ${idx}`);
+        return idx;
     }
 
     getIndex(): number {

@@ -17,25 +17,31 @@ export const useDeterministicStore = create<DeterministicState>((set) => {
     const initWorker = () => {
         if (typeof window === 'undefined' || sharedWorker) return
         
-        sharedWorker = new Worker(
-            new URL('../workers/DeterministicWorker.ts', import.meta.url),
-            { type: 'module' }
-        )
-        
-        sharedWorker.onmessage = (e) => {
-            const { type, data } = e.data
-            if (type === 'READY') {
-                set({ isReady: true })
+        console.log('🐍 Pyodide Worker: Initializing...')
+        try {
+            sharedWorker = new Worker(
+                new URL('../workers/DeterministicWorker.ts', import.meta.url),
+                { type: 'module' }
+            )
+            
+            sharedWorker.onmessage = (e) => {
+                const { type, data } = e.data
+                if (type === 'READY') {
+                    console.log('✅ Pyodide Worker: Ready')
+                    set({ isReady: true })
+                }
+                if (type === 'RESULT') {
+                    set({ lastResult: data })
+                }
+                if (type === 'ERROR') {
+                    console.error('❌ Pyodide Error:', data)
+                }
             }
-            if (type === 'RESULT') {
-                set({ lastResult: data })
-            }
-            if (type === 'ERROR') {
-                console.error('Pyodide Error:', data)
-            }
-        }
 
-        sharedWorker.postMessage({ type: 'INIT' })
+            sharedWorker.postMessage({ type: 'INIT' })
+        } catch (e) {
+            console.error('❌ Pyodide Worker: Failed to load', e)
+        }
     }
 
     // Initialize worker if in browser environment
