@@ -46,8 +46,9 @@ function validateInitData(initData: string, token: string): boolean {
 
     const authDate = parseInt(urlParams.get('auth_date') || '0', 10)
     const now = Math.floor(Date.now() / 1000)
-    if (!authDate || now - authDate > 86400) {
-        return false // Replay attack protection: data older than 24 hours
+    // Replay attack protection: check that auth_date is not older than 24 hours and not in the future
+    if (!authDate || (now - authDate > 86400) || (authDate > now + 300)) {
+        return false
     }
 
     const sortKeys = Array.from(urlParams.keys()).sort()
@@ -56,7 +57,17 @@ function validateInitData(initData: string, token: string): boolean {
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(token).digest()
     const checkHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex')
 
-    return checkHash === hash
+    if (!hash) return false
+
+    // Securely compare hashes using timingSafeEqual to prevent timing attacks
+    const checkHashBuffer = Buffer.from(checkHash, 'hex')
+    const hashBuffer = Buffer.from(hash, 'hex')
+
+    if (checkHashBuffer.length !== hashBuffer.length) {
+        return false
+    }
+
+    return crypto.timingSafeEqual(checkHashBuffer, hashBuffer)
 }
 
 /**
