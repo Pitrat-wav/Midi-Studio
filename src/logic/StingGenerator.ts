@@ -1,5 +1,5 @@
 import { Scale } from '@tonaljs/tonal'
-import type { ScaleType } from '../store/instrumentStore'
+import { ScaleType } from '../store/instrumentStore'
 
 export interface BassStep {
     note: string

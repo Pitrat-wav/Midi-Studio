@@ -10,6 +10,7 @@ mock.module('tone', {
     }
 });
 
+
 const mockTrack = {
     addTrackName: mock.fn(),
     setTempo: mock.fn(),
