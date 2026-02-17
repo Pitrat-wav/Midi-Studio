@@ -239,6 +239,7 @@ interface VisualState {
     handData: HandLandmark[] | null
     poseTrackingEnabled: boolean
     poseData: PoseLandmark[] | null
+    trackingDebug: boolean
     statusMessage: string | null
     showHelp: boolean
     showGamepadHelp: boolean
@@ -279,6 +280,7 @@ interface VisualState {
     setHandData: (data: HandLandmark[] | null) => void
     setPoseTrackingEnabled: (enabled: boolean) => void
     setPoseData: (data: PoseLandmark[] | null) => void
+    setTrackingDebug: (enabled: boolean) => void
     setStatus: (msg: string | null) => void
     toggleHelp: () => void
     toggleGamepadHelp: () => void
@@ -325,6 +327,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     handData: null,
     poseTrackingEnabled: false,
     poseData: null,
+    trackingDebug: (import.meta as any).env.VITE_TRACKING_DEBUG === 'true',
     statusMessage: null,
     showHelp: false,
     showGamepadHelp: false,
@@ -364,6 +367,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     setHandData: (data) => set({ handData: data }),
     setPoseTrackingEnabled: (enabled) => set({ poseTrackingEnabled: enabled }),
     setPoseData: (data) => set({ poseData: data }),
+    setTrackingDebug: (enabled) => set({ trackingDebug: enabled }),
     setFocusInstrument: (instrument) => set({ focusInstrument: instrument }),
 
     appView: '3D',
