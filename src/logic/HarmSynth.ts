@@ -99,14 +99,7 @@ class HarmVoice {
         this.amGain = new Tone.Gain(0)
         this.amNode = new Tone.Gain(1)
 
-        this.folder = new Tone.WaveShaper((val) => {
-            let x = val * 5
-            for (let i = 0; i < 3; i++) {
-                if (x > 1) x = 2 - x
-                if (x < -1) x = -2 - x
-            }
-            return x
-        }, 4096)
+        this.folder = new Tone.WaveShaper(undefined, 4096)
     }
 
     trigger(note: string, duration: string, time: number, velocity: number, settings: any) {
@@ -228,6 +221,9 @@ export class HarmSynth {
         }
     }
 
+    private sharedCurve = new Float32Array(4096)
+    private lastCurveParams = { timbre: -1, order: -1, harmonics: -1 }
+
     private initialized = false
     constructor() { }
 
@@ -305,28 +301,39 @@ export class HarmSynth {
         }
     }
 
-    private updateWavefolder(voice: HarmVoice, timbre: number, order: number, harmonics: number) {
+    private updateSharedCurve(timbre: number, order: number, harmonics: number) {
+        if (timbre === this.lastCurveParams.timbre &&
+            order === this.lastCurveParams.order &&
+            harmonics === this.lastCurveParams.harmonics) {
+            return
+        }
+
         const cTimbre = Math.max(0, Math.min(1, timbre))
         const cOrder = Math.max(0, Math.min(1, order))
         const cHarmonics = Math.max(0, Math.min(1, harmonics))
 
-        voice.folder.set({
-            mapping: (val: number) => {
-                let x = val * (1 + cTimbre * 10)
-                let symmetry = (cHarmonics - 0.5) * 0.8
-                x += symmetry
-                for (let i = 0; i < 4; i++) {
-                    let stageIntensity = Math.max(0, Math.min(1, cOrder * 5 - i))
-                    if (stageIntensity > 0) {
-                        let folded = x
-                        if (folded > 1) folded = 2 - folded
-                        if (folded < -1) folded = -2 - folded
-                        x = (folded * stageIntensity) + (x * (1 - stageIntensity))
-                    }
+        for (let i = 0; i < 4096; i++) {
+            const val = (i / 4095) * 2 - 1
+            let x = val * (1 + cTimbre * 10)
+            let symmetry = (cHarmonics - 0.5) * 0.8
+            x += symmetry
+            for (let j = 0; j < 4; j++) {
+                let stageIntensity = Math.max(0, Math.min(1, cOrder * 5 - j))
+                if (stageIntensity > 0) {
+                    let folded = x
+                    if (folded > 1) folded = 2 - folded
+                    if (folded < -1) folded = -2 - folded
+                    x = (folded * stageIntensity) + (x * (1 - stageIntensity))
                 }
-                return x - symmetry
             }
-        })
+            this.sharedCurve[i] = x - symmetry
+        }
+        this.lastCurveParams = { timbre, order, harmonics }
+    }
+
+    private updateWavefolder(voice: HarmVoice, timbre: number, order: number, harmonics: number) {
+        this.updateSharedCurve(timbre, order, harmonics)
+        voice.folder.curve = this.sharedCurve
     }
 
     setDistortion(drive: number, wet: number) { if (this.distortion) { this.distortion.distortion = drive; this.distortion.wet.value = wet } }
