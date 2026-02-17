@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNodeStore } from '../../store/nodeStore';
+import { useShallow } from 'zustand/react/shallow';
 import { X, Settings, Zap, ArrowRight, ArrowLeft, Sliders, Activity, Disc, Waves, Cpu, Power } from 'lucide-react';
 import './NodeInspector.css';
 
@@ -9,8 +10,14 @@ interface NodeInspectorProps {
 }
 
 export const NodeInspector: React.FC<NodeInspectorProps> = ({ nodeId, onClose }) => {
-    const { nodes, updateNodeParam, macros, assignMacro } = useNodeStore();
-    const node = nodes.find(n => n.id === nodeId);
+    const { node, updateNodeParam, macros, assignMacro } = useNodeStore(
+        useShallow(state => ({
+            node: state.nodes.find(n => n.id === nodeId),
+            updateNodeParam: state.updateNodeParam,
+            macros: state.macros,
+            assignMacro: state.assignMacro
+        }))
+    );
     const [expandedSections, setExpandedSections] = useState<string[]>(['core', 'output']);
     const [mappingMenu, setMappingMenu] = useState<{ param: string, x: number, y: number } | null>(null);
 
