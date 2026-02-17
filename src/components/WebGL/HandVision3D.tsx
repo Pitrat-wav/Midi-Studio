@@ -11,41 +11,56 @@ import { useAudioStore } from '../../store/audioStore'
 import { useBassStore, usePadStore } from '../../store/instrumentStore'
 import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
 
-function FingerJoint({ position }: { position: THREE.Vector3 }) {
-    return (
-        <mesh position={position}>
-            <sphereGeometry args={[0.3, 16, 16]} />
-            <meshBasicMaterial color="#3390ec" />
-        </mesh>
-    )
-}
-
 export function HandVision3D() {
-    const handData = useVisualStore(s => s.handData)
+    // Only subscribe to hand presence reactively to avoid 60fps re-renders
+    const hasHand = useVisualStore(s => s.handData !== null)
+
     const bridge = useAudioVisualBridge()
     const groupRef = useRef<THREE.Group>(null!)
-    const audio = useAudioStore.getState() // Use non-reactive state for engines
-    const bass = useBassStore.getState()
-    const pads = usePadStore.getState()
+    const jointRefs = useRef<(THREE.Mesh | null)[]>([])
+    const lineRef = useRef<THREE.Line>(null!)
 
-    // Map normalized landmarks to 3D space relative to camera
-    // Making it "Fullscreen Big" - covering a wider area
+    // Stable joints array of Vector3s to be mutated in useFrame
     const joints = useMemo(() => {
-        if (!handData) return []
-        return handData.map(l => {
-            // Scale up significantly: 20x16 units (approx fullscreen at depth 10)
-            return new THREE.Vector3(
-                (0.5 - l.x) * 20, // Was 10
-                (0.5 - l.y) * 16, // Was 8
-                -l.z * 10
-            )
-        })
-    }, [handData])
+        return Array.from({ length: 21 }, () => new THREE.Vector3())
+    }, [])
 
     const lastUpdateRef = useRef(0)
 
     useFrame(() => {
+        // Pull latest hand data and audio state non-reactively
+        const handData = useVisualStore.getState().handData
+        const audio = useAudioStore.getState()
+        const bass = useBassStore.getState()
+        const pads = usePadStore.getState()
+
         if (!handData || joints.length === 0) return
+
+        // Update joint positions directly
+        handData.forEach((l, i) => {
+            if (joints[i]) {
+                const x = (0.5 - l.x) * 20
+                const y = (0.5 - l.y) * 16
+                const z = -l.z * 10
+                joints[i].set(x, y, z)
+
+                const mesh = jointRefs.current[i]
+                if (mesh) {
+                    mesh.position.set(x, y, z)
+                }
+            }
+        })
+
+        // Update line geometry manually
+        if (lineRef.current) {
+            const positions = lineRef.current.geometry.attributes.position.array as Float32Array
+            joints.forEach((j, i) => {
+                positions[i * 3] = j.x
+                positions[i * 3 + 1] = j.y
+                positions[i * 3 + 2] = j.z
+            })
+            lineRef.current.geometry.attributes.position.needsUpdate = true
+        }
 
         // Interaction Logic
         // Landmark 4 = Thumb tip, 8 = Index tip
@@ -87,28 +102,29 @@ export function HandVision3D() {
         }
     })
 
-    if (!handData) return null
+    if (!hasHand) return null
 
     return (
         <group ref={groupRef} position={[0, 5, 10]}>
             {joints.map((p, i) => (
-                <FingerJoint key={i} position={p} />
+                <mesh key={i} ref={el => jointRefs.current[i] = el!} position={p}>
+                    <sphereGeometry args={[0.3, 16, 16]} />
+                    <meshBasicMaterial color="#3390ec" />
+                </mesh>
             ))}
 
             {/* Draw lines for bones */}
-            {joints.length > 0 && (
-                <line>
-                    <bufferGeometry attach="geometry">
-                        <bufferAttribute
-                            attach="attributes-position"
-                            count={joints.length}
-                            array={new Float32Array(joints.flatMap(j => [j.x, j.y, j.z]))}
-                            itemSize={3}
-                        />
-                    </bufferGeometry>
-                    <lineBasicMaterial color="#ffffff" opacity={0.3} transparent />
-                </line>
-            )}
+            <line ref={lineRef}>
+                <bufferGeometry attach="geometry">
+                    <bufferAttribute
+                        attach="attributes-position"
+                        count={joints.length}
+                        array={new Float32Array(joints.length * 3)}
+                        itemSize={3}
+                    />
+                </bufferGeometry>
+                <lineBasicMaterial color="#ffffff" opacity={0.3} transparent />
+            </line>
         </group>
     )
 }
