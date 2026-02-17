@@ -51,11 +51,14 @@ function DraggableNode({ type, label, icon }: { type: NodeType, label: string, i
 }
 
 function NodeEditorContent({ onClose }: { onClose: () => void }) {
-    const {
-        nodes, edges, context,
-        onNodesChange, onEdgesChange, onConnect,
-        addNode, setContext
-    } = useNodeStore()
+    const nodes = useNodeStore(state => state.nodes)
+    const edges = useNodeStore(state => state.edges)
+    const context = useNodeStore(state => state.context)
+    const onNodesChange = useNodeStore(state => state.onNodesChange)
+    const onEdgesChange = useNodeStore(state => state.onEdgesChange)
+    const onConnect = useNodeStore(state => state.onConnect)
+    const addNode = useNodeStore(state => state.addNode)
+    const setContext = useNodeStore(state => state.setContext)
 
     const [menu, setMenu] = useState<{ x: number, y: number, nodeId: string | null } | null>(null)
     const [inspectorNodeId, setInspectorNodeId] = useState<string | null>(null)
