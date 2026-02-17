@@ -17,6 +17,11 @@ async function initPython() {
         indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.3/full/'
     })
 
+    // Install music-related packages if needed (simulated for now)
+    // await pyodide.loadPackage(['micropip'])
+    // const micropip = pyodide.pyimport('micropip')
+    // await micropip.install('musicpy')
+
     await pyodide.runPythonAsync(`
 import math
 
