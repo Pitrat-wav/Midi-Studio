@@ -29,6 +29,12 @@ function validateInitData(initData: string, token: string): boolean {
     const hash = urlParams.get('hash')
     urlParams.delete('hash')
 
+    const authDate = parseInt(urlParams.get('auth_date') || '0', 10)
+    const now = Math.floor(Date.now() / 1000)
+    if (!authDate || now - authDate > 86400) {
+        return false // Replay attack protection: data older than 24 hours
+    }
+
     const sortKeys = Array.from(urlParams.keys()).sort()
     const dataCheckString = sortKeys.map(key => `${key}=${urlParams.get(key)}`).join('\n')
 
