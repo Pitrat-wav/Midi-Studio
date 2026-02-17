@@ -63,7 +63,7 @@ app.post('/upload-midi', async (req: Request, res: Response) => {
 
         res.send({ success: true })
     } catch (error) {
-        console.error('Ошибка Бота:', error)
+        console.error('Ошибка Бота:', error instanceof Error ? error.message : String(error))
         res.status(500).send({ error: 'Не удалось отправить MIDI' })
     }
 })
