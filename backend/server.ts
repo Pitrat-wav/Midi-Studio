@@ -3,6 +3,7 @@ import cors from 'cors'
 import { Telegraf } from 'telegraf'
 import crypto from 'crypto'
 import path from 'path'
+import { sanitizeFilename } from './utils.ts'
 
 // В продакшене используйте переменные окружения
 const BOT_TOKEN = process.env.BOT_TOKEN
@@ -36,46 +37,6 @@ function validateInitData(initData: string, token: string): boolean {
     const checkHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex')
 
     return checkHash === hash
-}
-
-/**
- * Sanitize filename to prevent path traversal and malicious naming
- */
-function sanitizeFilename(filename: any): string {
-    if (!filename || typeof filename !== 'string') {
-        return 'generative_loop.mid'
-    }
-
-    // Extract only the filename part, removing any path components
-    // path.basename is platform-dependent, but we also filter out unsafe characters
-    const base = path.basename(filename)
-
-    // Remove characters that aren't alphanumeric, dots, underscores, or dashes
-    let sanitized = base.replace(/[^a-zA-Z0-9._-]/g, '_')
-
-    // Ensure the filename is not empty and doesn't start with a dot (hidden file)
-    if (!sanitized || sanitized.startsWith('.')) {
-        sanitized = 'loop_' + sanitized.replace(/^\.+/, '')
-    }
-
-    // Final check for empty or just 'loop_'
-    if (sanitized === 'loop_' || !sanitized) {
-        sanitized = 'loop_unnamed'
-    }
-
-    // Ensure it has a .mid extension
-    if (!sanitized.toLowerCase().endsWith('.mid')) {
-        sanitized += '.mid'
-    }
-
-    // Limit length to a reasonable 64 characters
-    if (sanitized.length > 64) {
-        // Keep the extension if possible by slicing from the end or just truncating
-        // For simplicity, we just slice the last 64 chars
-        sanitized = sanitized.slice(-64)
-    }
-
-    return sanitized
 }
 
 app.post('/upload-midi', async (req: Request, res: Response) => {

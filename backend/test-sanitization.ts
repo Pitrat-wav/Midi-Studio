@@ -1,32 +1,4 @@
-import path from 'path';
-
-// Duplicate the function for testing since it's not exported
-function sanitizeFilename(filename: any): string {
-    if (!filename || typeof filename !== 'string') {
-        return 'generative_loop.mid'
-    }
-
-    const base = path.basename(filename)
-    let sanitized = base.replace(/[^a-zA-Z0-9._-]/g, '_')
-
-    if (!sanitized || sanitized.startsWith('.')) {
-        sanitized = 'loop_' + sanitized.replace(/^\.+/, '')
-    }
-
-    if (sanitized === 'loop_' || !sanitized) {
-        sanitized = 'loop_unnamed'
-    }
-
-    if (!sanitized.toLowerCase().endsWith('.mid')) {
-        sanitized += '.mid'
-    }
-
-    if (sanitized.length > 64) {
-        sanitized = sanitized.slice(-64)
-    }
-
-    return sanitized
-}
+import { sanitizeFilename } from './utils.ts';
 
 const testCases = [
     { input: 'standard.mid', expected: 'standard.mid' },
@@ -41,7 +13,14 @@ const testCases = [
     { input: null, expected: 'generative_loop.mid' },
     { input: undefined, expected: 'generative_loop.mid' },
     { input: 123, expected: 'generative_loop.mid' },
-    { input: 'C:\\Windows\\System32\\calc.exe', expected: 'C__Windows_System32_calc.exe.mid' },
+    // New test cases for Windows-style paths
+    { input: 'C:\\Windows\\System32\\calc.exe', expected: 'calc.exe.mid' },
+    { input: 'D:\\music\\projects\\loop.mid', expected: 'loop.mid' },
+    { input: '\\\\server\\share\\file.mid', expected: 'file.mid' },
+    // Null byte test
+    { input: 'test\0.mid', expected: 'test_.mid' },
+    // Extremely long filename
+    { input: 'b'.repeat(200), expected: 'b'.repeat(60) + '.mid' },
 ];
 
 let failed = 0;
