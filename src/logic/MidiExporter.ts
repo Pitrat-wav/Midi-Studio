@@ -1,6 +1,7 @@
-import MidiWriter from 'midi-writer-js'
+import * as MidiWriter from 'midi-writer-js'
 import { BassStep } from './StingGenerator'
 import { Stage } from '../store/instrumentStore'
+import { ChordType } from './Scaler'
 import * as Tone from 'tone'
 
 export function exportToMidi(
@@ -13,23 +14,22 @@ export function exportToMidi(
     pads: { notes: string[], active: boolean },
     harmGrid?: { note: number; active: boolean; velocity?: number }[],
     target: 'drums' | 'bass' | 'seq185' | 'snake' | 'pads' | 'harm' | 'turing' = 'drums',
-    smartChord?: { enabled: boolean; type: any },
+    smartChord?: { enabled: boolean; type: ChordType },
     turingRegister?: number,
     turingBits?: number
 ): Uint8Array {
-    const tracks: any[] = []
+    const tracks: MidiWriter.Track[] = []
 
     // 1. Bass Track
     if (target === 'bass') {
         const track = new MidiWriter.Track()
         track.addTrackName('Acid Bass')
-        // @ts-ignore
-        track.setTempo(bpm)
+        track.setTempo(bpm, 0)
         for (let bar = 0; bar < 4; bar++) {
             bassPattern.forEach((step) => {
                 if (step.active) {
                     track.addEvent(new MidiWriter.NoteEvent({
-                        pitch: [step.note] as any,
+                        pitch: [step.note as MidiWriter.Pitch],
                         duration: step.slide ? '8' : '16',
                         velocity: step.accent ? 127 : 90,
                         sequential: true
@@ -46,8 +46,7 @@ export function exportToMidi(
     if (target === 'drums') {
         const track = new MidiWriter.Track()
         track.addTrackName('Drums')
-        // @ts-ignore
-        track.setTempo(bpm)
+        track.setTempo(bpm, 0)
         for (let bar = 0; bar < 4; bar++) {
             for (let step = 0; step < 16; step++) {
                 const notes = []
@@ -58,7 +57,7 @@ export function exportToMidi(
                 if (drums.clap[step]) notes.push('D#1')
 
                 track.addEvent(new MidiWriter.NoteEvent({
-                    pitch: notes as any,
+                    pitch: notes as MidiWriter.Pitch[],
                     duration: '16',
                     sequential: true
                 }))
@@ -72,8 +71,7 @@ export function exportToMidi(
     if (target === 'seq185') {
         const track = new MidiWriter.Track()
         track.addTrackName('Seq 185 Rhythm')
-        // @ts-ignore
-        track.setTempo(bpm)
+        track.setTempo(bpm, 0)
 
         // We simulate the walker 
         // But strictly speaking ML-185 is just stages. We'll output the stage pitches?
@@ -90,17 +88,17 @@ export function exportToMidi(
                 const noteName = Tone.Frequency(stage.pitch, 'midi').toNote()
 
                 if (stage.gateMode === 0) {
-                    track.addEvent(new MidiWriter.NoteEvent({ pitch: [], duration: (stageLengthIn16th).toString() as any, sequential: true }))
+                    track.addEvent(new MidiWriter.NoteEvent({ pitch: [], duration: (stageLengthIn16th).toString() as MidiWriter.Duration, sequential: true }))
                 } else {
                     // Normalize events for multi/etc (simplified for export)
                     // We'll just put one note for the duration if Single/Hold, multiple if Multi?
                     // Simplified: One note per stage pulse if Multi, else one note.
                     if (stage.gateMode === 2) { // Multi
                         for (let i = 0; i < stageLengthIn16th; i++) {
-                            track.addEvent(new MidiWriter.NoteEvent({ pitch: [noteName] as any, duration: '16', velocity: 100, sequential: true }))
+                            track.addEvent(new MidiWriter.NoteEvent({ pitch: [noteName as MidiWriter.Pitch], duration: '16', velocity: 100, sequential: true }))
                         }
                     } else {
-                        track.addEvent(new MidiWriter.NoteEvent({ pitch: [noteName] as any, duration: (stageLengthIn16th).toString() as any, velocity: 100, sequential: true }))
+                        track.addEvent(new MidiWriter.NoteEvent({ pitch: [noteName as MidiWriter.Pitch], duration: (stageLengthIn16th).toString() as MidiWriter.Duration, velocity: 100, sequential: true }))
                     }
                 }
                 pulsesUsed += stageLengthIn16th
@@ -117,11 +115,10 @@ export function exportToMidi(
     if (target === 'snake') {
         const track = new MidiWriter.Track()
         track.addTrackName('MDD Snake Sequence')
-        // @ts-ignore
-        track.setTempo(bpm)
+        track.setTempo(bpm, 0)
 
         // Simulate walker for 4 bars (64 steps)
-        const normalizeGrid = (g: any[]) => g.map(cell => typeof cell === 'number' ? { note: cell, active: true } : cell)
+        const normalizeGrid = (g: (number | { note: number; active: boolean })[]) => g.map(cell => typeof cell === 'number' ? { note: cell, active: true } : cell)
         const grid = normalizeGrid(snakeGrid)
 
         // Import GridWalker logic locally or duplicate simple logic
@@ -140,7 +137,7 @@ export function exportToMidi(
             grid.forEach(cell => {
                 if (cell.active) {
                     const note = Tone.Frequency(cell.note, 'midi').toNote()
-                    track.addEvent(new MidiWriter.NoteEvent({ pitch: [note] as any, duration: '16', velocity: 100, sequential: true }))
+                    track.addEvent(new MidiWriter.NoteEvent({ pitch: [note as MidiWriter.Pitch], duration: '16', velocity: 100, sequential: true }))
                 } else {
                     track.addEvent(new MidiWriter.NoteEvent({ pitch: [], duration: '16', sequential: true }))
                 }
@@ -152,13 +149,12 @@ export function exportToMidi(
     if (target === 'pads') {
         const track = new MidiWriter.Track()
         track.addTrackName('Ambient Pads')
-        // @ts-ignore
-        track.setTempo(bpm)
+        track.setTempo(bpm, 0)
 
         if (pads.active) {
             for (let i = 0; i < 4; i++) {
                 track.addEvent(new MidiWriter.NoteEvent({
-                    pitch: pads.notes as any,
+                    pitch: pads.notes as MidiWriter.Pitch[],
                     duration: '1',
                     sequential: true,
                     velocity: 50
@@ -173,15 +169,14 @@ export function exportToMidi(
     if (target === 'harm' && harmGrid) {
         const track = new MidiWriter.Track()
         track.addTrackName('HarmSynth Modular')
-        // @ts-ignore
-        track.setTempo(bpm)
+        track.setTempo(bpm, 0)
 
         for (let bar = 0; bar < 4; bar++) {
             harmGrid.forEach(step => {
                 if (step.active) {
                     const noteName = Tone.Frequency(step.note, 'midi').toNote()
                     track.addEvent(new MidiWriter.NoteEvent({
-                        pitch: [noteName] as any,
+                        pitch: [noteName as MidiWriter.Pitch],
                         duration: '16',
                         velocity: Math.floor((step.velocity || 0.8) * 127),
                         sequential: true
@@ -197,8 +192,7 @@ export function exportToMidi(
     if (target === 'turing' && turingRegister !== undefined) {
         const track = new MidiWriter.Track()
         track.addTrackName('Turing Machine')
-        // @ts-ignore
-        track.setTempo(bpm)
+        track.setTempo(bpm, 0)
 
         let reg = turingRegister
         const bits = turingBits || 8
@@ -209,7 +203,7 @@ export function exportToMidi(
             const noteName = Tone.Frequency(midiNote, 'midi').toNote()
 
             track.addEvent(new MidiWriter.NoteEvent({
-                pitch: [noteName] as any,
+                pitch: [noteName as MidiWriter.Pitch],
                 duration: '16',
                 velocity: 90,
                 sequential: true
