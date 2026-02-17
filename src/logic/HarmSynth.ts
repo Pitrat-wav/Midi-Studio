@@ -56,6 +56,7 @@ class HarmVoice {
 
     public activeNote: string | null = null
     public startTime: number = 0
+    public currentCurve: Float32Array | null = null
 
     constructor(fxBus: Tone.ToneAudioNode, directBus: Tone.ToneAudioNode) {
         // OSC 1
@@ -199,6 +200,8 @@ export class HarmSynth {
     private voicePool: HarmVoice[] = []
     private activeVoices: Set<HarmVoice> = new Set()
     private maxVoices = 16
+    private sharedCurve: Float32Array = new Float32Array(4096)
+    private lastCurveParams = { timbre: -1, order: -1, harmonics: -1 }
 
     // Routing
     private fxBus: Tone.Gain | undefined
@@ -247,6 +250,7 @@ export class HarmSynth {
         this.directBus.chain(this.filter1, this.filter2, this.outputGain)
         this.fxBus.chain(this.distortion, this.phaser, this.chorus, this.delay, this.reverb, this.outputGain)
 
+        this.recalculateCurve(this.settings.complex.timbre, this.settings.complex.order, this.settings.complex.harmonics)
         for (let i = 0; i < this.maxVoices; i++) {
             this.voicePool.push(new HarmVoice(this.fxBus, this.directBus))
         }
@@ -305,28 +309,55 @@ export class HarmSynth {
         }
     }
 
+    private recalculateCurve(timbre: number, order: number, harmonics: number) {
+        const cTimbre = Math.max(0, Math.min(1, timbre))
+        const cOrder = Math.max(0, Math.min(1, order))
+        const cHarmonics = Math.max(0, Math.min(1, harmonics))
+
+        const intensities = new Float32Array(4)
+        for (let i = 0; i < 4; i++) {
+            intensities[i] = Math.max(0, Math.min(1, cOrder * 5 - i))
+        }
+
+        const gain = 1 + cTimbre * 10
+        const symmetry = (cHarmonics - 0.5) * 0.8
+        const curve = new Float32Array(4096)
+
+        for (let j = 0; j < 4096; j++) {
+            const val = (j / 2047.5) - 1
+            let x = val * gain + symmetry
+            for (let i = 0; i < 4; i++) {
+                const stageIntensity = intensities[i]
+                if (stageIntensity > 0) {
+                    let folded = x
+                    if (folded > 1) folded = 2 - folded
+                    else if (folded < -1) folded = -2 - folded
+                    x = (folded * stageIntensity) + (x * (1 - stageIntensity))
+                } else {
+                    break
+                }
+            }
+            curve[j] = x - symmetry
+        }
+        this.sharedCurve = curve
+        this.lastCurveParams = { timbre: cTimbre, order: cOrder, harmonics: cHarmonics }
+    }
+
     private updateWavefolder(voice: HarmVoice, timbre: number, order: number, harmonics: number) {
         const cTimbre = Math.max(0, Math.min(1, timbre))
         const cOrder = Math.max(0, Math.min(1, order))
         const cHarmonics = Math.max(0, Math.min(1, harmonics))
 
-        voice.folder.set({
-            mapping: (val: number) => {
-                let x = val * (1 + cTimbre * 10)
-                let symmetry = (cHarmonics - 0.5) * 0.8
-                x += symmetry
-                for (let i = 0; i < 4; i++) {
-                    let stageIntensity = Math.max(0, Math.min(1, cOrder * 5 - i))
-                    if (stageIntensity > 0) {
-                        let folded = x
-                        if (folded > 1) folded = 2 - folded
-                        if (folded < -1) folded = -2 - folded
-                        x = (folded * stageIntensity) + (x * (1 - stageIntensity))
-                    }
-                }
-                return x - symmetry
-            }
-        })
+        if (cTimbre !== this.lastCurveParams.timbre ||
+            cOrder !== this.lastCurveParams.order ||
+            cHarmonics !== this.lastCurveParams.harmonics) {
+            this.recalculateCurve(cTimbre, cOrder, cHarmonics)
+        }
+
+        if (voice.currentCurve !== this.sharedCurve) {
+            voice.folder.curve = this.sharedCurve
+            voice.currentCurve = this.sharedCurve
+        }
     }
 
     setDistortion(drive: number, wet: number) { if (this.distortion) { this.distortion.distortion = drive; this.distortion.wet.value = wet } }
@@ -359,6 +390,10 @@ export class HarmSynth {
 
     setComplexParams(params: Partial<BuchlaParams>) {
         this.settings.complex = { ...this.settings.complex, ...params }
-        this.activeVoices.forEach(v => this.updateWavefolder(v, this.settings.complex.timbre, this.settings.complex.order, this.settings.complex.harmonics))
+        this.recalculateCurve(this.settings.complex.timbre, this.settings.complex.order, this.settings.complex.harmonics)
+        this.activeVoices.forEach(v => {
+            v.folder.curve = this.sharedCurve
+            v.currentCurve = this.sharedCurve
+        })
     }
 }
