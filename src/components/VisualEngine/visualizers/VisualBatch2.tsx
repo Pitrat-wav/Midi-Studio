@@ -303,8 +303,8 @@ export function TriangleRain() {
         const t = state.clock.getElapsedTime()
         for (let i = 0; i < COUNT; i++) {
             const h = (10 - (t * (1 + intensity * 5) + i * 2) % 20) - 10
-            tempMatrix.setPosition((i % 10) - 5, h, Math.floor(i / 10) - 5)
             tempMatrix.makeRotationZ(t + i)
+            tempMatrix.setPosition((i % 10) - 5, h, Math.floor(i / 10) - 5)
             meshRef.current.setMatrixAt(i, tempMatrix)
         }
         meshRef.current.instanceMatrix.needsUpdate = true

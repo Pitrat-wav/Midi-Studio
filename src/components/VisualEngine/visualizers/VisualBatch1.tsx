@@ -8,14 +8,14 @@ import { Stars } from '@react-three/drei'
 export function AuraField() {
     const intensity = useVisualStore(s => s.globalAudioIntensity)
     return (
-        <group>
+        <>
             <fog attach="fog" args={['#000', 1, 10]} />
             <mesh>
                 <sphereGeometry args={[10, 32, 32]} />
                 <meshBasicMaterial color="#3390ec" side={THREE.BackSide} transparent opacity={0.1 + intensity * 0.2} />
             </mesh>
             <ambientLight intensity={intensity * 2} color="#ff00cc" />
-        </group>
+        </>
     )
 }
 

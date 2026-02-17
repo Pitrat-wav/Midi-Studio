@@ -18,7 +18,6 @@ export function VectorField() {
                 for (let z = 0; z < 5; z++) {
                     const id = i++
                     const posX = x - 2, posY = y - 2, posZ = z - 2
-                    tempMatrix.setPosition(posX, posY, posZ)
                     // Rotate based on audio/time
                     const rot = t + (posX + posY + posZ) * intensity
                     const quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(rot, rot, 0))

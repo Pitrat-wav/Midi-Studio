@@ -16,7 +16,7 @@ export const PRESETS = [
 ]
 
 export const VISUALIZER_REGISTRY = [
-    { name: 'Feedback Vortex', icon: '🌀', id: 0, tags: 'abstract, feedback, trippy, video' },
+    { name: 'Feedback Vortex', icon: '🌀', id: 0, tags: '2d, abstract, feedback, trippy, video' },
     { name: 'Quantum Particles', icon: '✨', id: 1, tags: 'particles, space, glow, video' },
     { name: 'Fractal Mirror', icon: '💎', id: 2, tags: 'fractal, crystal, geometry, video' },
     { name: 'Neon Weave', icon: '🕸️', id: 3, tags: 'grid, synthwave, lines' },
@@ -73,16 +73,16 @@ export const VISUALIZER_REGISTRY = [
     { name: 'Kandinsky Abstract', icon: '🎨', id: 50, tags: '2d, modern art, circles, kandinsky' },
 
     // 10 NEW CAMERA VISUALIZERS
-    { name: 'Mirror Mask', icon: '🎭', id: 51, tags: 'video, cam, mask, fx' },
-    { name: 'Ghost Cam', icon: '👻', id: 52, tags: 'video, cam, delay, ghost' },
-    { name: 'Thermal Vision', icon: '🌡️', id: 53, tags: 'video, cam, thermal, heat' },
-    { name: 'ASCII Mirror', icon: '🔡', id: 54, tags: 'video, cam, ascii, retro' },
-    { name: 'Edge Detector', icon: '🎞️', id: 55, tags: 'video, cam, edge, neon' },
-    { name: 'Kaleido Mirror', icon: '💠', id: 56, tags: 'video, cam, mirror, symmetry' },
-    { name: 'Motion Trails', icon: '☄️', id: 57, tags: 'video, cam, motion, trail' },
-    { name: 'Pixel Face', icon: '👾', id: 58, tags: 'video, cam, pixel, voxel' },
-    { name: 'Slit Scan', icon: '⏱️', id: 59, tags: 'video, cam, glitch, time' },
-    { name: 'Datamosh Feed', icon: '📼', id: 60, tags: 'video, cam, glitch, error' },
+    { name: 'Mirror Mask', icon: '🎭', id: 51, tags: '2d, video, cam, mask, fx' },
+    { name: 'Ghost Cam', icon: '👻', id: 52, tags: '2d, video, cam, delay, ghost' },
+    { name: 'Thermal Vision', icon: '🌡️', id: 53, tags: '2d, video, cam, thermal, heat' },
+    { name: 'ASCII Mirror', icon: '🔡', id: 54, tags: '2d, video, cam, ascii, retro' },
+    { name: 'Edge Detector', icon: '🎞️', id: 55, tags: '2d, video, cam, edge, neon' },
+    { name: 'Kaleido Mirror', icon: '💠', id: 56, tags: '2d, video, cam, mirror, symmetry' },
+    { name: 'Motion Trails', icon: '☄️', id: 57, tags: '2d, video, cam, motion, trail' },
+    { name: 'Pixel Face', icon: '👾', id: 58, tags: '2d, video, cam, pixel, voxel' },
+    { name: 'Slit Scan', icon: '⏱️', id: 59, tags: '2d, video, cam, glitch, time' },
+    { name: 'Datamosh Feed', icon: '📼', id: 60, tags: '2d, video, cam, glitch, error' },
 
     // 100 NEW 2D VISUALIZERS (61-160)
     { name: 'Neon Horizon', icon: '🌅', id: 61, tags: '2d, grid, synthwave' },
