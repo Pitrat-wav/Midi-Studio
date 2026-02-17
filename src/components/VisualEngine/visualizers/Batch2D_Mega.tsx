@@ -102,6 +102,11 @@ const createVisualizer = (id: number, name: string, color: string, type: 'blob' 
                 meshRef.current.rotation.z += 0.01
             } else if (type === 'lines') {
                 meshRef.current.position.x = Math.sin(t) * intensity
+            } else if (type === 'grid') {
+                meshRef.current.position.y = Math.sin(t) * intensity * 0.5
+            } else if (type === 'shapes') {
+                meshRef.current.rotation.z = t * 0.5 + intensity * 2
+                meshRef.current.scale.setScalar(1 + intensity * 0.3)
             }
         })
         return (

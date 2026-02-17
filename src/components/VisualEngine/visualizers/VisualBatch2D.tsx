@@ -9,9 +9,13 @@ export function RetroOscilloscope() {
     const fftData = useVisualStore(s => s.fftData)
     const intensity = useVisualStore(s => s.globalAudioIntensity)
 
-    const points = useMemo(() => {
-        const p = []
-        for (let i = 0; i < 128; i++) p.push(new THREE.Vector3((i / 64 - 1) * 4, 0, 0))
+    const initialPositions = useMemo(() => {
+        const p = new Float32Array(128 * 3)
+        for (let i = 0; i < 128; i++) {
+            p[i * 3] = (i / 64 - 1) * 4 // X
+            p[i * 3 + 1] = 0 // Y
+            p[i * 3 + 2] = 0 // Z
+        }
         return p
     }, [])
 
@@ -28,7 +32,7 @@ export function RetroOscilloscope() {
     return (
         <line ref={meshRef as any}>
             <bufferGeometry>
-                <bufferAttribute attach="attributes-position" count={points.length} array={new Float32Array(points.length * 3)} itemSize={3} />
+                <bufferAttribute attach="attributes-position" count={128} array={initialPositions} itemSize={3} />
             </bufferGeometry>
             <lineBasicMaterial color="#00ff00" linewidth={2} />
         </line>

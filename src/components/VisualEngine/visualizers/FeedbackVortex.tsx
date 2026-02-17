@@ -86,37 +86,7 @@ export function FeedbackVortex() {
 
     const readTarget = useRef(0)
 
-    const [videoTexture, setVideoTexture] = React.useState<THREE.VideoTexture | null>(null)
-
-    useEffect(() => {
-        const video = document.createElement('video')
-        video.autoplay = true
-        video.playsInline = true
-        video.muted = true
-
-        navigator.mediaDevices.getUserMedia({
-            video: {
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                frameRate: { ideal: 60 }
-            }
-        }).then(stream => {
-            video.srcObject = stream
-            video.onloadedmetadata = () => {
-                video.play()
-                const tex = new THREE.VideoTexture(video)
-                tex.minFilter = THREE.LinearFilter
-                tex.magFilter = THREE.LinearFilter
-                setVideoTexture(tex)
-            }
-        }).catch(err => console.error("Webcam failed", err))
-
-        return () => {
-            if (video.srcObject) {
-                (video.srcObject as MediaStream).getTracks().forEach(t => t.stop())
-            }
-        }
-    }, [])
+    const videoTexture = useVisualStore(s => s.webcamTexture)
 
     const modifier = useVisualStore(s => s.visualModifier)
     const speed = useVisualStore(s => s.visualSpeed)
