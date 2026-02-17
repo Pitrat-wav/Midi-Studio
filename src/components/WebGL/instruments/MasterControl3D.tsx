@@ -11,6 +11,7 @@ import { usePresetStore } from '../../../store/usePresetStore'
 import { useCompositionManager } from '../../../logic/CompositionManager'
 import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
 import { exportToMidi } from '../../../logic/MidiExporter'
+import { getApiUrl } from '../../../logic/apiConfig'
 import { useAudioStore } from '../../../store/audioStore'
 import {
     useBassStore,
@@ -309,7 +310,8 @@ export function MasterControl3D() {
 
                         try {
                             const initData = (window as any).Telegram?.WebApp?.initData || ""
-                            const response = await fetch('http://localhost:3001/upload-midi', {
+                            const apiUrl = getApiUrl(import.meta.env)
+                            const response = await fetch(`${apiUrl}/upload-midi`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
