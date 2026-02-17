@@ -9,8 +9,10 @@ interface NodeInspectorProps {
 }
 
 export const NodeInspector: React.FC<NodeInspectorProps> = ({ nodeId, onClose }) => {
-    const { nodes, updateNodeParam, macros, assignMacro } = useNodeStore();
-    const node = nodes.find(n => n.id === nodeId);
+    const node = useNodeStore(state => state.nodes.find(n => n.id === nodeId));
+    const updateNodeParam = useNodeStore(state => state.updateNodeParam);
+    const macros = useNodeStore(state => state.macros);
+    const assignMacro = useNodeStore(state => state.assignMacro);
     const [expandedSections, setExpandedSections] = useState<string[]>(['core', 'output']);
     const [mappingMenu, setMappingMenu] = useState<{ param: string, x: number, y: number } | null>(null);
 
