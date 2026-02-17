@@ -27,26 +27,18 @@ export interface BuchlaParams {
     phaseLock: boolean
 }
 
+interface VoiceUnit<T extends Tone.Oscillator | Tone.Noise> {
+    osc: T
+    env: Tone.AmplitudeEnvelope
+    direct: Tone.Gain
+    fx: Tone.Gain
+}
+
 class HarmVoice {
-    public osc1: Tone.Oscillator
-    public osc1Env: Tone.AmplitudeEnvelope
-    public osc1Direct: Tone.Gain
-    public osc1Fx: Tone.Gain
-
-    public osc2: Tone.Oscillator
-    public osc2Env: Tone.AmplitudeEnvelope
-    public osc2Direct: Tone.Gain
-    public osc2Fx: Tone.Gain
-
-    public osc3: Tone.Oscillator
-    public osc3Env: Tone.AmplitudeEnvelope
-    public osc3Direct: Tone.Gain
-    public osc3Fx: Tone.Gain
-
-    public noise: Tone.Noise
-    public noiseEnv: Tone.AmplitudeEnvelope
-    public noiseDirect: Tone.Gain
-    public noiseFx: Tone.Gain
+    public osc1: VoiceUnit<Tone.Oscillator>
+    public osc2: VoiceUnit<Tone.Oscillator>
+    public osc3: VoiceUnit<Tone.Oscillator>
+    public noise: VoiceUnit<Tone.Noise>
 
     // Complex/Buchla nodes
     public folder: Tone.WaveShaper
@@ -57,42 +49,22 @@ class HarmVoice {
     public activeNote: string | null = null
     public startTime: number = 0
 
+    private createUnit<T extends Tone.Oscillator | Tone.Noise>(type: HarmOscType | 'noise', fxBus: Tone.ToneAudioNode, directBus: Tone.ToneAudioNode): VoiceUnit<T> {
+        const osc = (type === 'noise' ? new Tone.Noise('white') : new Tone.Oscillator(440, type)).start() as T
+        const env = new Tone.AmplitudeEnvelope()
+        const direct = new Tone.Gain(1).connect(directBus)
+        const fx = new Tone.Gain(0).connect(fxBus)
+        osc.connect(env)
+        env.connect(direct)
+        env.connect(fx)
+        return { osc, env, direct, fx }
+    }
+
     constructor(fxBus: Tone.ToneAudioNode, directBus: Tone.ToneAudioNode) {
-        // OSC 1
-        this.osc1 = new Tone.Oscillator(440, 'sawtooth').start()
-        this.osc1Env = new Tone.AmplitudeEnvelope()
-        this.osc1Direct = new Tone.Gain(1).connect(directBus)
-        this.osc1Fx = new Tone.Gain(0).connect(fxBus)
-        this.osc1.connect(this.osc1Env)
-        this.osc1Env.connect(this.osc1Direct)
-        this.osc1Env.connect(this.osc1Fx)
-
-        // OSC 2
-        this.osc2 = new Tone.Oscillator(440, 'square').start()
-        this.osc2Env = new Tone.AmplitudeEnvelope()
-        this.osc2Direct = new Tone.Gain(1).connect(directBus)
-        this.osc2Fx = new Tone.Gain(0).connect(fxBus)
-        this.osc2.connect(this.osc2Env)
-        this.osc2Env.connect(this.osc2Direct)
-        this.osc2Env.connect(this.osc2Fx)
-
-        // OSC 3
-        this.osc3 = new Tone.Oscillator(440, 'triangle').start()
-        this.osc3Env = new Tone.AmplitudeEnvelope()
-        this.osc3Direct = new Tone.Gain(1).connect(directBus)
-        this.osc3Fx = new Tone.Gain(0).connect(fxBus)
-        this.osc3.connect(this.osc3Env)
-        this.osc3Env.connect(this.osc3Direct)
-        this.osc3Env.connect(this.osc3Fx)
-
-        // Noise
-        this.noise = new Tone.Noise('white').start()
-        this.noiseEnv = new Tone.AmplitudeEnvelope()
-        this.noiseDirect = new Tone.Gain(1).connect(directBus)
-        this.noiseFx = new Tone.Gain(0).connect(fxBus)
-        this.noise.connect(this.noiseEnv)
-        this.noiseEnv.connect(this.noiseDirect)
-        this.noiseEnv.connect(this.noiseFx)
+        this.osc1 = this.createUnit('sawtooth', fxBus, directBus)
+        this.osc2 = this.createUnit('square', fxBus, directBus)
+        this.osc3 = this.createUnit('triangle', fxBus, directBus)
+        this.noise = this.createUnit('noise', fxBus, directBus)
 
         // Complex Logic
         this.fmGain = new Tone.Gain(0)
@@ -121,76 +93,96 @@ class HarmVoice {
         this.activeNote = note
         this.startTime = time
 
-        this.osc1.frequency.setValueAtTime(principalFreq, time)
-        this.osc2.frequency.setValueAtTime(modFreq, time)
-        this.osc2.type = settings.complex.modOscShape || 'triangle'
-        this.osc3.frequency.setValueAtTime(freq, time)
+        // Apply oscillator/noise settings
+        const oscUnits = [this.osc1, this.osc2, this.osc3]
+        const oscSettings = [settings.osc1, settings.osc2, settings.osc3]
+
+        oscUnits.forEach((unit, i) => {
+            const s = oscSettings[i]
+            unit.osc.type = s.type
+            unit.osc.detune.value = s.detune
+            unit.env.set(s.env)
+            unit.fx.gain.setValueAtTime(s.send, time)
+            unit.direct.gain.setValueAtTime(1 - s.send, time)
+        })
+
+        this.noise.env.set(settings.noise.env)
+        this.noise.fx.gain.setValueAtTime(settings.noise.send, time)
+        this.noise.direct.gain.setValueAtTime(1 - settings.noise.send, time)
+
+        this.osc1.osc.frequency.setValueAtTime(principalFreq, time)
+        this.osc2.osc.frequency.setValueAtTime(modFreq, time)
+        this.osc2.osc.type = settings.complex.modOscShape || 'triangle' // Preserve override
+        this.osc3.osc.frequency.setValueAtTime(freq, time)
 
         this.applyComplexRouting(time, principalFreq, settings)
 
         if (!settings.complex.vcaBypass) {
-            if (settings.osc1.enabled) this.osc1Env.triggerAttackRelease(duration, time, velocity)
+            if (settings.osc1.enabled) this.osc1.env.triggerAttackRelease(duration, time, velocity)
         } else {
-            this.osc1Env.triggerAttack(time, velocity)
+            this.osc1.env.triggerAttack(time, velocity)
         }
 
         if (!settings.complex.complexMode) {
-            if (settings.osc2.enabled) this.osc2Env.triggerAttackRelease(duration, time, velocity)
-            if (settings.osc3.enabled) this.osc3Env.triggerAttackRelease(duration, time, velocity)
+            if (settings.osc2.enabled) this.osc2.env.triggerAttackRelease(duration, time, velocity)
+            if (settings.osc3.enabled) this.osc3.env.triggerAttackRelease(duration, time, velocity)
         }
-        if (settings.noise.enabled) this.noiseEnv.triggerAttackRelease(duration, time, velocity)
+        if (settings.noise.enabled) this.noise.env.triggerAttackRelease(duration, time, velocity)
     }
 
     private applyComplexRouting(time: number, principalFreq: number, settings: any) {
         const s = settings.complex
         if (s.complexMode) {
-            this.osc1.disconnect()
-            this.osc2.disconnect()
+            this.osc1.osc.disconnect()
+            this.osc2.osc.disconnect()
 
             if (s.pitchMod) {
                 this.fmGain.gain.setValueAtTime(s.fmIndex * 500 * (principalFreq / 440), time)
-                this.osc2.connect(this.fmGain)
-                this.fmGain.connect(this.osc1.frequency)
+                this.osc2.osc.connect(this.fmGain)
+                this.fmGain.connect(this.osc1.osc.frequency)
             } else {
                 this.fmGain.disconnect()
             }
 
             if (s.ampMod) {
                 this.amGain.gain.setValueAtTime(s.amIndex, time)
-                this.osc2.connect(this.amGain)
-                this.osc1.connect(this.amNode)
+                this.osc2.osc.connect(this.amGain)
+                this.osc1.osc.connect(this.amNode)
                 this.amGain.connect(this.amNode.gain)
             } else {
                 this.amGain.disconnect()
                 this.amNode.gain.setValueAtTime(1, time)
-                this.osc1.connect(this.amNode)
+                this.osc1.osc.connect(this.amNode)
             }
 
             if (s.timbreMod) {
                 const modGain = new Tone.Gain(s.fmIndex * 0.5)
-                this.osc2.connect(modGain)
+                this.osc2.osc.connect(modGain)
                 modGain.connect(this.amNode)
             }
 
             this.amNode.connect(this.folder)
-            this.folder.connect(this.osc1Env)
+            this.folder.connect(this.osc1.env)
         } else {
             this.fmGain.disconnect()
             this.amGain.disconnect()
             this.amNode.disconnect()
             this.folder.disconnect()
-            this.osc1.disconnect()
-            this.osc2.disconnect()
-            this.osc1.connect(this.osc1Env)
-            this.osc2.connect(this.osc2Env)
+            this.osc1.osc.disconnect()
+            this.osc2.osc.disconnect()
+            this.osc1.osc.connect(this.osc1.env)
+            this.osc2.osc.connect(this.osc2.env)
         }
     }
 
     dispose() {
-        this.osc1.dispose(); this.osc1Env.dispose(); this.osc1Direct.dispose(); this.osc1Fx.dispose()
-        this.osc2.dispose(); this.osc2Env.dispose(); this.osc2Direct.dispose(); this.osc2Fx.dispose()
-        this.osc3.dispose(); this.osc3Env.dispose(); this.osc3Direct.dispose(); this.osc3Fx.dispose()
-        this.noise.dispose(); this.noiseEnv.dispose(); this.noiseDirect.dispose(); this.noiseFx.dispose()
+        const units = [this.osc1, this.osc2, this.osc3, this.noise]
+        units.forEach(u => {
+            u.osc.dispose()
+            u.env.dispose()
+            u.direct.dispose()
+            u.fx.dispose()
+        })
         this.fmGain.dispose(); this.amGain.dispose(); this.amNode.dispose(); this.folder.dispose()
     }
 }
@@ -262,35 +254,13 @@ export class HarmSynth {
             const sorted = Array.from(this.activeVoices).sort((a, b) => a.startTime - b.startTime)
             voice = sorted[0]
             if (voice) {
-                voice.osc1Env.triggerRelease(time)
+                voice.osc1.env.triggerRelease(time)
                 this.activeVoices.delete(voice)
             }
         }
 
         if (voice) {
             this.activeVoices.add(voice)
-
-            voice.osc1.type = this.settings.osc1.type
-            voice.osc1.detune.value = this.settings.osc1.detune
-            voice.osc1Env.set(this.settings.osc1.env)
-            voice.osc1Fx.gain.setValueAtTime(this.settings.osc1.send, time)
-            voice.osc1Direct.gain.setValueAtTime(1 - this.settings.osc1.send, time)
-
-            voice.osc2.type = this.settings.osc2.type
-            voice.osc2.detune.value = this.settings.osc2.detune
-            voice.osc2Env.set(this.settings.osc2.env)
-            voice.osc2Fx.gain.setValueAtTime(this.settings.osc2.send, time)
-            voice.osc2Direct.gain.setValueAtTime(1 - this.settings.osc2.send, time)
-
-            voice.osc3.type = this.settings.osc3.type
-            voice.osc3.detune.value = this.settings.osc3.detune
-            voice.osc3Env.set(this.settings.osc3.env)
-            voice.osc3Fx.gain.setValueAtTime(this.settings.osc3.send, time)
-            voice.osc3Direct.gain.setValueAtTime(1 - this.settings.osc3.send, time)
-
-            voice.noiseEnv.set(this.settings.noise.env)
-            voice.noiseFx.gain.setValueAtTime(this.settings.noise.send, time)
-            voice.noiseDirect.gain.setValueAtTime(1 - this.settings.noise.send, time)
 
             this.updateWavefolder(voice, this.settings.complex.timbre, this.settings.complex.order, this.settings.complex.harmonics)
 
