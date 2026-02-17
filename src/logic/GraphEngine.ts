@@ -18,6 +18,9 @@ export class GraphEngine {
     private static roverAnalyser: Tone.Waveform | null = null
     private static currentRoverSource: any = null
 
+    private static aiGenStates = new Map<string, { meter: Tone.Meter, wasTriggered: boolean }>()
+    private static aiGenTimer: any = null
+
     static getRoverAnalyser() {
         if (!this.roverAnalyser) this.roverAnalyser = new Tone.Waveform(128)
         return this.roverAnalyser
@@ -113,6 +116,35 @@ export class GraphEngine {
             }
         }
         return scriptNode
+    }
+
+    private static registerAiGenNode(id: string, meter: Tone.Meter) {
+        this.aiGenStates.set(id, { meter, wasTriggered: false })
+        if (!this.aiGenTimer) {
+            this.aiGenTimer = setInterval(() => this.pollAiGenNodes(), 100)
+        }
+    }
+
+    private static unregisterAiGenNode(id: string) {
+        this.aiGenStates.delete(id)
+        if (this.aiGenStates.size === 0 && this.aiGenTimer) {
+            clearInterval(this.aiGenTimer)
+            this.aiGenTimer = null
+        }
+    }
+
+    private static pollAiGenNodes() {
+        this.aiGenStates.forEach((state, id) => {
+            const val = state.meter.getValue()
+            const level = Array.isArray(val) ? Math.max(...val.map(v => Math.abs(v))) : Math.abs(val as number)
+
+            if (level > 0.5 && !state.wasTriggered) {
+                state.wasTriggered = true
+                window.dispatchEvent(new CustomEvent('AI_GEN_TRIGGER', { detail: { id } }))
+            } else if (level < 0.5) {
+                state.wasTriggered = false
+            }
+        })
     }
 
     static createNode(id: string, data: NodeData) {
@@ -359,16 +391,8 @@ export class GraphEngine {
             }
             else if (data.type === 'ai_gen') {
                 const meter = new Tone.Meter({ normalRange: true })
-                const interval = setInterval(() => {
-                    const val = meter.getValue() as number;
-                    if (val > 0.5 && !(meter as any)._wasTriggered) {
-                        (meter as any)._wasTriggered = true;
-                        window.dispatchEvent(new CustomEvent('AI_GEN_TRIGGER', { detail: { id } }));
-                    }
-                    if (val < 0.5) (meter as any)._wasTriggered = false;
-                }, 100)
-                wrapper = { node: meter, inputs: { 'trig': meter } };
-                (meter as any)._interval = interval
+                wrapper = { node: meter, inputs: { 'trig': meter } }
+                this.registerAiGenNode(id, meter)
             }
             else if (data.type === 'logic_compare') {
                 const script = this.createScriptNode(`
@@ -747,7 +771,7 @@ export class GraphEngine {
                 window.removeEventListener('keydown', (wrap.node as any)._onDown)
                 window.removeEventListener('keyup', (wrap.node as any)._onUp)
             }
-            if ((wrap.node as any)._interval) clearInterval((wrap.node as any)._interval)
+            this.unregisterAiGenNode(id)
             if (wrap.node instanceof Tone.ToneAudioNode) wrap.node.dispose()
             else if (wrap.node instanceof AudioNode) wrap.node.disconnect()
             audioNodes.delete(id)
@@ -999,6 +1023,11 @@ export class GraphEngine {
 
     static dispose() {
         if (this.unsubscribe) this.unsubscribe()
+        if (this.aiGenTimer) {
+            clearInterval(this.aiGenTimer)
+            this.aiGenTimer = null
+        }
+        this.aiGenStates.clear()
         audioNodes.forEach(w => {
             if (w.node instanceof Tone.ToneAudioNode) w.node.dispose()
             else if (w.node instanceof AudioNode) w.node.disconnect()
