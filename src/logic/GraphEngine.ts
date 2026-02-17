@@ -45,6 +45,9 @@ export class GraphEngine {
         }
     }
 
+    private static aiGenStates = new Map<string, { meter: Tone.Meter, wasTriggered: boolean }>()
+    private static aiGenTimer: any = null
+
     static getRoverAnalyser() {
         if (!this.roverAnalyser) this.roverAnalyser = new Tone.Waveform(128)
         return this.roverAnalyser
@@ -151,6 +154,35 @@ export class GraphEngine {
             }
             return scriptNode
         }
+    }
+
+    private static registerAiGenNode(id: string, meter: Tone.Meter) {
+        this.aiGenStates.set(id, { meter, wasTriggered: false })
+        if (!this.aiGenTimer) {
+            this.aiGenTimer = setInterval(() => this.pollAiGenNodes(), 100)
+        }
+    }
+
+    private static unregisterAiGenNode(id: string) {
+        this.aiGenStates.delete(id)
+        if (this.aiGenStates.size === 0 && this.aiGenTimer) {
+            clearInterval(this.aiGenTimer)
+            this.aiGenTimer = null
+        }
+    }
+
+    private static pollAiGenNodes() {
+        this.aiGenStates.forEach((state, id) => {
+            const val = state.meter.getValue()
+            const level = Array.isArray(val) ? Math.max(...val.map(v => Math.abs(v))) : Math.abs(val as number)
+
+            if (level > 0.5 && !state.wasTriggered) {
+                state.wasTriggered = true
+                window.dispatchEvent(new CustomEvent('AI_GEN_TRIGGER', { detail: { id } }))
+            } else if (level < 0.5) {
+                state.wasTriggered = false
+            }
+        })
     }
 
     static createNode(id: string, data: NodeData) {
@@ -1029,6 +1061,11 @@ export class GraphEngine {
 
     static dispose() {
         if (this.unsubscribe) this.unsubscribe()
+        if (this.aiGenTimer) {
+            clearInterval(this.aiGenTimer)
+            this.aiGenTimer = null
+        }
+        this.aiGenStates.clear()
         audioNodes.forEach(w => {
             if (w.node instanceof Tone.ToneAudioNode) w.node.dispose()
             else if (w.node instanceof AudioNode) w.node.disconnect()
