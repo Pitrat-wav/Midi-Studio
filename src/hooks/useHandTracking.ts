@@ -17,6 +17,7 @@ export function useHandTracking() {
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const requestRef = useRef<number>()
     const isEnabled = useVisualStore(s => s.handTrackingEnabled)
+    const isDebug = useVisualStore(s => s.trackingDebug)
     const setHandData = useVisualStore(s => s.setHandData)
 
     useEffect(() => {
@@ -62,7 +63,8 @@ export function useHandTracking() {
                 border: '2px solid #3390ec',
                 transform: 'scaleX(-1)', // Mirror
                 opacity: '0.8',
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                display: isDebug ? 'block' : 'none'
             })
 
             document.body.appendChild(video)
@@ -109,7 +111,7 @@ export function useHandTracking() {
                 videoRef.current.remove() // Remove from DOM
             }
         }
-    }, [isEnabled, setHandData])
+    }, [isEnabled, isDebug, setHandData])
 
     return null
 }

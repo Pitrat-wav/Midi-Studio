@@ -16,6 +16,7 @@ export function usePoseTracking() {
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const requestRef = useRef<number>()
     const isEnabled = useVisualStore(s => s.poseTrackingEnabled)
+    const isDebug = useVisualStore(s => s.trackingDebug)
     const setPoseData = useVisualStore(s => s.setPoseData)
 
     useEffect(() => {
@@ -65,7 +66,7 @@ export function usePoseTracking() {
                 transform: 'scaleX(-1)', // Mirror
                 opacity: '0.8',
                 pointerEvents: 'none',
-                display: 'block'
+                display: isDebug ? 'block' : 'none'
             })
 
             document.body.appendChild(video)
@@ -119,7 +120,7 @@ export function usePoseTracking() {
                 videoRef.current.remove() // Remove from DOM
             }
         }
-    }, [isEnabled, setPoseData])
+    }, [isEnabled, isDebug, setPoseData])
 
     return null
 }
