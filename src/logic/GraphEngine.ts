@@ -985,11 +985,9 @@ export class GraphEngine {
                 if (targetInput) {
                     try {
                         if (sourceNode instanceof Tone.ToneAudioNode) {
-                            // @ts-ignore
-                            sourceNode.connect(targetInput)
+                            sourceNode.connect(targetInput as any)
                         } else if (sourceNode instanceof AudioNode) {
-                            // @ts-ignore
-                            sourceNode.connect(targetInput)
+                            sourceNode.connect(targetInput as any)
                         }
                     } catch (e) { }
                 }
