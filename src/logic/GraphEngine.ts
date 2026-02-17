@@ -17,6 +17,32 @@ export class GraphEngine {
     static initialized = false
     private static roverAnalyser: Tone.Waveform | null = null
     private static currentRoverSource: any = null
+    private static aiGenNodes = new Map<string, Tone.Meter>()
+    private static aiGenInterval: any = null
+
+    private static registerAiGenNode(id: string, meter: Tone.Meter) {
+        this.aiGenNodes.set(id, meter)
+        if (this.aiGenInterval === null) {
+            this.aiGenInterval = setInterval(() => {
+                this.aiGenNodes.forEach((m, nodeId) => {
+                    const val = m.getValue() as number;
+                    if (val > 0.5 && !(m as any)._wasTriggered) {
+                        (m as any)._wasTriggered = true;
+                        window.dispatchEvent(new CustomEvent('AI_GEN_TRIGGER', { detail: { id: nodeId } }));
+                    }
+                    if (val < 0.5) (m as any)._wasTriggered = false;
+                })
+            }, 100)
+        }
+    }
+
+    private static unregisterAiGenNode(id: string) {
+        this.aiGenNodes.delete(id)
+        if (this.aiGenNodes.size === 0 && this.aiGenInterval !== null) {
+            clearInterval(this.aiGenInterval)
+            this.aiGenInterval = null
+        }
+    }
 
     static getRoverAnalyser() {
         if (!this.roverAnalyser) this.roverAnalyser = new Tone.Waveform(128)
@@ -359,16 +385,8 @@ export class GraphEngine {
             }
             else if (data.type === 'ai_gen') {
                 const meter = new Tone.Meter({ normalRange: true })
-                const interval = setInterval(() => {
-                    const val = meter.getValue() as number;
-                    if (val > 0.5 && !(meter as any)._wasTriggered) {
-                        (meter as any)._wasTriggered = true;
-                        window.dispatchEvent(new CustomEvent('AI_GEN_TRIGGER', { detail: { id } }));
-                    }
-                    if (val < 0.5) (meter as any)._wasTriggered = false;
-                }, 100)
-                wrapper = { node: meter, inputs: { 'trig': meter } };
-                (meter as any)._interval = interval
+                wrapper = { node: meter, inputs: { 'trig': meter } }
+                this.registerAiGenNode(id, meter)
             }
             else if (data.type === 'logic_compare') {
                 const script = this.createScriptNode(`
@@ -747,7 +765,7 @@ export class GraphEngine {
                 window.removeEventListener('keydown', (wrap.node as any)._onDown)
                 window.removeEventListener('keyup', (wrap.node as any)._onUp)
             }
-            if ((wrap.node as any)._interval) clearInterval((wrap.node as any)._interval)
+            this.unregisterAiGenNode(id)
             if (wrap.node instanceof Tone.ToneAudioNode) wrap.node.dispose()
             else if (wrap.node instanceof AudioNode) wrap.node.disconnect()
             audioNodes.delete(id)
@@ -1004,6 +1022,13 @@ export class GraphEngine {
             else if (w.node instanceof AudioNode) w.node.disconnect()
         })
         audioNodes.clear()
+
+        if (this.aiGenInterval) {
+            clearInterval(this.aiGenInterval)
+            this.aiGenInterval = null
+        }
+        this.aiGenNodes.clear()
+
         this.initialized = false
     }
 }
