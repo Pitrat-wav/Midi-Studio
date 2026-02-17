@@ -1,4 +1,5 @@
 import * as Tone from 'tone'
+import { logger } from '../utils/logger'
 import { useAudioStore } from '../store/audioStore'
 import { useDrumStore, useBassStore, usePadStore, useHarmStore, useHarmonyStore, useSequencerStore } from '../store/instrumentStore'
 import { useArrangementStore } from '../store/arrangementStore'
@@ -13,11 +14,11 @@ let stagePulse = 0
 
 export function startSequencerLoop() {
     if (loopInstance) {
-        console.warn('⚠️ Loop already running!')
+        logger.warn('⚠️ Loop already running!')
         return
     }
 
-    console.log('🚀 STARTING GLOBAL SEQUENCER LOOP v2.0 (NO SCALER)')
+    logger.info('🚀 STARTING GLOBAL SEQUENCER LOOP v2.0 (NO SCALER)')
 
     loopInstance = new Tone.Loop((time) => {
         const step = stepCounter % 16
@@ -26,7 +27,7 @@ export function startSequencerLoop() {
         // Лог раз в такт + Коммит снапшотов
         if (step === 0) {
             const bar = Math.floor(totalStep / 16)
-            console.log(`🎹 Bar ${bar}, Transport: ${Tone.Transport.state}`)
+            logger.debug(`🎹 Bar ${bar}, Transport: ${Tone.Transport.state}`)
             useAudioStore.getState().commitSnapshots()
         }
 
@@ -40,7 +41,7 @@ export function startSequencerLoop() {
 
             if (startingClips.length > 0) {
                 startingClips.forEach(clip => {
-                    console.log(`⏱️ Arrangement: Triggering ${clip.trackId} snapshot ${clip.snapshotId}`)
+                    logger.debug(`⏱️ Arrangement: Triggering ${clip.trackId} snapshot ${clip.snapshotId}`)
                     useAudioStore.getState().triggerSnapshot(clip.trackId, clip.snapshotId)
                 })
                 // Commit arrangement clips immediately at their start step
@@ -161,11 +162,11 @@ export function startSequencerLoop() {
                     const stage = seq.stages[stageIndex]
 
                     if (!stage) {
-                        if (step === 0) console.log(`    ⚠️ No stage at index ${stageIndex}`)
+                        if (step === 0) logger.warn(`    ⚠️ No stage at index ${stageIndex}`)
                     } else {
                         // Логируем stage info
                         if (step === 0) {
-                            console.log(`    Stage ${stageIndex}: pitch=${stage.pitch}, velocity=${stage.velocity}, pulseCount=${stage.pulseCount}, pulse=${stagePulse}`)
+                            logger.debug(`    Stage ${stageIndex}: pitch=${stage.pitch}, velocity=${stage.velocity}, pulseCount=${stage.pulseCount}, pulse=${stagePulse}`)
                         }
 
                         // Триггер на начале каждого pulse
@@ -174,14 +175,14 @@ export function startSequencerLoop() {
                             const noteName = Tone.Frequency(midiNote, 'midi').toNote()
 
                             leadSynth.triggerNote(noteName, '16n', time, stage.velocity || 0.8)
-                            console.log(`    ✅ LEAD note: ${noteName} (${midiNote})`)
+                            logger.debug(`    ✅ LEAD note: ${noteName} (${midiNote})`)
                         }
 
                         // Продвигаем pulse
                         stagePulse = (stagePulse + 1) % (stage.pulseCount || 4)
                     }
                 } catch (e) {
-                    console.error('  ❌ Lead error:', e)
+                    logger.error('  ❌ Lead error:', e)
                 }
             }
         }
@@ -203,10 +204,10 @@ export function startSequencerLoop() {
                 if (progression && progression.length > 0) {
                     const chordIdx = Math.floor((totalStep / 32) % progression.length)
                     padSynth.triggerChord(progression[chordIdx], '2n', time)
-                    console.log('  🎹 PADS triggered')
+                    logger.debug('  🎹 PADS triggered')
                 }
             } catch (e) {
-                console.error('Pads trigger failed:', e)
+                logger.error('Pads trigger failed:', e)
             }
         }
 
@@ -223,9 +224,9 @@ export function startSequencerLoop() {
                 const rootNote = harmony.root + '2'
                 const rootMidi = Tone.Frequency(rootNote).toMidi()
                 harmSynth.triggerNote(rootNote, '2n', time, 0.7)
-                console.log('  🔮 HARM triggered')
+                logger.debug('  🔮 HARM triggered')
             } catch (e) {
-                console.error('Harm trigger failed:', e)
+                logger.error('Harm trigger failed:', e)
             }
         }
 
@@ -238,13 +239,13 @@ export function startSequencerLoop() {
     }, '16n')
 
     loopInstance.start(0)
-    console.log('✅ LOOP STARTED')
-    console.log('   Transport state:', Tone.Transport.state)
-    console.log('   Transport BPM:', Tone.Transport.bpm.value)
+    logger.info('✅ LOOP STARTED')
+    logger.info('   Transport state:', Tone.Transport.state)
+    logger.info('   Transport BPM:', Tone.Transport.bpm.value)
 }
 
 export function stopSequencerLoop() {
-    console.log('🛑 STOPPING SEQUENCER LOOP')
+    logger.info('🛑 STOPPING SEQUENCER LOOP')
     if (loopInstance) {
         loopInstance.dispose()
         loopInstance = null
