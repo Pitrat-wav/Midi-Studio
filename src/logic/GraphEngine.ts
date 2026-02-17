@@ -28,6 +28,7 @@ export class GraphEngine {
             // Note: In development we use the source path. In build we might need a different strategy.
             await ctx.audioWorklet.addModule('/src/audio/worklets/WasmProcessor.js')
             await ctx.audioWorklet.addModule('/src/audio/worklets/ExpressionProcessor.js')
+            await ctx.audioWorklet.addModule('/src/audio/worklets/ScriptProcessor.js')
             console.log('✅ AudioWorklet: Engines loaded')
         } catch (e) {
             console.warn('⚠️ AudioWorklet: Failed to load WasmProcessor. WebGL Studio will fallback to JS DSP.', e)
@@ -85,34 +86,44 @@ export class GraphEngine {
 
     static createScriptNode(code: string) {
         const ctx = Tone.getContext().rawContext
-        const scriptNode = ctx.createScriptProcessor(1024, 1, 1)
-        const memory = new Float32Array(1024)
 
         try {
-            // Create reusable process function from string
-            const factory = new Function('memory', 'console', `
-                ${code}
-                return { init: typeof init !== 'undefined' ? init : null, process: typeof process !== 'undefined' ? process : null }
-             `)
-            const lib = factory(memory, console)
-            if (lib.init && typeof lib.init === 'function') lib.init()
-                ; (scriptNode as any)._userProcess = lib.process
+            // Attempt to use AudioWorklet for better performance and off-thread processing
+            const node = new AudioWorkletNode(ctx, 'script-processor')
+            ;(node as any).nodeRole = 'script'
+            node.port.postMessage({ type: 'compile', code })
+            return node
         } catch (e) {
-            console.error('Built-in Script Error', e)
-        }
+            // Fallback to ScriptProcessorNode (runs on main thread)
+            const scriptNode = ctx.createScriptProcessor(1024, 1, 1)
+            const memory = new Float32Array(1024)
 
-        (scriptNode as any)._memory = memory
-        scriptNode.onaudioprocess = (e) => {
-            const input = e.inputBuffer.getChannelData(0)
-            const output = e.outputBuffer.getChannelData(0)
-            const proc = (scriptNode as any)._userProcess
-            if (proc) {
-                try { proc(input, output) } catch (err) { (scriptNode as any)._userProcess = null }
-            } else {
-                output.set(input) // Passthrough if failed
+            try {
+                // Create reusable process function from string
+                const factory = new Function('memory', 'console', `
+                    ${code}
+                    return { init: typeof init !== 'undefined' ? init : null, process: typeof process !== 'undefined' ? process : null }
+                 `)
+                const lib = factory(memory, console)
+                if (lib.init && typeof lib.init === 'function') lib.init()
+                ;(scriptNode as any)._userProcess = lib.process
+            } catch (err) {
+                console.error('Built-in Script Error', err)
             }
+
+            (scriptNode as any)._memory = memory
+            scriptNode.onaudioprocess = (e) => {
+                const input = e.inputBuffer.getChannelData(0)
+                const output = e.outputBuffer.getChannelData(0)
+                const proc = (scriptNode as any)._userProcess
+                if (proc) {
+                    try { proc(input, output) } catch (err) { (scriptNode as any)._userProcess = null }
+                } else {
+                    output.set(input) // Passthrough if failed
+                }
+            }
+            return scriptNode
         }
-        return scriptNode
     }
 
     static createNode(id: string, data: NodeData) {
@@ -832,8 +843,12 @@ export class GraphEngine {
         const wrap = audioNodes.get(id)
         if (!wrap) return
 
-        if (wrap.node instanceof AudioWorkletNode && (wrap.node as any).nodeRole === 'expression') {
-            wrap.node.port.postMessage({ type: 'compile', formula: code })
+        if (wrap.node instanceof AudioWorkletNode) {
+            if ((wrap.node as any).nodeRole === 'expression') {
+                wrap.node.port.postMessage({ type: 'compile', formula: code })
+            } else if ((wrap.node as any).nodeRole === 'script') {
+                wrap.node.port.postMessage({ type: 'compile', code })
+            }
             return
         }
 
