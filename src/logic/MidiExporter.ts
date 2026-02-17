@@ -1,6 +1,6 @@
 import MidiWriter from 'midi-writer-js'
-import { BassStep } from './StingGenerator'
-import { Stage } from '../store/instrumentStore'
+import type { BassStep } from './StingGenerator'
+import type { Stage } from '../store/instrumentStore'
 import * as Tone from 'tone'
 
 export function exportToMidi(
