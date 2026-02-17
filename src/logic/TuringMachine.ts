@@ -10,7 +10,7 @@ export class TuringMachine {
     private register: number = 0; // 16-bit
 
     constructor(initialValue?: number) {
-        this.register = initialValue || Math.floor(Math.random() * 65535);
+        this.register = (initialValue !== undefined) ? (initialValue & 0xFFFF) : Math.floor(Math.random() * 65536);
     }
 
     /**
