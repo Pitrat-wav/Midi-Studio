@@ -4,6 +4,7 @@ import { useDrumStore, useBassStore, usePadStore, useHarmonyStore, useSequencerS
 import { useAudioStore } from '../store/audioStore'
 import { exportToMidi } from '../logic/MidiExporter'
 import { bjorklund } from '../logic/bjorklund'
+import { getApiUrl } from '../logic/apiConfig'
 
 export function useMidiExport() {
     const [isExporting, setIsExporting] = useState(false)
@@ -45,7 +46,11 @@ export function useMidiExport() {
             )
             const base64Midi = btoa(String.fromCharCode(...midiData))
 
-            const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3001'
+            const API_URL = getApiUrl((import.meta as any).env)
+
+            if (!API_URL) {
+                throw new Error('MIDI Export API URL is not configured. Please set VITE_API_URL.')
+            }
 
             const response = await fetch(`${API_URL}/upload-midi`, {
                 method: 'POST',
