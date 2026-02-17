@@ -2,6 +2,7 @@ import MidiWriter, { Pitch, Duration } from 'midi-writer-js'
 import { BassStep } from './StingGenerator'
 import { Stage } from '../store/instrumentStore'
 import * as Tone from 'tone'
+import { GridWalker, SnakePattern } from './GridWalker'
 
 export function exportToMidi(
     bpm: number,
@@ -9,7 +10,7 @@ export function exportToMidi(
     bassPattern: BassStep[],
     stages: Stage[],
     snakeGrid: { note: number; active: boolean }[] | number[],
-    snakePattern: string,
+    snakePattern: SnakePattern | 'cartesian',
     pads: { notes: string[], active: boolean },
     harmGrid?: { note: number; active: boolean; velocity?: number }[],
     target: 'drums' | 'bass' | 'seq185' | 'snake' | 'pads' | 'harm' | 'turing' = 'drums',
@@ -120,21 +121,11 @@ export function exportToMidi(
         const normalizeGrid = (g: any[]) => g.map(cell => typeof cell === 'number' ? { note: cell, active: true } : cell)
         const grid = normalizeGrid(snakeGrid)
 
-        // Import GridWalker logic locally or duplicate simple logic
-        // We'll duplicate simple logic for linear/etc to determine note sequence.
-        // Actually, let's just dump the grid in order? No, "Snake" implies the path.
-        // We'll iterate 64 steps using the pattern.
-
-        // Simple GridWalker Simulation
-        let x = 0, y = 0
-        // ... Wait, we can't easily import class here depending on structure.
-        // Let's just do a simple export of the GRID steps in order 1-16 for now?
-        // Or better: Simulate simple linear path as default if complex logic is hard?
-        // Let's try to replicate the pattern logic simply.
-        // Actually, let's just export the 16 notes as a 1-bar loop.
-        for (let i = 0; i < 4; i++) { // 4 bars repeated
-            grid.forEach(cell => {
-                if (cell.active) {
+        const path = GridWalker.getPatternPath(snakePattern)
+        for (let i = 0; i < 4; i++) { // 4 bars repeated (64 steps total)
+            path.forEach(gridIndex => {
+                const cell = grid[gridIndex]
+                if (cell && cell.active) {
                     const note = Tone.Frequency(cell.note, 'midi').toNote()
                     track.addEvent(new MidiWriter.NoteEvent({ pitch: [note] as Pitch[], duration: '16', velocity: 100, sequential: true }))
                 } else {
