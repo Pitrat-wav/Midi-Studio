@@ -914,6 +914,26 @@ export class GraphEngine {
         return false
     }
 
+    private static isReachable(target: string, source: string, adj: Map<string, string[]>): boolean {
+        if (target === source) return true
+        const visited = new Set<string>()
+        const queue = [target]
+        visited.add(target)
+
+        while (queue.length > 0) {
+            const curr = queue.shift()!
+            const neighbors = adj.get(curr) || []
+            for (const neighbor of neighbors) {
+                if (neighbor === source) return true
+                if (!visited.has(neighbor)) {
+                    visited.add(neighbor)
+                    queue.push(neighbor)
+                }
+            }
+        }
+        return false
+    }
+
     static getSignalLevel(nodeId: string, handleId?: string): number {
         const wrap = audioNodes.get(nodeId)
         if (!wrap || !wrap.meters) return 0
@@ -995,10 +1015,14 @@ export class GraphEngine {
         const safeEdges: Edge<any>[] = []
         const nodeIds = Array.from(audioNodes.keys())
 
+        const adj = new Map<string, string[]>()
+        nodeIds.forEach(id => adj.set(id, []))
+
         allEdges.forEach(edge => {
-            const testEdges = [...safeEdges, edge]
-            if (!this.hasCycle(nodeIds, testEdges)) {
+            if (!this.isReachable(edge.target, edge.source, adj)) {
                 safeEdges.push(edge)
+                const neighbors = adj.get(edge.source)
+                if (neighbors) neighbors.push(edge.target)
             } else {
                 console.warn(`🚫 GraphEngine: Blocked feedback loop (possibly wireless) involving ${edge.source}`)
             }
