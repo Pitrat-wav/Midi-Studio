@@ -699,7 +699,7 @@ export class GraphEngine {
                 mod.connect(car.frequency);
                 wrapper = { node: car, inputs: { 'freq': car.frequency, 'mod': mod.frequency } }
             }
-            else if (data.type.includes('io_') || data.type.includes('adv_') || (data.type as string).includes('logic_') || (data.type as string).includes('note_')) {
+            else if (data.type.includes('adv_') || (data.type as string).includes('logic_') || (data.type as string).includes('note_')) {
                 const pass = new Tone.Gain(1)
                 wrapper = { node: pass, inputs: { 'in': pass } }
             }
