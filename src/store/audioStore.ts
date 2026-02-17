@@ -98,6 +98,7 @@ export interface AudioState {
     triggerSnapshot: (instId: string, index: number) => void
     commitSnapshots: () => void
     freezeTrack: (trackId: string) => Promise<void>
+    setSamplerUrl: (url: string) => Promise<void>
 }
 
 export const useAudioStore = create<AudioState>((set, get) => ({
@@ -388,20 +389,18 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
             // Sampler Sync logic
             useSamplerStore.subscribe((state) => {
-                const inst = get().samplerInstrument
-                if (inst) {
-                    inst.setGranularParams({
+                const { samplerInstrument, setSamplerUrl } = get()
+                if (samplerInstrument) {
+                    samplerInstrument.setGranularParams({
                         grainSize: state.grainSize,
                         overlap: state.overlap,
                         detune: state.detune
                     })
-                    inst.setPlaybackRate(state.playbackRate)
+                    samplerInstrument.setPlaybackRate(state.playbackRate)
+
                     // URL loading logic
-                    if (inst.loaded && state.url !== (inst.player.buffer as any)._url && !state.url.includes('blob')) {
-                        // This is a bit hacky to check if URL changed, 
-                        // but GrainPlayer.buffer is a ToneAudioBuffer
-                        // For now we'll rely on the fact that if user changes sample, we should load
-                        // A better way would be a dedicated action, but subscription is safer for UI sync.
+                    if (samplerInstrument.loaded && state.url !== samplerInstrument.url && !state.url.includes('blob')) {
+                        setSamplerUrl(state.url)
                     }
                 }
             })
@@ -775,6 +774,13 @@ export const useAudioStore = create<AudioState>((set, get) => ({
                 activeSnapshots: newActive,
                 queuedSnapshots: { drums: null, bass: null, lead: null, pads: null, sampler: null, harm: null }
             })
+        }
+    },
+
+    setSamplerUrl: async (url: string) => {
+        const { samplerInstrument } = get()
+        if (samplerInstrument) {
+            await samplerInstrument.load(url)
         }
     },
 

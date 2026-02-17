@@ -10,7 +10,7 @@
         "preview": "vite preview",
         "scan-samples": "node scripts/scan-samples.js",
         "sync-docs": "./scripts/sync_to_drive.sh",
-        "test": "node --experimental-strip-types --test src/**/*.test.ts"
+        "test": "tsx --experimental-test-module-mocks --test src/**/*.test.ts"
     },
     "dependencies": {
         "@huggingface/inference": "^4.13.11",
