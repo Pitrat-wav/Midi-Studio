@@ -13,23 +13,6 @@ import sampleManifest from '../data/sampleManifest.json'
 import { SNAPSHOT_LIBRARY } from '../data/snapshotLibrary'
 import { audioTrackManager } from '../logic/AudioTrackManager'
 
-/**
- * Yields control to the UI to allow for painting and responsiveness during heavy operations.
- * Prioritizes Scheduler.postTask, then requestAnimationFrame, and finally setTimeout(0).
- */
-const yieldToUI = async () => {
-    if (typeof window !== 'undefined' && (window as any).scheduler?.postTask) {
-        return (window as any).scheduler.postTask(() => { }, { priority: 'user-blocking' })
-    }
-    return new Promise(resolve => {
-        if (typeof requestAnimationFrame !== 'undefined') {
-            requestAnimationFrame(resolve)
-        } else {
-            setTimeout(resolve, 0)
-        }
-    })
-}
-
 export interface AudioState {
     isInitializing: boolean
     isInitialized: boolean
@@ -258,35 +241,35 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             console.log('[Audio] Step 5: Instruments')
             // ... (Rest of init)
             set({ loadingStep: 'Constructing Synths (Bass)...' })
-            await yieldToUI()
+            await new Promise(r => setTimeout(r, 10))
             const bass = new AcidSynth()
             bass.init()
 
             set({ loadingStep: 'Constructing Synths (FM)...' })
-            await yieldToUI()
+            await new Promise(r => setTimeout(r, 10))
             const fm = new FMBass()
             fm.init()
 
             set({ loadingStep: 'Constructing Synths (Lead)...' })
-            await yieldToUI()
+            await new Promise(r => setTimeout(r, 10))
             const lead = new AcidSynth()
             lead.init()
 
             set({ loadingStep: 'Constructing Synths (Drums)...' })
-            await yieldToUI()
+            await new Promise(r => setTimeout(r, 10))
             const drums = new DrumMachine()
 
             set({ loadingStep: 'Constructing Synths (Pads)...' })
-            await yieldToUI()
+            await new Promise(r => setTimeout(r, 10))
             const pads = new PadSynth()
 
             set({ loadingStep: 'Constructing Synths (Harm)...' })
-            await yieldToUI()
+            await new Promise(r => setTimeout(r, 10))
             const harm = new HarmSynth()
             harm.init()
 
             set({ loadingStep: 'Constructing Synths (Sampler)...' })
-            await yieldToUI()
+            await new Promise(r => setTimeout(r, 10))
             const sampler = new SamplerInstrument()
             await sampler.load(useSamplerStore.getState().url)
 
