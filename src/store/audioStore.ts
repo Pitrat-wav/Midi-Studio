@@ -71,6 +71,7 @@ export interface AudioState {
     masterEQ: { low: number, lowMid: number, highMid: number, high: number }
     setMasterEQ: (band: 'low' | 'lowMid' | 'highMid' | 'high', value: number) => void
     recalculateRouting: (edges: any[]) => void
+    loadSamplerUrl: (url: string) => Promise<void>
     // Snapshot Grid
     activeSnapshots: Record<string, number>
     queuedSnapshots: Record<string, number | null>
@@ -362,7 +363,15 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             useDrumStore.getState().togglePlay()
             useBassStore.getState().togglePlay()
 
-            // Sampler Sync logic
+            // Sampler Sync logic - watch URL changes via selector
+            useSamplerStore.subscribe(
+                state => state.url,
+                (url) => {
+                    get().loadSamplerUrl(url)
+                }
+            )
+
+            // Sync other sampler params
             useSamplerStore.subscribe((state) => {
                 const inst = get().samplerInstrument
                 if (inst) {
@@ -372,13 +381,6 @@ export const useAudioStore = create<AudioState>((set, get) => ({
                         detune: state.detune
                     })
                     inst.setPlaybackRate(state.playbackRate)
-                    // URL loading logic
-                    if (inst.loaded && state.url !== (inst.player.buffer as any)._url && !state.url.includes('blob')) {
-                        // This is a bit hacky to check if URL changed, 
-                        // but GrainPlayer.buffer is a ToneAudioBuffer
-                        // For now we'll rely on the fact that if user changes sample, we should load
-                        // A better way would be a dedicated action, but subscription is safer for UI sync.
-                    }
                 }
             })
 
@@ -405,6 +407,13 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             if (band === 'lowMid') nodes.eqLowMid.gain.rampTo(value, 0.1)
             if (band === 'highMid') nodes.eqHighMid.gain.rampTo(value, 0.1)
             if (band === 'high') nodes.eqHigh.gain.rampTo(value, 0.1)
+        }
+    },
+
+    loadSamplerUrl: async (url) => {
+        const { samplerInstrument } = get()
+        if (samplerInstrument && url && !url.includes('blob')) {
+            await samplerInstrument.load(url)
         }
     },
 

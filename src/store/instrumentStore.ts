@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { subscribeWithSelector } from 'zustand/middleware'
 import { withHistory } from './middleware/withHistory'
 import { ChordType } from '../logic/Scaler'
 import { SnakePattern } from '../logic/GridWalker'
@@ -659,7 +660,7 @@ interface SamplerState {
 import sampleManifestDataRaw from '../data/sampleManifest.json'
 const sampleManifestData = sampleManifestDataRaw as SampleItem[]
 
-export const useSamplerStore = create<SamplerState>((set, get) => ({
+export const useSamplerStore = create<SamplerState>()(subscribeWithSelector((set, get) => ({
     url: (sampleManifestData && sampleManifestData.length > 0) ? sampleManifestData[0].path : 'https://tonejs.github.io/audio/berklee/gong_1.mp3',
     slices: 8,
     activeSlice: -1,
@@ -708,4 +709,4 @@ export const useSamplerStore = create<SamplerState>((set, get) => ({
             url: prevUrl
         })
     }
-}))
+})))

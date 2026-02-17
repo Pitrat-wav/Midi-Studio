@@ -5,6 +5,7 @@ export class SamplerInstrument {
     volume: Tone.Volume
     loaded: boolean = false
     bufferDuration: number = 0
+    currentUrl: string = ''
 
     constructor() {
         this.player = new Tone.GrainPlayer()
@@ -17,11 +18,13 @@ export class SamplerInstrument {
     }
 
     async load(url: string) {
+        if (this.currentUrl === url && this.loaded) return
         this.loaded = false
         const buffer = await new Tone.ToneAudioBuffer().load(url)
         this.player.buffer = buffer
         this.loaded = true
         this.bufferDuration = buffer.duration
+        this.currentUrl = url
         console.log(`[Sampler] Loaded ${url}, duration: ${this.bufferDuration}s`)
     }
 
