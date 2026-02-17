@@ -13,6 +13,25 @@ import sampleManifest from '../data/sampleManifest.json'
 import { SNAPSHOT_LIBRARY } from '../data/snapshotLibrary'
 import { audioTrackManager } from '../logic/AudioTrackManager'
 
+export interface MasterFXNodes {
+    distortion: Tone.Distortion
+    delay: Tone.FeedbackDelay
+    reverb: Tone.Reverb
+    masterBus: Tone.Gain
+    eqLow: Tone.Filter
+    eqLowMid: Tone.Filter
+    eqHighMid: Tone.Filter
+    eqHigh: Tone.Filter
+    reverbBus: Tone.Channel
+    delayBus: Tone.Channel
+    sidechainNodes?: {
+        follower: Tone.Follower
+        inverter: Tone.Gain
+        offset: Tone.Signal
+        sidechainGain: Tone.Gain
+    }
+}
+
 export interface AudioState {
     isInitializing: boolean
     isInitialized: boolean
@@ -71,6 +90,8 @@ export interface AudioState {
     masterEQ: { low: number, lowMid: number, highMid: number, high: number }
     setMasterEQ: (band: 'low' | 'lowMid' | 'highMid' | 'high', value: number) => void
     recalculateRouting: (edges: any[]) => void
+    masterFXNodes: MasterFXNodes | null
+    stutterInterval: ReturnType<typeof setInterval> | null
     // Snapshot Grid
     activeSnapshots: Record<string, number>
     queuedSnapshots: Record<string, number | null>
@@ -117,6 +138,8 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     queuedSnapshots: { drums: null, bass: null, lead: null, pads: null, sampler: null, harm: null },
 
     masterEQ: { low: 0, lowMid: 0, highMid: 0, high: 0 },
+    masterFXNodes: null,
+    stutterInterval: null,
 
     // Audio Tracks Implementation
     audioPlayers: {},
@@ -232,11 +255,11 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             mic.chain(micGate, micComp, micGain)
             micGain.connect(channels['mic'])
 
-                // Store nodes on window for global access
-                ; (window as any).masterFX = {
-                    distortion, delay, reverb, masterBus, mic, micGate, micGain,
-                    eqLow, eqLowMid, eqHighMid, eqHigh, channels, reverbBus, delayBus, sidechain
-                }
+            const masterFXNodes: MasterFXNodes = {
+                distortion, delay, reverb, masterBus,
+                eqLow, eqLowMid, eqHighMid, eqHigh,
+                reverbBus, delayBus
+            }
 
             console.log('[Audio] Step 5: Instruments')
             // ... (Rest of init)
@@ -300,7 +323,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
                 inverter.connect(sidechainGain.gain)
                 offset.connect(sidechainGain.gain)
 
-                    ; (window as any).masterFX.sidechainNodes = { follower, inverter, offset, sidechainGain }
+                masterFXNodes.sidechainNodes = { follower, inverter, offset, sidechainGain }
             } else {
                 sidechain.connect(masterBus)
             }
@@ -356,7 +379,8 @@ export const useAudioStore = create<AudioState>((set, get) => ({
                 micGain: micGain,
                 channels: channels,
                 buses: { reverb: reverbBus, delay: delayBus },
-                sidechain: sidechain
+                sidechain: sidechain,
+                masterFXNodes: masterFXNodes
             })
 
             useDrumStore.getState().togglePlay()
@@ -399,7 +423,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         set(state => ({
             masterEQ: { ...state.masterEQ, [band]: value }
         }))
-        const nodes = (window as any).masterFX
+        const nodes = get().masterFXNodes
         if (nodes) {
             if (band === 'low') nodes.eqLow.gain.rampTo(value, 0.1)
             if (band === 'lowMid') nodes.eqLowMid.gain.rampTo(value, 0.1)
@@ -492,7 +516,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     },
 
     triggerPerformanceFx: (effect, active) => {
-        const nodes = (window as any).masterFX
+        const nodes = get().masterFXNodes
         if (!nodes) return
 
         if (effect === 'tapeStop') {
@@ -515,9 +539,13 @@ export const useAudioStore = create<AudioState>((set, get) => ({
                 const interval = setInterval(() => {
                     Tone.Destination.mute = !Tone.Destination.mute
                 }, 100)
-                    ; (window as any)._stutterInt = interval
+                set({ stutterInterval: interval })
             } else {
-                clearInterval((window as any)._stutterInt)
+                const { stutterInterval } = get()
+                if (stutterInterval) {
+                    clearInterval(stutterInterval)
+                    set({ stutterInterval: null })
+                }
                 Tone.Destination.mute = false
             }
         } else if (effect === 'glitch') {
@@ -553,7 +581,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             }
         }))
 
-        const nodes = (window as any).masterFX
+        const nodes = get().masterFXNodes
         if (!nodes) return
 
         if (effect === 'reverb') {
@@ -590,9 +618,14 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     },
 
     dispose: () => {
-        const { bassSynth, fmBass, leadSynth, drumMachine, padSynth, harmSynth, samplerInstrument, channels, buses, sidechain } = get()
+        const { bassSynth, fmBass, leadSynth, drumMachine, padSynth, harmSynth, samplerInstrument, channels, buses, sidechain, stutterInterval } = get()
         Tone.Transport.stop()
         Tone.Transport.cancel()
+
+        if (stutterInterval) {
+            clearInterval(stutterInterval)
+            set({ stutterInterval: null })
+        }
         if (bassSynth && 'dispose' in bassSynth) (bassSynth as any).dispose()
         if (fmBass && 'dispose' in fmBass) (fmBass as any).dispose()
         if (samplerInstrument) samplerInstrument.dispose()
@@ -602,7 +635,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         buses.delay.dispose()
         sidechain?.dispose()
 
-        const nodes = (window as any).masterFX
+        const nodes = get().masterFXNodes
         if (nodes) {
             nodes.distortion.dispose()
             nodes.delay.dispose()
@@ -621,7 +654,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         const state = get()
         if (!state.isInitialized) return
 
-        const nodes = (window as any).masterFX
+        const nodes = state.masterFXNodes
         if (!nodes) return
 
         // --- CYCLE DETECTION HELPER ---
