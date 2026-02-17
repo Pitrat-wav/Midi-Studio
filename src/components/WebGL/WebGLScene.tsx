@@ -4,7 +4,7 @@
  * Renders all instruments in 3D space with camera management.
  */
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { useVisualStore } from '../../store/visualStore'
 import { AllInstruments3D } from './instruments/AllInstruments3D'
@@ -45,7 +45,27 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
     if (!webglEnabled) return null
 
     const gestures = useGestureStore()
+    const cycleFocusInstrument = useVisualStore(s => s.cycleFocusInstrument)
+    const lastGesture = useRef(gestures.activeGesture)
+
     const radialPos = gestures.targetPosition || new THREE.Vector3(0, 0, 0)
+
+    // Handle Two-Swipe Navigation
+    useEffect(() => {
+        if (gestures.activeGesture === 'two-swipe' && lastGesture.current !== 'two-swipe') {
+            const pts = Object.values(gestures.pointers)
+            if (pts.length >= 2) {
+                const dx = (pts[0].currentX - pts[0].startX + pts[1].currentX - pts[1].startX) / 2
+                // GestureManager uses 50px dist, so dx will likely be significant.
+                // We use a safe threshold here to trigger navigation.
+                cycleFocusInstrument(dx > 0 ? 1 : -1)
+                if ((window as any).Telegram?.WebApp?.HapticFeedback) {
+                    (window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium')
+                }
+            }
+        }
+        lastGesture.current = gestures.activeGesture
+    }, [gestures.activeGesture, gestures.pointers, cycleFocusInstrument])
 
     // Actions needed for interaction (stable references)
     const setMasterVolume = useAudioStore(s => s.setMasterVolume)
@@ -67,13 +87,13 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
                 pointerEvents: 'auto'
             }}
             onPointerDown={(e) => {
-                gestures.onStart(e.clientX, e.clientY)
+                gestures.onStart(e.clientX, e.clientY, undefined, e.pointerId)
             }}
             onPointerMove={(e) => {
-                gestures.onMove(e.clientX, e.clientY)
+                gestures.onMove(e.clientX, e.clientY, e.pointerId)
 
                 // Edge gesture effects
-                if (gestures.isEdgeSwipe) {
+                if (gestures.isEdgeSwipe && gestures.pointerCount === 1) {
                     if (gestures.edgeSide === 'top') {
                         setMasterVolume(THREE.MathUtils.clamp(1 - (e.clientY / 200), 0, 1))
                     } else if (gestures.edgeSide === 'bottom') {
@@ -81,7 +101,7 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
                     }
                 }
             }}
-            onPointerUp={() => gestures.onEnd()}
+            onPointerUp={(e) => gestures.onEnd(e.pointerId)}
         >
             <GlobalHUD />
 

@@ -174,7 +174,7 @@ export function CameraController({ focusInstrument, mode = 'overview' }: { focus
     return (
         <OrbitControls
             ref={controlsRef}
-            enabled={gestures.activeGesture !== 'drag' && !activeParam}
+            enabled={gestures.activeGesture !== 'drag' && gestures.activeGesture !== 'two-swipe' && !activeParam}
             enableDamping={true}
             dampingFactor={0.05}
             minDistance={1}
