@@ -17,13 +17,15 @@ async function initPython() {
         indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.3/full/'
     })
 
-    // Install music-related packages if needed (simulated for now)
-    // await pyodide.loadPackage(['micropip'])
-    // const micropip = pyodide.pyimport('micropip')
-    // await micropip.install('musicpy') 
+    // Install music-related packages
+    await pyodide.loadPackage(['micropip'])
+    const micropip = pyodide.pyimport('micropip')
+    await micropip.install('musicpy')
 
     await pyodide.runPythonAsync(`
 import math
+import musicpy as mp
+print(f"Musicpy {mp.__version__} Ready")
 
 def euclidean_pattern(pulses, steps):
     if pulses == 0: return [0] * steps
