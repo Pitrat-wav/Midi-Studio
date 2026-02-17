@@ -8,7 +8,22 @@ const BOT_TOKEN = (process as any).env.BOT_TOKEN || 'YOUR_BOT_TOKEN'
 const bot = new Telegraf(BOT_TOKEN)
 const app = express()
 
-app.use(cors())
+const allowedOrigins = (process as any).env.ALLOWED_ORIGINS
+    ? (process as any).env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000']
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true)
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            callback(null, false)
+        }
+    }
+}))
 app.use(express.json({ limit: '10mb' }))
 
 /**
