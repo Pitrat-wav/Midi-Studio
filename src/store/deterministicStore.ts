@@ -16,12 +16,12 @@ let sharedWorker: Worker | null = null
 export const useDeterministicStore = create<DeterministicState>((set) => {
     const initWorker = () => {
         if (typeof window === 'undefined' || sharedWorker) return
-
+        
         sharedWorker = new Worker(
             new URL('../workers/DeterministicWorker.ts', import.meta.url),
             { type: 'module' }
         )
-
+        
         sharedWorker.onmessage = (e) => {
             const { type, data } = e.data
             if (type === 'READY') {
@@ -50,7 +50,7 @@ export const useDeterministicStore = create<DeterministicState>((set) => {
             if (!sharedWorker) {
                 initWorker()
             }
-
+            
             sharedWorker?.postMessage({
                 type: 'GENERATE',
                 data: { scale, root }
