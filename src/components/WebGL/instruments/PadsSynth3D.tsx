@@ -93,7 +93,7 @@ export function PadsSynth3D() {
                 ref={pointsRef}
                 onPointerDown={(e) => {
                     e.stopPropagation()
-                    gestures.onStart(e.clientX, e.clientY, e.point)
+                    gestures.onStart(e.clientX, e.clientY, e.point, e.pointerId)
                 }}
             >
                 <bufferGeometry>

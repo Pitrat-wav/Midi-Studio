@@ -73,7 +73,7 @@ export function AcidSynth3D() {
                     rotation={[-Math.PI / 2, 0, 0]}
                     onPointerDown={(e) => {
                         e.stopPropagation()
-                        gestures.onStart(e.clientX, e.clientY, e.point)
+                        gestures.onStart(e.clientX, e.clientY, e.point, e.pointerId)
                     }}
                     castShadow
                 >

@@ -147,7 +147,7 @@ export function HarmSynth3D() {
                     active={complexMode}
                     onGesture={(e) => {
                         e.stopPropagation()
-                        gestures.onStart(e.clientX, e.clientY, e.point)
+                        gestures.onStart(e.clientX, e.clientY, e.point, e.pointerId)
                     }}
                 />
 

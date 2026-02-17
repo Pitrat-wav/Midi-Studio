@@ -245,6 +245,7 @@ interface VisualState {
     showGamepadHelp: boolean
     focusInstrument: InstrumentType | null
     setFocusInstrument: (instrument: InstrumentType | null) => void
+    cycleFocusInstrument: (dir: number) => void
     appView: AppView
     visualizerIndex: number
     visualModifier: { x: number, y: number }
@@ -369,6 +370,17 @@ export const useVisualStore = create<VisualState>((set) => ({
     setPoseData: (data) => set({ poseData: data }),
     setTrackingDebug: (enabled) => set({ trackingDebug: enabled }),
     setFocusInstrument: (instrument) => set({ focusInstrument: instrument }),
+
+    cycleFocusInstrument: (dir) => set((state) => {
+        const instruments: (InstrumentType | null)[] = [
+            null, 'drums', 'bass', 'harmony', 'pads', 'sequencer',
+            'drone', 'sampler', 'buchla', 'ml185', 'snake',
+            'master', 'mixer', 'keyboard'
+        ]
+        const currentIndex = instruments.indexOf(state.focusInstrument)
+        const nextIndex = (currentIndex + dir + instruments.length) % instruments.length
+        return { focusInstrument: instruments[nextIndex] }
+    }),
 
     appView: '3D',
     visualizerIndex: 0,
