@@ -168,7 +168,12 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         if (get().isInitialized || get().isInitializing) return
         set({ isInitializing: true, loadingStep: 'Starting Audio Context...' })
 
-        try {
+        // --- Private Initialization Helpers ---
+
+        /**
+         * Handles starting Tone.js and the iOS silent switch workaround
+         */
+        const initToneContext = async () => {
             console.log('[Audio] Step 1: Tone.start()')
             await Tone.start()
 
@@ -182,7 +187,12 @@ export const useAudioStore = create<AudioState>((set, get) => ({
                 console.log('[Audio] Step 2: Resuming Context')
                 await Tone.context.resume()
             }
+        }
 
+        /**
+         * Sets up the global master effects chain and instrument channels
+         */
+        const initGlobalFX = async () => {
             console.log('[Audio] Step 3: Global FX')
             set({ loadingStep: 'Initializing Effects Chain...' })
 
@@ -245,7 +255,40 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             // Update Master Chain: masterBus -> EQ -> Dist -> Destination
             masterBus.chain(eqLow, eqLowMid, eqHighMid, eqHigh, distortion, Tone.getDestination())
 
-            // Initialize Microphone Chain
+            const masterFXNodes: MasterFXNodes = {
+                distortion,
+                delay,
+                reverb,
+                masterBus,
+                eqLow,
+                eqLowMid,
+                eqHighMid,
+                eqHigh,
+                reverbBus,
+                delayBus
+            }
+
+            return {
+                masterBus,
+                channels,
+                reverbBus,
+                delayBus,
+                sidechain,
+                masterFXNodes,
+                reverb,
+                delay,
+                distortion,
+                eqLow,
+                eqLowMid,
+                eqHighMid,
+                eqHigh
+            }
+        }
+
+        /**
+         * Initializes the microphone chain
+         */
+        const initMicChain = (channels: Record<string, Tone.Channel>) => {
             // Mic -> Gate (remove background noise) -> Compressor (even levels) -> Gain -> MasterBus
             const mic = new Tone.UserMedia()
             const micGate = new Tone.Gate(-50) // Open only when louder than -50db
@@ -255,49 +298,72 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             mic.chain(micGate, micComp, micGain)
             micGain.connect(channels['mic'])
 
-            const masterFXNodes: MasterFXNodes = {
-                distortion, delay, reverb, masterBus,
-                eqLow, eqLowMid, eqHighMid, eqHigh,
-                reverbBus, delayBus
-            }
+            return { mic, micGate, micGain, micComp }
+        }
 
+        /**
+         * Sequentially constructs and initializes instruments
+         */
+        const initInstruments = async () => {
             console.log('[Audio] Step 5: Instruments')
-            // ... (Rest of init)
+
+            const yieldToUI = () => new Promise(r => setTimeout(r, 10))
+
             set({ loadingStep: 'Constructing Synths (Bass)...' })
-            await new Promise(r => setTimeout(r, 10))
+            await yieldToUI()
             const bass = new AcidSynth()
             bass.init()
 
             set({ loadingStep: 'Constructing Synths (FM)...' })
-            await new Promise(r => setTimeout(r, 10))
+            await yieldToUI()
             const fm = new FMBass()
             fm.init()
 
             set({ loadingStep: 'Constructing Synths (Lead)...' })
-            await new Promise(r => setTimeout(r, 10))
+            await yieldToUI()
             const lead = new AcidSynth()
             lead.init()
 
             set({ loadingStep: 'Constructing Synths (Drums)...' })
-            await new Promise(r => setTimeout(r, 10))
+            await yieldToUI()
             const drums = new DrumMachine()
 
             set({ loadingStep: 'Constructing Synths (Pads)...' })
-            await new Promise(r => setTimeout(r, 10))
+            await yieldToUI()
             const pads = new PadSynth()
 
             set({ loadingStep: 'Constructing Synths (Harm)...' })
-            await new Promise(r => setTimeout(r, 10))
+            await yieldToUI()
             const harm = new HarmSynth()
             harm.init()
 
             set({ loadingStep: 'Constructing Synths (Sampler)...' })
-            await new Promise(r => setTimeout(r, 10))
+            await yieldToUI()
             const sampler = new SamplerInstrument()
             await sampler.load(useSamplerStore.getState().url)
 
-            set({ loadingStep: 'Connecting Modules...' })
-            console.log('[Audio] Step 6: Connecting Modules')
+            return { bass, fm, lead, drums, pads, harm, sampler }
+        }
+
+        /**
+         * Connects instruments to their respective channels and sidechain
+         */
+        const connectInstruments = (
+            insts: {
+                bass: AcidSynth,
+                fm: FMBass,
+                lead: AcidSynth,
+                drums: DrumMachine,
+                pads: PadSynth,
+                harm: HarmSynth,
+                sampler: SamplerInstrument
+            },
+            channels: Record<string, Tone.Channel>,
+            sidechain: Tone.Compressor,
+            masterBus: Tone.Gain,
+            masterFXNodes: MasterFXNodes
+        ) => {
+            const { bass, lead, drums, pads, harm, sampler } = insts
 
             // Connect instruments to their respective channels
             if ((bass as any).outputGain) (bass as any).outputGain.connect(channels['bass'])
@@ -338,14 +404,30 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             // Sampler
             sampler.volume.connect(channels['sampler'])
 
-
-            // Apply initial volumes (already set during channel creation, but let's be sure for instrument internal levels)
+            // Apply initial volumes
             bass?.setVolume(0) // Let channels handle the actual mix
             lead?.setVolume(0)
             drums?.setVolume(0)
             if (pads?.synth?.volume) pads.synth.volume.value = 0
             harm?.setVolume(0)
             sampler.setVolume(0)
+        }
+
+        try {
+            await initToneContext()
+
+            const fxNodes = await initGlobalFX()
+            const { channels, sidechain, masterBus, masterFXNodes, reverbBus, delayBus } = fxNodes
+
+            const micNodes = initMicChain(channels)
+            const { mic, micGate, micGain } = micNodes
+
+            const insts = await initInstruments()
+            const { bass, fm, lead, drums, pads, harm, sampler } = insts
+
+            set({ loadingStep: 'Connecting Modules...' })
+            console.log('[Audio] Step 6: Connecting Modules')
+            connectInstruments(insts, channels, sidechain, masterBus, masterFXNodes)
 
             Tone.Transport.bpm.value = get().bpm
             Tone.Transport.swing = get().swing
