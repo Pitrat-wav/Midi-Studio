@@ -17,6 +17,7 @@ export class GraphEngine {
     static initialized = false
     private static roverAnalyser: Tone.Waveform | null = null
     private static currentRoverSource: any = null
+    private static activeConnections = new Map<string, { sourceNode: any, targetInput: any }>()
 
     static getRoverAnalyser() {
         if (!this.roverAnalyser) this.roverAnalyser = new Tone.Waveform(128)
@@ -698,7 +699,7 @@ export class GraphEngine {
                 mod.connect(car.frequency);
                 wrapper = { node: car, inputs: { 'freq': car.frequency, 'mod': mod.frequency } }
             }
-            else if (data.type.includes('adv_') || (data.type as string).includes('logic_') || (data.type as string).includes('note_')) {
+            else if (data.type.includes('io_') || data.type.includes('adv_') || (data.type as string).includes('logic_') || (data.type as string).includes('note_')) {
                 const pass = new Tone.Gain(1)
                 wrapper = { node: pass, inputs: { 'in': pass } }
             }
@@ -851,32 +852,22 @@ export class GraphEngine {
         }
     }
 
-    static hasCycle(nodes: string[], edges: Edge<any>[]): boolean {
-        const adj = new Map<string, string[]>()
-        nodes.forEach(id => adj.set(id, []))
-        edges.forEach(e => {
-            if (adj.has(e.source)) adj.get(e.source)!.push(e.target)
-        })
-
+    private static isReachable(start: string, target: string, adj: Map<string, string[]>): boolean {
+        if (start === target) return true
         const visited = new Set<string>()
-        const recStack = new Set<string>()
+        const queue = [start]
+        visited.add(start)
 
-        const check = (v: string): boolean => {
-            if (!visited.has(v)) {
-                visited.add(v)
-                recStack.add(v)
-                const neighbors = adj.get(v) || []
-                for (const neighbor of neighbors) {
-                    if (!visited.has(neighbor) && check(neighbor)) return true
-                    if (recStack.has(neighbor)) return true
+        while (queue.length > 0) {
+            const curr = queue.shift()!
+            const neighbors = adj.get(curr) || []
+            for (const neighbor of neighbors) {
+                if (neighbor === target) return true
+                if (!visited.has(neighbor)) {
+                    visited.add(neighbor)
+                    queue.push(neighbor)
                 }
             }
-            recStack.delete(v)
-            return false
-        }
-
-        for (const node of nodes) {
-            if (check(node)) return true
         }
         return false
     }
@@ -921,19 +912,6 @@ export class GraphEngine {
     }
 
     static rebuildConnections(nodes: Node<NodeData>[], edges: Edge<any>[]) {
-        // Safe rebuild: Disconnect all
-        audioNodes.forEach(wrap => {
-            if (wrap.node instanceof Tone.ToneAudioNode) wrap.node.disconnect()
-            else if (wrap.node instanceof AudioNode) wrap.node.disconnect()
-            if (wrap.outputs) {
-                Object.keys(wrap.outputs).forEach(k => {
-                    const out = wrap.outputs![k]
-                    if (out instanceof Tone.ToneAudioNode) out.disconnect()
-                    else if (out instanceof AudioNode) out.disconnect()
-                })
-            }
-        })
-
         // 1. Collect Virtual Edges from Portals
         const portals: Record<string, { senders: string[], receivers: string[] }> = {}
         nodes.forEach(n => {
@@ -962,16 +940,23 @@ export class GraphEngine {
         const safeEdges: Edge<any>[] = []
         const nodeIds = Array.from(audioNodes.keys())
 
+        // Optimized incremental cycle detection
+        const adj = new Map<string, string[]>()
+        nodeIds.forEach(id => adj.set(id, []))
+
         allEdges.forEach(edge => {
-            const testEdges = [...safeEdges, edge]
-            if (!this.hasCycle(nodeIds, testEdges)) {
+            // Check if adding this edge creates a cycle
+            if (!this.isReachable(edge.target, edge.source, adj)) {
                 safeEdges.push(edge)
+                if (adj.has(edge.source)) adj.get(edge.source)!.push(edge.target)
             } else {
                 console.warn(`🚫 GraphEngine: Blocked feedback loop (possibly wireless) involving ${edge.source}`)
             }
         })
 
-        // 3. Establish Physical Connections
+        // 3. Diff and update physical connections
+        const newConnections = new Map<string, { sourceNode: any, targetInput: any }>()
+
         safeEdges.forEach(edge => {
             const srcWrap = audioNodes.get(edge.source)
             const destWrap = audioNodes.get(edge.target)
@@ -982,19 +967,44 @@ export class GraphEngine {
                 }
                 const targetHandleName = edge.targetHandle || 'in'
                 const targetInput = destWrap.inputs[targetHandleName]
+
                 if (targetInput) {
-                    try {
-                        if (sourceNode instanceof Tone.ToneAudioNode) {
-                            // @ts-ignore
-                            sourceNode.connect(targetInput)
-                        } else if (sourceNode instanceof AudioNode) {
-                            // @ts-ignore
-                            sourceNode.connect(targetInput)
-                        }
-                    } catch (e) { }
+                    const connKey = `${edge.source}:${edge.sourceHandle || ''}->${edge.target}:${edge.targetHandle || ''}`
+                    newConnections.set(connKey, { sourceNode, targetInput })
                 }
             }
         })
+
+        // Remove connections that are no longer in safeEdges
+        this.activeConnections.forEach((conn, key) => {
+            if (!newConnections.has(key)) {
+                try {
+                    // Only disconnect if the source node hasn't been disposed
+                    if (conn.sourceNode && (conn.sourceNode as any).disposed !== true) {
+                        conn.sourceNode.disconnect(conn.targetInput)
+                    }
+                } catch (e) {
+                    // Native AudioNodes or already disconnected
+                }
+            }
+        })
+
+        // Add new connections
+        newConnections.forEach((conn, key) => {
+            if (!this.activeConnections.has(key)) {
+                try {
+                    if (conn.sourceNode instanceof Tone.ToneAudioNode) {
+                        // @ts-ignore
+                        conn.sourceNode.connect(conn.targetInput)
+                    } else if (conn.sourceNode instanceof AudioNode) {
+                        // @ts-ignore
+                        conn.sourceNode.connect(conn.targetInput)
+                    }
+                } catch (e) { }
+            }
+        })
+
+        this.activeConnections = newConnections
     }
 
     static dispose() {
