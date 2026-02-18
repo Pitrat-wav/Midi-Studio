@@ -1,6 +1,6 @@
 /* ============================================================================
    MIDI STUDIO — GLOBAL STYLES & DESIGN SYSTEM
-   Версия: 2.0 (Полный рефакторинг UX/UI)
+   Версия: 3.0 — Studio 2026 Redesign
    ============================================================================ */
 
 /* ============================================================================
@@ -75,16 +75,47 @@ p {
 }
 
 /* ============================================================================
-   3. COLOR PALETTE
+   3. COLOR PALETTE — Studio 2026
    ============================================================================ */
 :root {
-    /* Primary Colors */
+    /* Studio Environment Colors */
+    --studio-dark: #0a0a0f;
+    --studio-panel: #12121a;
+    --studio-metal: #1a1a25;
+    --studio-metal-light: #252535;
+    --studio-glass: rgba(30, 30, 40, 0.7);
+    --studio-glass-heavy: rgba(20, 20, 30, 0.85);
+    --studio-floor: #0d0d12;
+    --studio-ceiling: #08080c;
+
+    /* Neon Lighting */
+    --neon-blue: #00f0ff;
+    --neon-blue-dim: rgba(0, 240, 255, 0.3);
+    --neon-blue-glow: rgba(0, 240, 255, 0.5);
+    
+    --neon-purple: #bf00ff;
+    --neon-purple-dim: rgba(191, 0, 255, 0.3);
+    --neon-purple-glow: rgba(191, 0, 255, 0.5);
+    
+    --neon-amber: #ff9500;
+    --neon-amber-dim: rgba(255, 149, 0, 0.3);
+    --neon-amber-glow: rgba(255, 149, 0, 0.5);
+    
+    --neon-red: #ff2a2a;
+    --neon-red-dim: rgba(255, 42, 42, 0.3);
+    --neon-red-glow: rgba(255, 42, 42, 0.5);
+    
+    --neon-green: #00ff88;
+    --neon-green-dim: rgba(0, 255, 136, 0.3);
+    --neon-green-glow: rgba(0, 255, 136, 0.5);
+
+    /* Primary Colors (legacy support) */
     --color-primary: #3390ec;
     --color-primary-hover: #2578c9;
     --color-primary-light: rgba(51, 144, 236, 0.1);
     --color-primary-border: rgba(51, 144, 236, 0.3);
 
-    /* Accent Colors */
+    /* Accent Colors (legacy support) */
     --color-accent: #00ffaa;
     --color-accent-hover: #00cc88;
     --color-accent-light: rgba(0, 255, 170, 0.1);
@@ -96,7 +127,7 @@ p {
     --color-error: #ff3b30;
     --color-info: #3390ec;
 
-    /* Neutrals */
+    /* Neutrals (legacy support) */
     --color-bg: #050508;
     --color-bg-elevated: #1a1a1a;
     --color-bg-overlay: rgba(0, 0, 0, 0.8);
@@ -106,7 +137,7 @@ p {
     --color-border: rgba(255, 255, 255, 0.1);
     --color-border-hover: rgba(255, 255, 255, 0.2);
 
-    /* Magazine Theme */
+    /* Magazine Theme (legacy support) */
     --magazine-white: #ffffff;
     --magazine-black: #050505;
     --magazine-gold: #c5a059;
@@ -203,6 +234,146 @@ body.southpark-theme {
     --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.2);
     --shadow-glow-primary: 0 0 20px rgba(51, 144, 236, 0.4);
     --shadow-glow-accent: 0 0 20px rgba(0, 255, 170, 0.4);
+    
+    /* Studio Neon Glows */
+    --glow-blue: 0 0 10px var(--neon-blue-dim), 0 0 20px var(--neon-blue-glow);
+    --glow-purple: 0 0 10px var(--neon-purple-dim), 0 0 20px var(--neon-purple-glow);
+    --glow-amber: 0 0 10px var(--neon-amber-dim), 0 0 20px var(--neon-amber-glow);
+    --glow-red: 0 0 10px var(--neon-red-dim), 0 0 20px var(--neon-red-glow);
+    --glow-green: 0 0 10px var(--neon-green-dim), 0 0 20px var(--neon-green-glow);
+    
+    /* Studio Panel Shadows */
+    --panel-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --panel-shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================================================
+   7.5 GRADIENTS — Studio 2026
+   ============================================================================ */
+:root {
+    /* Metal Gradients */
+    --gradient-metal: linear-gradient(180deg, var(--studio-metal-light) 0%, var(--studio-metal) 100%);
+    --gradient-metal-dark: linear-gradient(180deg, #252535 0%, #1a1a25 100%);
+    --gradient-brushed: repeating-linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.02) 0px, 
+        transparent 1px, 
+        transparent 2px,
+        rgba(255, 255, 255, 0.02) 3px
+    );
+    
+    /* Glass Gradients */
+    --gradient-glass: linear-gradient(135deg, 
+        rgba(30, 30, 40, 0.8) 0%, 
+        rgba(20, 20, 30, 0.9) 50%,
+        rgba(15, 15, 20, 0.95) 100%
+    );
+    --gradient-glass-heavy: linear-gradient(135deg,
+        rgba(25, 25, 35, 0.9) 0%,
+        rgba(15, 15, 25, 0.95) 100%
+    );
+    
+    /* Neon Gradients */
+    --gradient-neon: linear-gradient(90deg, var(--neon-blue) 0%, var(--neon-purple) 100%);
+    --gradient-neon-warm: linear-gradient(90deg, var(--neon-amber) 0%, var(--neon-red) 100%);
+    --gradient-neon-cool: linear-gradient(90deg, var(--neon-blue) 0%, var(--neon-green) 100%);
+    
+    /* Background Gradients */
+    --gradient-studio-floor: linear-gradient(180deg, var(--studio-floor) 0%, #050508 100%);
+    --gradient-studio-ceiling: linear-gradient(180deg, var(--studio-ceiling) 0%, var(--studio-dark) 100%);
+    --gradient-studio-wall: linear-gradient(90deg, var(--studio-dark) 0%, var(--studio-panel) 50%, var(--studio-dark) 100%);
+}
+
+/* ============================================================================
+   7.6 MATERIALS — PBR-inspired
+   ============================================================================ */
+:root {
+    /* Brushed Metal */
+    --material-metal: var(--gradient-metal) var(--gradient-brushed);
+    
+    /* Frosted Glass */
+    --material-glass: var(--gradient-glass);
+    --material-glass-heavy: var(--gradient-glass-heavy);
+    
+    /* LED Display */
+    --material-led: linear-gradient(180deg, 
+        rgba(0, 240, 255, 0.1) 0%, 
+        rgba(0, 240, 255, 0.3) 50%,
+        rgba(0, 240, 255, 0.1) 100%
+    );
+    
+    /* Rubber/Soft Touch */
+    --material-rubber: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+    
+    /* Carbon Fiber Pattern (CSS approximation) */
+    --material-carbon: 
+        repeating-linear-gradient(45deg, 
+            rgba(255, 255, 255, 0.03) 0px, 
+            rgba(255, 255, 255, 0.03) 1px, 
+            transparent 1px, 
+            transparent 4px
+        ),
+        repeating-linear-gradient(-45deg,
+            rgba(255, 255, 255, 0.03) 0px,
+            rgba(255, 255, 255, 0.03) 1px,
+            transparent 1px,
+            transparent 4px
+        ),
+        #0a0a0a;
+}
+
+/* ============================================================================
+   8. TYPOGRAPHY — Studio 2026
+   ============================================================================ */
+:root {
+    /* Font Families */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-display: 'Rajdhani', 'Inter', sans-serif;  /* Tech/Studio look */
+    --font-mono: 'JetBrains Mono', 'Courier New', monospace;  /* Code/parameters */
+    --font-magazine: 'Cormorant Garamond', serif;
+    --font-gloss: 'Bangers', cursive;
+    --font-hand: 'Permanent Marker', cursive;
+    
+    /* Font Sizes */
+    --text-xs: 0.75rem;    /* 12px */
+    --text-sm: 0.875rem;   /* 14px */
+    --text-base: 1rem;     /* 16px */
+    --text-lg: 1.125rem;   /* 18px */
+    --text-xl: 1.25rem;    /* 20px */
+    --text-2xl: 1.5rem;    /* 24px */
+    --text-3xl: 2rem;      /* 32px */
+    --text-4xl: 2.5rem;    /* 40px */
+    --text-5xl: 3.5rem;    /* 56px */
+    
+    /* Studio-specific sizes */
+    --text-display: 4rem;   /* 64px - big headers */
+    --text-meter: 2.5rem;   /* 40px - VU meters, BPM */
+    --text-param: 0.7rem;   /* 11px - parameter labels */
+    --text-value: 0.85rem;  /* 14px - parameter values */
+
+    /* Font Weights */
+    --font-light: 300;
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 800;
+    --font-black: 900;
+    
+    /* Studio weights */
+    --font-tech: 600;  /* For technical labels */
+    --font-brand: 700; /* For branding */
+
+    /* Letter Spacing */
+    --tracking-tighter: -0.05em;
+    --tracking-tight: -0.02em;
+    --tracking-normal: 0;
+    --tracking-wide: 0.05em;
+    --tracking-wider: 0.1em;
+    --tracking-widest: 0.2em;
+    
+    /* Studio spacing */
+    --tracking-tech: 0.15em;  /* For technical text */
+    --tracking-brand: 0.25em; /* For brand names */
 }
 
 /* ============================================================================
@@ -257,6 +428,380 @@ input:focus:not(:focus-visible),
 select:focus:not(:focus-visible),
 textarea:focus:not(:focus-visible) {
     outline: none;
+}
+
+/* ============================================================================
+   10.5 STUDIO 2026 COMPONENT STYLES
+   ============================================================================ */
+
+/* Studio Panel — Base Equipment Container */
+.studio-panel {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-lg);
+    padding: var(--space-l);
+    box-shadow: var(--panel-shadow), var(--glow-blue);
+    position: relative;
+    overflow: hidden;
+}
+
+.studio-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--neon-blue) 50%, 
+        transparent 100%
+    );
+    opacity: 0.5;
+}
+
+.studio-panel:hover {
+    box-shadow: var(--panel-shadow-hover), var(--glow-blue);
+}
+
+/* Metal Panel Variant */
+.studio-panel.metal {
+    background: var(--gradient-metal);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--panel-shadow);
+}
+
+.studio-panel.metal::before {
+    background: var(--gradient-brushed);
+    opacity: 1;
+}
+
+/* Studio Header — Panel Top Bar */
+.studio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-s) var(--space-m);
+    background: var(--gradient-metal-dark);
+    border-bottom: 1px solid var(--neon-blue-dim);
+    margin: calc(-1 * var(--space-l)) calc(-1 * var(--space-l)) var(--space-l);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.studio-title {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--font-tech);
+    letter-spacing: var(--tracking-tech);
+    color: var(--neon-blue);
+    text-transform: uppercase;
+}
+
+.studio-led {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--neon-blue-dim);
+    box-shadow: 0 0 5px var(--neon-blue-dim);
+    transition: all 0.2s;
+}
+
+.studio-led.active {
+    background: var(--neon-blue);
+    box-shadow: var(--glow-blue);
+}
+
+.studio-led.rec {
+    background: var(--neon-red-dim);
+    box-shadow: 0 0 5px var(--neon-red-dim);
+}
+
+.studio-led.rec.active {
+    background: var(--neon-red);
+    box-shadow: var(--glow-red);
+}
+
+/* Studio Button — Equipment Controls */
+.studio-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-s);
+    padding: var(--space-s) var(--space-m);
+    background: var(--gradient-metal);
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--font-tech);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.studio-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(0, 240, 255, 0.2) 50%, 
+        transparent 100%
+    );
+    transition: left 0.3s;
+}
+
+.studio-button:hover {
+    border-color: var(--neon-blue);
+    box-shadow: var(--glow-blue);
+    transform: translateY(-1px);
+}
+
+.studio-button:hover::before {
+    left: 100%;
+}
+
+.studio-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.studio-button.active {
+    background: var(--neon-blue-dim);
+    border-color: var(--neon-blue);
+    box-shadow: var(--glow-blue), inset 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.studio-button.danger {
+    border-color: var(--neon-red-dim);
+}
+
+.studio-button.danger:hover {
+    border-color: var(--neon-red);
+    box-shadow: var(--glow-red);
+}
+
+.studio-button.danger.active {
+    background: var(--neon-red-dim);
+    border-color: var(--neon-red);
+    box-shadow: var(--glow-red), inset 0 0 10px rgba(255, 42, 42, 0.2);
+}
+
+/* Studio Knob — Rotary Control */
+.studio-knob {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background: var(--gradient-metal);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.studio-knob::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 12px;
+    background: var(--neon-blue);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 5px var(--neon-blue);
+}
+
+.studio-knob:hover {
+    border-color: var(--neon-blue-dim);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4), var(--glow-blue);
+}
+
+.studio-knob:active {
+    transform: scale(0.95);
+}
+
+.studio-knob-label {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: var(--text-param);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.studio-knob-value {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: var(--text-value);
+    color: var(--neon-blue);
+    font-weight: var(--font-medium);
+}
+
+/* Studio Slider — Fader Control */
+.studio-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: var(--radius-sm);
+    background: var(--gradient-metal-dark);
+    outline: none;
+    cursor: pointer;
+}
+
+.studio-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    background: var(--gradient-metal);
+    border: 1px solid var(--neon-blue-dim);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.15s;
+}
+
+.studio-slider::-webkit-slider-thumb:hover {
+    border-color: var(--neon-blue);
+    box-shadow: var(--glow-blue);
+}
+
+.studio-slider::-webkit-slider-thumb:active {
+    box-shadow: var(--glow-blue), 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.studio-slider::-moz-range-thumb {
+    width: 16px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    background: var(--gradient-metal);
+    border: 1px solid var(--neon-blue-dim);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Studio Display — LED/LCD Screen */
+.studio-display {
+    background: var(--material-led);
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-sm);
+    padding: var(--space-s) var(--space-m);
+    font-family: var(--font-mono);
+    font-size: var(--text-meter);
+    color: var(--neon-blue);
+    text-shadow: 0 0 10px var(--neon-blue-glow);
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.studio-display.large {
+    font-size: var(--text-display);
+    min-height: 80px;
+}
+
+.studio-display amber {
+    color: var(--neon-amber);
+    text-shadow: 0 0 10px var(--neon-amber-glow);
+}
+
+.studio-display.green {
+    color: var(--neon-green);
+    text-shadow: 0 0 10px var(--neon-green-glow);
+}
+
+.studio-display.red {
+    color: var(--neon-red);
+    text-shadow: 0 0 10px var(--neon-red-glow);
+}
+
+/* VU Meter */
+.vu-meter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    align-items: center;
+}
+
+.vu-meter-bar {
+    width: 24px;
+    height: 120px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.vu-meter-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, 
+        var(--neon-green) 0%, 
+        var(--neon-amber) 60%, 
+        var(--neon-red) 90%
+    );
+    transition: height 0.1s;
+}
+
+.vu-meter-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-param);
+    color: var(--color-text-muted);
+}
+
+/* Studio Grid — Equipment Layout */
+.studio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-l);
+    padding: var(--space-l);
+}
+
+.studio-rack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    padding: var(--space-m);
+    background: var(--gradient-metal-dark);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+}
+
+.studio-rack-unit {
+    background: var(--gradient-metal);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    padding: var(--space-m);
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+}
+
+.studio-rack-unit:hover {
+    border-color: var(--neon-blue-dim);
+    box-shadow: var(--glow-blue);
 }
 
 /* ============================================================================
