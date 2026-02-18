@@ -34,9 +34,8 @@ export class GraphEngine {
             await ctx.audioWorklet.addModule('/src/audio/worklets/WasmProcessor.js')
             await ctx.audioWorklet.addModule('/src/audio/worklets/ExpressionProcessor.js')
             await ctx.audioWorklet.addModule('/src/audio/worklets/ScriptProcessor.js')
-            console.log('✅ AudioWorklet: Engines loaded')
         } catch (e) {
-            console.warn('⚠️ AudioWorklet: Failed to load WasmProcessor. WebGL Studio will fallback to JS DSP.', e)
+            // Silent fail - fallback to JS DSP
         }
     }
 
@@ -45,7 +44,6 @@ export class GraphEngine {
     static init() {
         if (this.initialized) return
         this.initialized = true
-        console.log('🔌 GraphEngine: Initializing Deep Core DSP...')
         this.initWorklet()
 
         this.unsubscribe = useNodeStore.subscribe((state, prevState) => {
@@ -113,7 +111,7 @@ export class GraphEngine {
                 if (lib.init && typeof lib.init === 'function') lib.init()
                 ;(scriptNode as any)._userProcess = lib.process
             } catch (err) {
-                console.error('Built-in Script Error', err)
+                // Silent fail for script errors
             }
 
             (scriptNode as any)._memory = memory
@@ -132,10 +130,8 @@ export class GraphEngine {
     }
 
     private static registerAiGenNode(id: string, meter: Tone.Meter) {
-        console.log(`🤖 GraphEngine: Registering AI Node ${id}`)
         this.aiGenStates.set(id, { meter, wasTriggered: false })
         if (!this.aiGenTimer) {
-            console.log('🤖 GraphEngine: Starting AI Polling Loop')
             this.aiGenTimer = setInterval(() => this.pollAiGenNodes(), 100)
         }
     }
@@ -143,23 +139,17 @@ export class GraphEngine {
     private static unregisterAiGenNode(id: string) {
         this.aiGenStates.delete(id)
         if (this.aiGenStates.size === 0 && this.aiGenTimer) {
-            console.log('🤖 GraphEngine: Stopping AI Polling Loop')
             clearInterval(this.aiGenTimer)
             this.aiGenTimer = null
         }
     }
 
     private static pollAiGenNodes() {
-        if (this.aiGenStates.size > 0 && Math.random() < 0.05) {
-             // Occasional log to prove it's running without flooding console
-             console.log(`🤖 GraphEngine: Polling ${this.aiGenStates.size} AI nodes...`)
-        }
         this.aiGenStates.forEach((state, id) => {
             const val = state.meter.getValue()
             const level = Array.isArray(val) ? Math.max(...val.map(v => Math.abs(v))) : Math.abs(val as number)
 
             if (level > 0.5 && !state.wasTriggered) {
-                console.log(`🤖 GraphEngine: AI Trigger fired for ${id}`)
                 state.wasTriggered = true
                 window.dispatchEvent(new CustomEvent('AI_GEN_TRIGGER', { detail: { id } }))
             } else if (level < 0.5) {
@@ -1014,7 +1004,7 @@ export class GraphEngine {
                 const neighbors = adj.get(edge.source)
                 if (neighbors) neighbors.push(edge.target)
             } else {
-                console.warn(`🚫 GraphEngine: Blocked feedback loop (possibly wireless) involving ${edge.source}`)
+                console.warn(`🚫 GraphEngine: Blocked feedback loop involving ${edge.source}`)
             }
         })
 
