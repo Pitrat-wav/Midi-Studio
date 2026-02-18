@@ -69,6 +69,15 @@ export function KeyboardController({
                     e.preventDefault()
                     visual.toggleTerminal()
                     break
+                
+                // --- BACKGROUND PRESET CYCLE ---
+                case 'KeyB':
+                    e.preventDefault()
+                    visual.cycleBackgroundPreset()
+                    const presetIdx = visual.backgroundPreset
+                    const presetName = (visual as any).PRESETS?.[presetIdx]?.name || `Preset ${presetIdx + 1}`
+                    visual.setStatus(`BACKGROUND: ${presetName}`)
+                    break
 
                 // --- NAVIGATION / VISUALIZER SWITCH ---
                 case 'Digit0':
