@@ -10,6 +10,7 @@ import ReactFlow, {
     ReactFlowInstance
 } from 'reactflow'
 import 'reactflow/dist/style.css'
+import './ReactFlow.css'  // Studio 2026 theme
 import { useNodeStore, NodeType, NODE_DEFS } from '../../store/nodeStore'
 import { CustomNode } from '../Nodes/CustomNode'
 import { MathNode } from '../Nodes/MathNode'

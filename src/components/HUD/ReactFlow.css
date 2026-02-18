@@ -1,0 +1,232 @@
+/* ============================================================================
+   REACTFLOW — Studio 2026 Theme
+   ============================================================================ */
+
+/* Main Container */
+.react-flow {
+    background: var(--studio-dark);
+    --react-flow-bg: var(--studio-dark);
+    --react-flow-panel-background: var(--gradient-glass);
+    --react-flow-panel-color: var(--color-text);
+    --react-flow-node-border-radius: var(--radius-lg);
+    --react-flow-edge-color: var(--neon-blue);
+    --react-flow-handle-background: var(--neon-blue);
+}
+
+/* Nodes */
+.react-flow__node {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-lg);
+    box-shadow: 
+        var(--panel-shadow),
+        0 0 20px rgba(0, 240, 255, 0.1);
+    transition: all 0.2s ease;
+    cursor: grab;
+}
+
+.react-flow__node:hover {
+    border-color: var(--neon-blue);
+    box-shadow: 
+        var(--panel-shadow-hover),
+        0 0 30px rgba(0, 240, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.react-flow__node.selected {
+    border-color: var(--neon-blue);
+    box-shadow: 
+        var(--glow-blue),
+        0 0 40px rgba(0, 240, 255, 0.3);
+}
+
+/* Node Header */
+.react-flow__handle {
+    width: 12px;
+    height: 12px;
+    background: var(--neon-blue);
+    border: 2px solid var(--magazine-white);
+    border-radius: var(--radius-full);
+    box-shadow: var(--glow-blue);
+    transition: all 0.15s;
+}
+
+.react-flow__handle:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px var(--neon-blue);
+}
+
+.react-flow__handle-left {
+    left: -6px;
+}
+
+.react-flow__handle-right {
+    right: -6px;
+}
+
+/* Edges */
+.react-flow__edge-path {
+    stroke: var(--neon-blue);
+    stroke-width: 2px;
+    filter: drop-shadow(0 0 5px var(--neon-blue));
+    transition: stroke 0.2s;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+    stroke: var(--neon-blue);
+    stroke-width: 3px;
+    filter: drop-shadow(0 0 10px var(--neon-blue));
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+    stroke: var(--neon-blue);
+    stroke-width: 3px;
+    filter: drop-shadow(0 0 15px var(--neon-blue));
+}
+
+/* Edge Controls */
+.react-flow__controls {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--panel-shadow);
+}
+
+.react-flow__controls-button {
+    background: transparent;
+    border: none;
+    color: var(--color-text);
+    cursor: pointer;
+    padding: var(--space-s);
+    transition: all 0.15s;
+}
+
+.react-flow__controls-button:hover {
+    background: var(--neon-blue-dim);
+    color: var(--neon-blue);
+}
+
+/* MiniMap */
+.react-flow__minimap {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--panel-shadow);
+}
+
+.react-flow__minimap-mask {
+    fill: rgba(0, 240, 255, 0.1);
+}
+
+.react-flow__minimap-node {
+    fill: var(--neon-blue);
+    opacity: 0.5;
+}
+
+/* Background Pattern */
+.react-flow__background {
+    background-color: var(--studio-dark);
+}
+
+.react-flow__background-pattern line {
+    stroke: var(--neon-blue-dim);
+    stroke-opacity: 0.1;
+}
+
+/* Panel */
+.react-flow__panel {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--panel-shadow);
+    color: var(--color-text);
+}
+
+/* Connection Line */
+.react-flow__connection-line {
+    stroke: var(--neon-blue);
+    stroke-width: 2px;
+    stroke-dasharray: 5 5;
+    animation: dashAnimation 1s linear infinite;
+}
+
+@keyframes dashAnimation {
+    to {
+        stroke-dashoffset: -10;
+    }
+}
+
+/* Selection Box */
+.react-flow__selection {
+    background: rgba(0, 240, 255, 0.1);
+    border: 1px solid var(--neon-blue);
+    border-radius: var(--radius-md);
+}
+
+/* Resize Handles */
+.react-flow__resize-control {
+    border-color: var(--neon-blue);
+}
+
+.react-flow__resize-control-handle {
+    background: var(--neon-blue);
+    border: 2px solid var(--magazine-white);
+    box-shadow: var(--glow-blue);
+}
+
+/* ============================================================================
+   NODE CATEGORY COLORS
+   ============================================================================ */
+
+/* Audio Nodes - Blue */
+.react-flow__node[data-category="audio"] {
+    border-color: var(--neon-blue-dim);
+}
+
+.react-flow__node[data-category="audio"]:hover {
+    box-shadow: var(--glow-blue);
+}
+
+/* FX Nodes - Purple */
+.react-flow__node[data-category="audio"][data-label*="Reverb"],
+.react-flow__node[data-category="audio"][data-label*="Delay"],
+.react-flow__node[data-category="audio"][data-label*="Chorus"] {
+    border-color: var(--neon-purple-dim);
+}
+
+.react-flow__node[data-category="audio"][data-label*="Reverb"]:hover,
+.react-flow__node[data-category="audio"][data-label*="Delay"]:hover {
+    box-shadow: var(--glow-purple);
+}
+
+/* Logic Nodes - Amber */
+.react-flow__node[data-category="logic"] {
+    border-color: var(--neon-amber-dim);
+}
+
+.react-flow__node[data-category="logic"]:hover {
+    box-shadow: var(--glow-amber);
+}
+
+/* Script Nodes - Green */
+.react-flow__node[data-category="script"] {
+    border-color: var(--neon-green-dim);
+}
+
+.react-flow__node[data-category="script"]:hover {
+    box-shadow: var(--glow-green);
+}
+
+/* AI Nodes - Pink */
+.react-flow__node[data-category="ai"] {
+    border-color: rgba(255, 0, 128, 0.3);
+}
+
+.react-flow__node[data-category="ai"]:hover {
+    box-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
+}
