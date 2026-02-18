@@ -1,5 +1,6 @@
-import React, { Suspense, useMemo } from 'react'
-import { Canvas } from '@react-three/fiber'
+import React, { Suspense, useMemo, useRef } from 'react'
+import * as THREE from 'three'
+import { Canvas, useFrame } from '@react-three/fiber'
 import { useVisualStore, VISUALIZER_REGISTRY } from '../../store/visualStore'
 import { Stars, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei'
 import { usePoseTracking } from '../../hooks/usePoseTracking'
@@ -26,9 +27,26 @@ import * as RetroWindows from './visualizers/RetroWindowsBatch'
 import { Boomy3 } from './visualizers/Boomy3'
 import { GlobalWebcamManager } from './GlobalWebcamManager'
 
+function AudioReactiveLights() {
+    const light1 = useRef<THREE.PointLight>(null!)
+    const light2 = useRef<THREE.PointLight>(null!)
+
+    useFrame(() => {
+        const intensity = useVisualStore.getState().globalAudioIntensity
+        if (light1.current) light1.current.intensity = intensity * 5
+        if (light2.current) light2.current.intensity = intensity * 2
+    })
+
+    return (
+        <>
+            <pointLight ref={light1} position={[10, 10, 10]} color="#3390ec" />
+            <pointLight ref={light2} position={[-10, -10, -10]} color="#ff3b30" />
+        </>
+    )
+}
+
 export function VisualEngine() {
     const index = useVisualStore(s => s.visualizerIndex)
-    const intensity = useVisualStore(s => s.globalAudioIntensity)
 
     // ...
 
@@ -256,8 +274,7 @@ export function VisualEngine() {
                     {!is2D && (
                         <>
                             <ambientLight intensity={0.1} />
-                            <pointLight position={[10, 10, 10]} intensity={intensity * 5} color="#3390ec" />
-                            <pointLight position={[-10, -10, -10]} intensity={intensity * 2} color="#ff3b30" />
+                            <AudioReactiveLights />
                             <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
                             <OrbitControls enableZoom={false} enablePan={false} />
                         </>

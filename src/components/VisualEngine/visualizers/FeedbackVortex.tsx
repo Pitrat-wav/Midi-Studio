@@ -71,7 +71,6 @@ const fragmentShader = `
 
 export function FeedbackVortex() {
     const { size, gl } = useThree()
-    const intensity = useVisualStore(s => s.globalAudioIntensity)
 
     const videoRef = useRef<HTMLVideoElement>(null!)
     const targets = useMemo(() => {
@@ -110,6 +109,8 @@ export function FeedbackVortex() {
     useFrame((state) => {
         if (!videoTexture) return
         const { gl, scene, camera } = state
+
+        const intensity = useVisualStore.getState().globalAudioIntensity
 
         uniforms.uTime.value = state.clock.getElapsedTime()
         uniforms.uAudio.value = intensity

@@ -5,7 +5,6 @@ import { useVisualStore } from '../../../store/visualStore'
 
 export function PlasmaOrb() {
     const meshRef = useRef<THREE.Mesh>(null!)
-    const intensity = useVisualStore(s => s.globalAudioIntensity)
 
     const uniforms = useMemo(() => ({
         uTime: { value: 0 },
@@ -15,6 +14,7 @@ export function PlasmaOrb() {
 
     useFrame((state) => {
         if (meshRef.current) {
+            const intensity = useVisualStore.getState().globalAudioIntensity
             const material = meshRef.current.material as THREE.ShaderMaterial
             material.uniforms.uTime.value = state.clock.getElapsedTime()
             material.uniforms.uIntensity.value = THREE.MathUtils.lerp(
@@ -58,7 +58,7 @@ export function PlasmaOrb() {
                         float pulse = sin(uTime * 5.0) * 0.5 + 0.5;
                         vec3 color = mix(uColor, vec3(0.0, 1.0, 1.0), uIntensity);
                         float glow = pow(0.7 - dot(vNormal, vec3(0, 0, 1)), 2.0);
-                        gl_FragColor = vec4(color + glow, 0.6 + intensity * 0.4);
+                        gl_FragColor = vec4(color + glow, 0.6 + uIntensity * 0.4);
                     }
                 `}
                 transparent

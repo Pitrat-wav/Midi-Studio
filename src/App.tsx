@@ -93,6 +93,7 @@ function App() {
     useCompositionManager()
 
     const micEnabled = useVisualStore(s => s.micEnabled)
+    const toggleGamepadHelp = useVisualStore(s => s.toggleGamepadHelp)
 
     // Sync Microphone State
     useEffect(() => {
