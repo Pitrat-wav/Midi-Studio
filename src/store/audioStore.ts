@@ -98,7 +98,7 @@ export interface AudioState {
     // Snapshot Grid
     activeSnapshots: Record<string, number>
     queuedSnapshots: Record<string, number | null>
-    triggerSnapshot: (instId: string, index: number) => void
+    triggerSnapshot: (instId: string, index: number | undefined) => void
     commitSnapshots: () => void
     freezeTrack: (trackId: string) => Promise<void>
 }
@@ -170,9 +170,9 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
     triggerSampler: () => {
         const { samplerInstrument } = get()
-        if (samplerInstrument) {
+        if (samplerInstrument && 'triggerAttackRelease' in samplerInstrument) {
             // Default trigger for testing/manual play
-            samplerInstrument.triggerAttackRelease("C4", "4n")
+            (samplerInstrument as any).triggerAttackRelease("C4", "4n")
         }
     },
 
@@ -751,7 +751,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
     triggerSnapshot: (instId, index) => {
         set((state) => ({
-            queuedSnapshots: { ...state.queuedSnapshots, [instId]: index }
+            queuedSnapshots: { ...state.queuedSnapshots, [instId]: index ?? null }
         }))
     },
 

@@ -61,10 +61,10 @@ export function startSequencerLoop() {
         const seq = useSequencerStore.getState()
 
         // --- AUTOMATION INTERPOLATION HELPER ---
-        const getInterpolatedValue = (trackId: string, param: string, currentTick: number, defaultValue: number) => {
+        const getInterpolatedValue = (trackId: string, param: string, currentTick: number, defaultValue: number | undefined) => {
             const trackAuto = arrange.automations[trackId] || {}
             const points = trackAuto[param] || []
-            if (points.length === 0) return defaultValue
+            if (points.length === 0) return defaultValue ?? 0.8
             if (points.length === 1) return points[0].value
 
             const nextIdx = points.findIndex(p => p.tick > currentTick)
