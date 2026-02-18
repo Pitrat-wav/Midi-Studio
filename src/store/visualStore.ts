@@ -304,7 +304,7 @@ interface VisualState {
     setTerminalHistory: (history: string[]) => void
 }
 
-export const useVisualStore = create<VisualState>((set) => ({
+export const useVisualStore = create<VisualState>((set, get) => ({
     energyCode: Math.random().toString(36).substring(7),
     energy: {
         drums: 0, bass: 0, harmony: 0, sequencer: 0, pads: 0,
@@ -365,7 +365,17 @@ export const useVisualStore = create<VisualState>((set) => ({
     setViewMode: (mode) => set({ viewMode: mode }),
     toggleWebGL: () => set((state) => ({ webglEnabled: !state.webglEnabled })),
     setHandTrackingEnabled: (enabled) => set({ handTrackingEnabled: enabled }),
-    setHandData: (data) => set({ handData: data }),
+    setHandData: (data) => {
+        // Optimization: Only trigger reactive update when hand presence changes
+        const wasNull = (get() as any).handData === null
+        const isNull = data === null
+        if (wasNull !== isNull) {
+            set({ handData: data })
+        } else {
+            // Transient update for high-frequency data (mutate state without notifying subscribers)
+            (get() as any).handData = data
+        }
+    },
     setPoseTrackingEnabled: (enabled) => set({ poseTrackingEnabled: enabled }),
     setPoseData: (data) => set({ poseData: data }),
     setTrackingDebug: (enabled) => set({ trackingDebug: enabled }),
