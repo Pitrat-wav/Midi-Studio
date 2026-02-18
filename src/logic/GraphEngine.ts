@@ -190,6 +190,14 @@ export class GraphEngine {
                     inputs: { 'freq': lfo.frequency, 'reset': lfo as any }
                 }
             }
+            else if (data.type === 'audio_noise') {
+                const noise = new Tone.Noise(data.params.type || 'white').start()
+                wrapper = {
+                    node: noise,
+                    inputs: { 'type': noise as any },
+                    outputs: { 'out': noise }
+                }
+            }
             else if (data.type === 'audio_delay') {
                 const delay = new Tone.FeedbackDelay(data.params.delayTime || 0.25, data.params.feedback || 0.5)
                 wrapper = {
@@ -199,7 +207,7 @@ export class GraphEngine {
             }
             else if (data.type === 'audio_reverb') {
                 const rev = new Tone.Reverb({ decay: data.params.decay || 1.5, preDelay: data.params.preDelay || 0.01 })
-                rev.generate()
+                rev.generate().catch(() => {})  // Silent fail for IR generation
                 wrapper = { node: rev, inputs: { 'in': rev } }
             }
             else if (data.type === 'audio_vca') {
@@ -214,6 +222,23 @@ export class GraphEngine {
                 wrapper = {
                     node: Tone.getDestination(),
                     inputs: { 'l': Tone.getDestination(), 'r': Tone.getDestination() }
+                }
+            }
+            else if (data.type === 'io_portal_send') {
+                const gain = new Tone.Gain(1)
+                wrapper = {
+                    node: gain,
+                    inputs: { 'in': gain },
+                    isLogic: true
+                }
+            }
+            else if (data.type === 'io_portal_receive') {
+                const gain = new Tone.Gain(1)
+                wrapper = {
+                    node: gain,
+                    inputs: {},
+                    outputs: { 'out': gain },
+                    isLogic: true
                 }
             }
             else if (data.type === 'script_js') {
@@ -362,7 +387,7 @@ export class GraphEngine {
             }
             else if (data.type === 'logic_clock') {
                 const clock = new Tone.PulseOscillator(data.params.bpm ? data.params.bpm / 60 : 2, 0.5).start()
-                wrapper = { node: clock, inputs: { 'bpm': clock.frequency } }
+                wrapper = { node: clock, inputs: { 'bpm': clock.frequency }, outputs: { 'pulse': clock } }
             }
             else if (data.type === 'logic_seq') {
                 const seqScript = this.createScriptNode(`
