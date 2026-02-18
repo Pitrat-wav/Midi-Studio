@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useVisualStore } from '../../store/visualStore'
 
@@ -34,19 +34,25 @@ export function GenerativeKnob3D({ value, min, max, label, position, color, onCh
     return (
         <group
             position={position}
-            onPointerDown={(e) => {
+            onPointerDown={(e: ThreeEvent<PointerEvent>) => {
                 e.stopPropagation()
-                    ; (e.target as any).setPointerCapture(e.pointerId)
+                // In R3F e.target is Object3D, but for pointer capture we need the canvas element from nativeEvent
+                if (e.nativeEvent && e.nativeEvent.target) {
+                    (e.nativeEvent.target as HTMLElement).setPointerCapture(e.pointerId)
+                }
                 setInteraction(label, 1.0)
             }}
-            onPointerUp={(e) => {
+            onPointerUp={(e: ThreeEvent<PointerEvent>) => {
                 e.stopPropagation()
-                    ; (e.target as any).releasePointerCapture(e.pointerId)
+                if (e.nativeEvent && e.nativeEvent.target) {
+                    (e.nativeEvent.target as HTMLElement).releasePointerCapture(e.pointerId)
+                }
                 setInteraction(null, 0)
             }}
-            onPointerMove={(e) => {
+            onPointerMove={(e: ThreeEvent<PointerEvent>) => {
                 if (isEditing && e.buttons > 0) {
-                    const delta = e.movementY * -0.01
+                    // Use movementY from nativeEvent
+                    const delta = e.nativeEvent.movementY * -0.01
                     const newValue = Math.min(max, Math.max(min, value + delta * (max - min)))
                     onChange?.(newValue)
                     setInteraction(label, 1.0)
