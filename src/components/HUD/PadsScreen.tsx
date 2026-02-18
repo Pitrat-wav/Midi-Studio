@@ -1,7 +1,7 @@
 import React from 'react'
 import { usePadStore, useHarmonyStore, ROOTS, SCALES } from '../../store/instrumentStore'
 import { useVisualStore } from '../../store/visualStore'
-import { StudioScreen, StudioKnob, StudioButton, StudioDisplay } from './StudioScreen'
+import { StudioScreen, StudioButton, StudioDisplay } from './StudioScreen'
 import './PadsScreen.css'
 
 export const PadsScreen: React.FC = () => {
@@ -15,7 +15,7 @@ export const PadsScreen: React.FC = () => {
             title="Ambient Stratosphere"
             subtitle="Atmospheric Pad Engine"
             onClose={handleClose}
-            ledColor="purple"
+            ledColor="blue"
             className="pads-screen-studio"
         >
             <div className="pads-screen-content">
@@ -30,7 +30,7 @@ export const PadsScreen: React.FC = () => {
                     <StudioDisplay
                         value={`${Math.round(store.brightness * 100)}%`}
                         label="BRIGHTNESS"
-                        color="purple"
+                        color="blue"
                         size="small"
                     />
                 </div>
@@ -61,117 +61,34 @@ export const PadsScreen: React.FC = () => {
 
                 {/* Main Controls */}
                 <div className="pads-controls-grid">
-                    <StudioKnob
-                        label="Brightness"
-                        value={store.brightness * 100}
-                        min={0}
-                        max={100}
-                        onChange={(v) => store.setParams({ brightness: v / 100 })}
-                        color="purple"
-                    />
-                    <StudioKnob
-                        label="Complexity"
-                        value={store.complexity * 100}
-                        min={0}
-                        max={100}
-                        onChange={(v) => store.setParams({ complexity: v / 100 })}
-                        color="purple"
-                    />
-                    <StudioKnob
-                        label="Spread"
-                        value={store.spread * 100}
-                        min={0}
-                        max={100}
-                        onChange={(v) => store.setParams({ spread: v / 100 })}
-                        color="purple"
-                    />
-                    <StudioKnob
-                        label="Modulation"
-                        value={store.modulation * 100}
-                        min={0}
-                        max={100}
-                        onChange={(v) => store.setParams({ modulation: v / 100 })}
-                        color="purple"
-                    />
-                </div>
-
-                {/* Voice Mode */}
-                <div className="pads-voice-section">
-                    <label>Voice Mode</label>
-                    <div className="voice-mode-selector">
-                        <StudioButton
-                            label="Poly"
-                            onClick={() => store.setParams({ voiceMode: 'poly' })}
-                            active={store.voiceMode === 'poly'}
+                    <div className="pad-control-item">
+                        <label>Brightness</label>
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={store.brightness}
+                            onChange={(e) => store.setParams({ brightness: parseFloat(e.target.value) })}
+                            className="studio-slider-horizontal"
                         />
-                        <StudioButton
-                            label="Mono"
-                            onClick={() => store.setParams({ voiceMode: 'mono' })}
-                            active={store.voiceMode === 'mono'}
+                        <span className="control-value">{Math.round(store.brightness * 100)}%</span>
+                    </div>
+                    <div className="pad-control-item">
+                        <label>Complexity</label>
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={store.complexity}
+                            onChange={(e) => store.setParams({ complexity: parseFloat(e.target.value) })}
+                            className="studio-slider-horizontal"
                         />
-                        <StudioButton
-                            label="Unison"
-                            onClick={() => store.setParams({ voiceMode: 'unison' })}
-                            active={store.voiceMode === 'unison'}
-                        />
+                        <span className="control-value">{Math.round(store.complexity * 100)}%</span>
                     </div>
                 </div>
             </div>
         </StudioScreen>
-    )
-}
-                            />
-                            <span className="ambient-value">{Math.round(store.complexity * 100)}%</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Chord Display */}
-                <div className="ambient-chord-display">
-                    <div className="ambient-chord-label">CURRENT PROGRESSION</div>
-                    <div className="ambient-chord-grid">
-                        {[1, 4, 5, 6].map(degree => (
-                            <div key={degree} className="ambient-chord-card">
-                                <div className="chord-degree">{degree}</div>
-                                <div className="chord-quality">
-                                    {store.complexity < 0.5 ? 'TRIAD' : '7TH'}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Visual Wave */}
-                <div className="ambient-wave-container">
-                    {Array.from({ length: 50 }).map((_, i) => (
-                        <div
-                            key={i}
-                            className="ambient-wave-bar"
-                            style={{
-                                height: `${20 + Math.sin(i * 0.3 + (store.active ? Date.now() / 500 : 0)) * 15}px`,
-                                background: `linear-gradient(180deg, #ff9944 0%, #ffcc66 100%)`,
-                                opacity: store.active ? 0.8 : 0.3
-                            }}
-                        />
-                    ))}
-                </div>
-
-                {/* Info Footer */}
-                <div className="ambient-info">
-                    <div className="ambient-info-item">
-                        <span className="info-label">TYPE:</span>
-                        <span className="info-value">Generative Pad Synth</span>
-                    </div>
-                    <div className="ambient-info-item">
-                        <span className="info-label">ALGORITHM:</span>
-                        <span className="info-value">Modal Chord Progression</span>
-                    </div>
-                    <div className="ambient-info-item">
-                        <span className="info-label">INSPIRATION:</span>
-                        <span className="info-value">Brian Eno / Ambient 1</span>
-                    </div>
-                </div>
-            </div>
-        </div>
     )
 }
