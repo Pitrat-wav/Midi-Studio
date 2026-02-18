@@ -227,6 +227,13 @@ function App() {
                                 <span>{bpm}</span>
                             </div>
 
+                            {/* Theme Indicator */}
+                            <div className="theme-indicator">
+                                {aestheticTheme === 'studio' && '🏭 Studio'}
+                                {aestheticTheme === 'southpark' && '🎨 South Park'}
+                                {aestheticTheme === 'none' && '🌌 Space'}
+                            </div>
+
                             <button
                                 className="help-button-circle"
                                 onClick={() => setShowFAQ(true)}
