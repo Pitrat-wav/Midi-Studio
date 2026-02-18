@@ -89,11 +89,11 @@ function App() {
         }
     }, [aestheticTheme])
 
-    // Pyodide Bridge
-    useCompositionManager()
-
     const micEnabled = useVisualStore(s => s.micEnabled)
     const toggleGamepadHelp = useVisualStore(s => s.toggleGamepadHelp)
+
+    // Pyodide Bridge
+    useCompositionManager()
 
     // Sync Microphone State
     useEffect(() => {

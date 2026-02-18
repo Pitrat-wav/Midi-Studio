@@ -75,8 +75,7 @@ export function KeyboardController({
                     e.preventDefault()
                     visual.cycleBackgroundPreset()
                     const presetIdx = visual.backgroundPreset
-                    const presetName = (visual as any).PRESETS?.[presetIdx]?.name || `Preset ${presetIdx + 1}`
-                    visual.setStatus(`BACKGROUND: ${presetName}`)
+                    visual.setStatus(`BACKGROUND: ${presetIdx + 1}`)
                     break
 
                 // --- NAVIGATION / VISUALIZER SWITCH ---
