@@ -72,6 +72,7 @@ export interface AudioState {
     removeAudioPlayer: (clipId: string) => void
     syncAudioClips: () => void
     // Methods
+    triggerSampler: () => void
     initialize: () => Promise<void>
     togglePlay: () => void
     toggleMic: () => Promise<void>
@@ -165,6 +166,14 @@ export const useAudioStore = create<AudioState>((set, get) => ({
                 player.sync().start(clip.startTick * (60 / bpm / 4))
             }
         })
+    },
+
+    triggerSampler: () => {
+        const { samplerInstrument } = get()
+        if (samplerInstrument) {
+            // Default trigger for testing/manual play
+            samplerInstrument.triggerAttackRelease("C4", "4n")
+        }
     },
 
     initialize: async () => {

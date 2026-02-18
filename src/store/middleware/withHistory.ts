@@ -66,14 +66,10 @@ const getDiff = (
 };
 
 // Types for the middleware
-type WithHistory = <
-    T,
-    Mps extends [StoreMutatorIdentifier, unknown][] = [],
-    Mcs extends [StoreMutatorIdentifier, unknown][] = []
->(
-    initializer: StateCreator<T, Mps, Mcs>,
+type WithHistory = <T>(
+    initializer: StateCreator<T, [], []>,
     options: WithHistoryOptions
-) => StateCreator<T, Mps, Mcs>;
+) => StateCreator<T, [], []>;
 
 export const withHistory: WithHistory = (initializer, options) => (set, get, api) => {
     const { storeName, ignorePaths = [] } = options;

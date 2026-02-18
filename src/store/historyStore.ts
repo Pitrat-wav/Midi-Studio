@@ -125,7 +125,6 @@ export const useHistoryStore = create<HistoryState>()(
                     state.future = [];
                     // Limit stack size
                     if (state.past.length > 50) {
-                        state.past.remove(0); // Immer way, or shift
                         state.past.shift();
                     }
                 }

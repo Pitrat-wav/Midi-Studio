@@ -1,4 +1,4 @@
-import { NodeData, NodeEdge, GridContext, useNodeStore } from '../store/nodeStore'
+import { NodeData, useNodeStore } from '../store/nodeStore'
 
 export interface DevicePreset {
     id: string

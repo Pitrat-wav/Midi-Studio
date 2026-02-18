@@ -22,7 +22,6 @@ import { HandVision3D } from './HandVision3D'
 import { GlobalHUD } from './GlobalHUD'
 import { SpectrumAnalyzer3D } from './visualizers/SpectrumAnalyzer3D'
 import { WaveformScope3D } from './visualizers/WaveformScope3D'
-import { VisualizerLayer } from './visualizers/VisualizerLayer'
 // Postprocessing library removed due to crashes - using custom shaders instead
 import type { InstrumentType } from '../../lib/SpatialLayout'
 

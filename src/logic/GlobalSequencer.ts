@@ -78,15 +78,16 @@ export function startSequencerLoop() {
         }
 
         // --- SOLO LOGIC ---
-        const anySolo = Object.values(arrange.tracks).some(t => t.solo)
+        const tracks = arrange.tracks || {}
+        const anySolo = Object.values(tracks).some(t => t.solo)
         const isTrackActive = (trackId: string) => {
-            const settings = arrange.tracks[trackId] || { mute: false, solo: false, volume: 0.8 }
+            const settings = tracks[trackId] || { mute: false, solo: false, volume: 0.8 }
             if (anySolo) return settings.solo
             return !settings.mute
         }
 
         // 1. DRUMS
-        const drumSettings = arrange.tracks?.drums || { mute: false, solo: false, volume: 0.8 }
+        const drumSettings = tracks.drums || { mute: false, solo: false, volume: 0.8 }
         const autoVolDrums = getInterpolatedValue('drums', 'volume', totalStep, drumSettings.volume)
 
         if (drums.isPlaying && drumMachine && isTrackActive('drums')) {
@@ -117,7 +118,7 @@ export function startSequencerLoop() {
         }
 
         // 2. BASS
-        const bassSettings = arrange.tracks?.bass || { mute: false, solo: false, volume: 0.8 }
+        const bassSettings = tracks.bass || { mute: false, solo: false, volume: 0.8 }
         const autoVolBass = getInterpolatedValue('bass', 'volume', totalStep, bassSettings.volume)
 
         if (bass.isPlaying && isTrackActive('bass')) {
@@ -147,7 +148,7 @@ export function startSequencerLoop() {
 
 
         // 3. LEAD (Stages Sequencer)
-        const leadSettings = arrange.tracks?.lead || { mute: false, solo: false, volume: 0.8 }
+        const leadSettings = tracks.lead || { mute: false, solo: false, volume: 0.8 }
         const autoVolLead = getInterpolatedValue('lead', 'volume', totalStep, leadSettings.volume)
 
         if (leadSynth && isTrackActive('lead')) {
@@ -188,7 +189,7 @@ export function startSequencerLoop() {
         }
 
         // 4. PADS (каждые 32 шага = 2 такта)
-        const padSettings = arrange.tracks?.pads || { mute: false, solo: false, volume: 0.8 }
+        const padSettings = tracks.pads || { mute: false, solo: false, volume: 0.8 }
         const autoVolPads = getInterpolatedValue('pads', 'volume', totalStep, padSettings.volume)
 
         if (pads.active && padSynth && totalStep % 32 === 0 && isTrackActive('pads')) {
@@ -213,7 +214,7 @@ export function startSequencerLoop() {
 
 
         // 5. HARM SYNTH
-        const harmSettings = arrange.tracks?.harm || { mute: false, solo: false, volume: 0.8 }
+        const harmSettings = tracks.harm || { mute: false, solo: false, volume: 0.8 }
         const autoVolHarm = getInterpolatedValue('harm', 'volume', totalStep, harmSettings.volume)
 
         if (harm.isPlaying && harmSynth && totalStep % 32 === 0 && isTrackActive('harm')) {
