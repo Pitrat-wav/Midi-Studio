@@ -197,7 +197,7 @@ export const VISUALIZER_REGISTRY = [
 
 export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'
 export type PerformanceMode = 'low' | 'medium' | 'high' | 'ultra'
-export type AestheticTheme = 'none' | 'cosmic' | 'cyber' | 'pixel' | 'southpark'
+export type AestheticTheme = 'none' | 'cosmic' | 'cyber' | 'pixel' | 'southpark' | 'studio'
 export type AppView = '3D' | 'NODES' | 'LIVE' | 'ARRANGE' | 'VISUALIZER' | 'SOCIAL'
 
 export interface EnvironmentConditions {
@@ -459,7 +459,8 @@ export const useVisualStore = create<VisualState>((set, get) => ({
             PRESETS[index].name?.includes('COSMIC') ? 'cosmic' :
                 PRESETS[index].name?.includes('CYBER') ? 'cyber' :
                     PRESETS[index].name?.includes('PIXEL') ? 'pixel' :
-                        PRESETS[index].name?.includes('SOUTH PARK') ? 'southpark' : 'none'
+                        PRESETS[index].name?.includes('SOUTH PARK') ? 'southpark' :
+                            PRESETS[index].name?.includes('STUDIO') ? 'studio' : 'none'
         ) : 'none'
     }),
     setAestheticTheme: (theme) => set({ aestheticTheme: theme }),
@@ -474,7 +475,8 @@ export const useVisualStore = create<VisualState>((set, get) => ({
                 nextName.includes('COSMIC') ? 'cosmic' :
                     nextName.includes('CYBER') ? 'cyber' :
                         nextName.includes('PIXEL') ? 'pixel' :
-                            nextName.includes('SOUTH PARK') ? 'southpark' : 'none'
+                            nextName.includes('SOUTH PARK') ? 'southpark' :
+                                nextName.includes('STUDIO') ? 'studio' : 'none'
         }
     }),
 

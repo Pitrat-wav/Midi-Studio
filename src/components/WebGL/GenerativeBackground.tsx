@@ -7,6 +7,7 @@ import { PRESETS, useVisualStore } from '../../store/visualStore'
 import { useAudioVisualBridge } from '../../lib/AudioVisualBridge'
 import { SouthParkWorld } from './SouthParkWorld'
 import { PlanetField } from './PlanetField'
+import { StudioRoom } from './StudioRoom'
 
 export function GenerativeBackground() {
     const isPlaying = useAudioStore(s => s.isPlaying)
@@ -14,6 +15,11 @@ export function GenerativeBackground() {
     const aestheticTheme = useVisualStore(s => s.aestheticTheme)
     const bridge = useAudioVisualBridge()
     const meshRef = useRef<THREE.Mesh>(null!)
+
+    // Use Studio 2026 environment
+    if (aestheticTheme === 'studio') {
+        return <StudioRoom />
+    }
 
     // Use South Park 2.5D world if that theme is active
     if (aestheticTheme === 'southpark') {
