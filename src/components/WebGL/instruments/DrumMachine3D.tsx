@@ -7,7 +7,7 @@
  * - "Mission Control" Console for precise parameter tuning
  */
 
-import { useRef, useMemo, useState } from 'react'
+import { useRef, useMemo, useState, memo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useDrumStore } from '../../../store/instrumentStore'
@@ -24,7 +24,7 @@ import { audioReactiveVertexShader, fresnelFragmentShader } from '../../../shade
 
 // --- Generative Visuals (Preserved & Polished) ---
 
-function KickDrum() {
+const KickDrum = memo(function KickDrum() {
     const meshRef = useRef<THREE.Mesh>(null!)
     const bridge = useAudioVisualBridge()
     const kickPitch = useDrumStore(s => s.kick.pitch)
@@ -51,10 +51,13 @@ function KickDrum() {
         meshRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.2)
         meshRef.current.rotation.y += 0.005
 
-        // Direct Interact
-        if (gestures.activeGesture === 'drag' && gestures.targetPosition && gestures.targetPosition.distanceTo(meshRef.current.position) < 2.5) {
-            const dy = gestures.currentPos.y - gestures.startPos.y
-            setParams('kick', { decay: THREE.MathUtils.clamp(useDrumStore.getState().kick.decay + dy * 0.01, 0.1, 1) })
+        // Direct Interact - read store directly to avoid re-renders during drag
+        const gestureState = useGestureStore.getState()
+        if (gestureState.activeGesture === 'drag' && gestureState.targetPosition && gestureState.targetPosition.distanceTo(meshRef.current.position) < 2.5) {
+            const dy = gestureState.currentPos.y - gestureState.startPos.y
+            // We use getState here to avoid stale closure or dependency on changing store values
+            const currentDecay = useDrumStore.getState().kick.decay
+            setParams('kick', { decay: THREE.MathUtils.clamp(currentDecay + dy * 0.01, 0.1, 1) })
         }
     })
 
@@ -87,9 +90,9 @@ function KickDrum() {
             </mesh>
         </group>
     )
-}
+})
 
-function SnareDrum() {
+const SnareDrum = memo(function SnareDrum() {
     const meshRef = useRef<THREE.Mesh>(null!)
     const bridge = useAudioVisualBridge()
 
@@ -115,9 +118,9 @@ function SnareDrum() {
             />
         </mesh>
     )
-}
+})
 
-function HiHatParticles() {
+const HiHatParticles = memo(function HiHatParticles() {
     const groupRef = useRef<THREE.Group>(null!)
     const bridge = useAudioVisualBridge()
 
@@ -138,18 +141,18 @@ function HiHatParticles() {
             ))}
         </group>
     )
-}
+})
 
 // --- Interactive Bjorklund Rings ---
 
-function InteractiveRing({ instrument, radius, color, yPos }: { instrument: 'kick' | 'snare' | 'hihat', radius: number, color: string, yPos: number }) {
+const InteractiveRing = memo(function InteractiveRing({ instrument, radius, color, yPos }: { instrument: 'kick' | 'snare' | 'hihat', radius: number, color: string, yPos: number }) {
     const steps = useDrumStore(s => s[instrument].steps)
     const pulses = useDrumStore(s => s[instrument].pulses)
-    const globalStep = useAudioStore(s => s.globalStep)
-    const currentStep = globalStep % steps
-
-    const [isHovered, setIsHovered] = useState(false)
+    
+    // Removed globalStep hook to prevent re-renders on every beat
     const groupRef = useRef<THREE.Group>(null!)
+    const meshRefs = useRef<(THREE.Mesh | null)[]>([])
+    const patternRef = useRef<boolean[]>([])
 
     // Pattern generation
     const pattern = useMemo(() => {
@@ -165,14 +168,33 @@ function InteractiveRing({ instrument, radius, color, yPos }: { instrument: 'kic
         return res
     }, [steps, pulses])
 
+    // Sync pattern to ref for useFrame usage
+    useEffect(() => {
+        patternRef.current = pattern
+        meshRefs.current = meshRefs.current.slice(0, steps)
+    }, [pattern, steps])
+
     useFrame((state) => {
         if (groupRef.current) {
             groupRef.current.rotation.y = state.clock.elapsedTime * 0.05 * (yPos === 0 ? 1 : yPos === -0.5 ? -1 : 0.5)
-            // Pulse on hit
-            if (currentStep !== -1) {
-                // Subtle user feedback could go here
-            }
         }
+
+        // Access global step directly from store
+        const globalStep = useAudioStore.getState().globalStep
+        const currentStep = globalStep % steps
+
+        // Update opacity of ring segments directly
+        meshRefs.current.forEach((mesh, i) => {
+            if (!mesh) return
+            const active = patternRef.current[i]
+            // Check for current step match
+            const isCurrent = Math.abs(currentStep - i) < 0.5
+            const targetOpacity = active ? (isCurrent ? 1 : 0.6) : 0.1
+            
+            const material = mesh.material as THREE.MeshBasicMaterial
+            // Smoothly interpolate opacity
+            material.opacity = THREE.MathUtils.lerp(material.opacity, targetOpacity, 0.2)
+        })
     })
 
     return (
@@ -188,15 +210,20 @@ function InteractiveRing({ instrument, radius, color, yPos }: { instrument: 'kic
             </mesh>
 
             {/* Active Steps */}
-            {pattern.map((active, i) => {
+            {pattern.map((_, i) => {
                 const angle = (i / steps) * Math.PI * 2
                 const arcLength = (Math.PI * 2) / steps * 0.5
                 return (
-                    <mesh key={i} rotation={[-Math.PI / 2, 0, angle]}>
+                    <mesh 
+                        key={i} 
+                        ref={(el) => (meshRefs.current[i] = el)}
+                        rotation={[-Math.PI / 2, 0, angle]}
+                    >
                         <ringGeometry args={[radius, radius + 0.1, 32, 1, 0, arcLength]} />
                         <meshBasicMaterial
                             color={color}
-                            transparent opacity={active ? ((Math.abs(currentStep - i) < 0.5) ? 1 : 0.6) : 0.1}
+                            transparent 
+                            opacity={0.1} // Initial opacity, updated in useFrame
                             side={THREE.DoubleSide}
                         />
                     </mesh>
@@ -204,13 +231,14 @@ function InteractiveRing({ instrument, radius, color, yPos }: { instrument: 'kic
             })}
         </group>
     )
-}
+})
 
 // --- Control Console ---
 
-function ChannelStrip({ instrument, xPos, color, label }: { instrument: 'kick' | 'snare' | 'hihat', xPos: number, color: string, label: string }) {
+const ChannelStrip = memo(function ChannelStrip({ instrument, xPos, color, label }: { instrument: 'kick' | 'snare' | 'hihat', xPos: number, color: string, label: string }) {
     const state = useDrumStore(s => s[instrument])
     const setParams = useDrumStore(s => s.setParams)
+    // Cast to any to avoid type complexity with dynamic key access
     const play = useDrumStore(s => s[`trigger${label}` as 'triggerKick' | 'triggerSnare' | 'triggerHiHat'])
 
     return (
@@ -260,9 +288,9 @@ function ChannelStrip({ instrument, xPos, color, label }: { instrument: 'kick' |
             />
         </group>
     )
-}
+})
 
-function ControlConsole() {
+const ControlConsole = memo(function ControlConsole() {
     return (
         <group position={[0, -3.5, 4]} rotation={[-Math.PI / 6, 0, 0]}>
             {/* Desk Base */}
@@ -275,9 +303,9 @@ function ControlConsole() {
             <ChannelStrip instrument="hihat" xPos={3.5} color="#ffff44" label="HiHat" />
         </group>
     )
-}
+})
 
-export function DrumMachine3D() {
+export const DrumMachine3D = memo(function DrumMachine3D() {
     return (
         <group position={SPATIAL_LAYOUT.drums.position}>
             {/* Visuals suspended above */}
@@ -300,4 +328,4 @@ export function DrumMachine3D() {
             </Text>
         </group>
     )
-}
+})

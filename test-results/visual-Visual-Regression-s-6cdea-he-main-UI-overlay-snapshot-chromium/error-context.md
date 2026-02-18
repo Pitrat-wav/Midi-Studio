@@ -1,0 +1,72 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - 'button "🙌 VISION: OFF" [ref=e6] [cursor=pointer]'
+    - 'button "🎙 MIC: OFF" [ref=e8] [cursor=pointer]'
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]: 🎨
+        - text: VISUAL THEMES
+      - generic [ref=e12]:
+        - button "DEFAULT" [ref=e13] [cursor=pointer]
+        - button "COSMIC" [ref=e14] [cursor=pointer]
+        - button "CYBER" [ref=e15] [cursor=pointer]
+        - button "PIXEL" [ref=e16] [cursor=pointer]
+      - button "🏔️ SOUTH PARK ROCK ❄️" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]: Click theme to apply • Drag panel to move
+  - generic [ref=e22]:
+    - generic [ref=e23]:
+      - button "⏸" [ref=e24] [cursor=pointer]
+      - generic [ref=e25]:
+        - generic [ref=e26]: BPM
+        - slider [ref=e27]: "128"
+        - generic [ref=e28]: "128"
+      - button "?" [ref=e29] [cursor=pointer]
+    - button "✕" [ref=e30] [cursor=pointer]
+  - button [ref=e32] [cursor=pointer]:
+    - img [ref=e33]
+  - generic [ref=e36]:
+    - button "🌌 All 0" [ref=e37] [cursor=pointer]:
+      - generic [ref=e38]: 🌌
+      - generic [ref=e39]: All
+      - generic [ref=e40]: "0"
+    - button "🥁 Drums 1" [ref=e41] [cursor=pointer]:
+      - generic [ref=e42]: 🥁
+      - generic [ref=e43]: Drums
+      - generic [ref=e44]: "1"
+    - button "🎸 Bass 2" [ref=e45] [cursor=pointer]:
+      - generic [ref=e46]: 🎸
+      - generic [ref=e47]: Bass
+      - generic [ref=e48]: "2"
+    - button "🎹 Synth 3" [ref=e49] [cursor=pointer]:
+      - generic [ref=e50]: 🎹
+      - generic [ref=e51]: Synth
+      - generic [ref=e52]: "3"
+    - button "☁️ Pads 4" [ref=e53] [cursor=pointer]:
+      - generic [ref=e54]: ☁️
+      - generic [ref=e55]: Pads
+      - generic [ref=e56]: "4"
+    - button "🎛️ Seq 5" [ref=e57] [cursor=pointer]:
+      - generic [ref=e58]: 🎛️
+      - generic [ref=e59]: Seq
+      - generic [ref=e60]: "5"
+    - button "☄️ Drone 6" [ref=e61] [cursor=pointer]:
+      - generic [ref=e62]: ☄️
+      - generic [ref=e63]: Drone
+      - generic [ref=e64]: "6"
+    - button "🕹️ Master 7" [ref=e65] [cursor=pointer]:
+      - generic [ref=e66]: 🕹️
+      - generic [ref=e67]: Master
+      - generic [ref=e68]: "7"
+    - button "🎚️ Sampler 8" [ref=e69] [cursor=pointer]:
+      - generic [ref=e70]: 🎚️
+      - generic [ref=e71]: Sampler
+      - generic [ref=e72]: "8"
+    - button "🧬 Buchla 9" [ref=e73] [cursor=pointer]:
+      - generic [ref=e74]: 🧬
+      - generic [ref=e75]: Buchla
+      - generic [ref=e76]: "9"
+  - button "🎮" [ref=e77] [cursor=pointer]
+```

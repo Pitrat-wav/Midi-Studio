@@ -12,11 +12,13 @@ import { useArrangementStore } from './arrangementStore'
 import sampleManifest from '../data/sampleManifest.json'
 import { SNAPSHOT_LIBRARY } from '../data/snapshotLibrary'
 import { audioTrackManager } from '../logic/AudioTrackManager'
+import { FX_PRESETS, FxSettings } from '../data/fxPresets'
 
 export interface MasterFXNodes {
     distortion: Tone.Distortion
     delay: Tone.FeedbackDelay
     reverb: Tone.Reverb
+    compressor: Tone.Compressor
     masterBus: Tone.Gain
     eqLow: Tone.Filter
     eqLowMid: Tone.Filter
@@ -54,7 +56,8 @@ export interface AudioState {
     fx: {
         reverb: { wet: number, decay: number },
         delay: { wet: number, feedback: number, delayTime: string },
-        distortion: { wet: number, amount: number }
+        distortion: { wet: number, amount: number },
+        compressor: { threshold: number, ratio: number, attack: number, release: number }
     }
     loadingStep: string
     mic: Tone.UserMedia | null
@@ -87,7 +90,8 @@ export interface AudioState {
     setSwing: (swing: number) => void
     setCurrentStep: (currentStep: number) => void
     setGlobalStep: (globalStep: number) => void
-    setFxParam: (effect: 'reverb' | 'delay' | 'distortion', params: Partial<{ wet: number, decay: number, feedback: number, amount: number, delayTime: string }>) => void
+    setFxParam: (effect: 'reverb' | 'delay' | 'distortion' | 'compressor', params: Partial<any>) => void
+    loadFxPreset: (presetName: string) => void
     panic: () => void
     dispose: () => void
     masterEQ: { low: number, lowMid: number, highMid: number, high: number }
@@ -125,7 +129,8 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     fx: {
         reverb: { wet: 0.3, decay: 1.5 },
         delay: { wet: 0.3, feedback: 0.3, delayTime: "8n" },
-        distortion: { wet: 0, amount: 0.4 }
+        distortion: { wet: 0, amount: 0.4 },
+        compressor: { threshold: -24, ratio: 2, attack: 0.01, release: 0.1 }
     },
     loadingStep: '',
     mic: null,
@@ -254,8 +259,15 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             const distortion = new Tone.Distortion(get().fx.distortion.amount)
             distortion.wet.value = get().fx.distortion.wet
 
-            // Update Master Chain: masterBus -> EQ -> Dist -> Destination
-            masterBus.chain(eqLow, eqLowMid, eqHighMid, eqHigh, distortion, Tone.getDestination())
+            const compressor = new Tone.Compressor({
+                threshold: get().fx.compressor.threshold,
+                ratio: get().fx.compressor.ratio,
+                attack: get().fx.compressor.attack,
+                release: get().fx.compressor.release
+            })
+
+            // Update Master Chain: masterBus -> EQ -> Compressor -> Dist -> Destination
+            masterBus.chain(eqLow, eqLowMid, eqHighMid, eqHigh, compressor, distortion, Tone.getDestination())
 
             // Initialize Microphone Chain
             // Mic -> Gate (remove background noise) -> Compressor (even levels) -> Gain -> MasterBus
@@ -268,7 +280,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             micGain.connect(channels['mic'])
 
             const masterFXNodes: MasterFXNodes = {
-                distortion, delay, reverb, masterBus,
+                distortion, delay, reverb, compressor, masterBus,
                 eqLow, eqLowMid, eqHighMid, eqHigh,
                 reverbBus, delayBus
             }
@@ -587,7 +599,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
     setGlobalStep: (globalStep: number) => set({ globalStep }),
 
-    setFxParam: (effect: 'reverb' | 'delay' | 'distortion', params: Partial<{ wet: number, decay: number, feedback: number, amount: number, delayTime: string }>) => {
+    setFxParam: (effect, params) => {
         set((state) => ({
             fx: {
                 ...state.fx,
@@ -599,16 +611,55 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         if (!nodes) return
 
         if (effect === 'reverb') {
-            if (params.wet !== undefined) nodes.reverb.wet.value = params.wet
+            if (params.wet !== undefined) nodes.reverb.wet.rampTo(params.wet, 0.1)
             if (params.decay !== undefined) nodes.reverb.decay = params.decay
         } else if (effect === 'delay') {
-            if (params.wet !== undefined) nodes.delay.wet.value = params.wet
-            if (params.feedback !== undefined) nodes.delay.feedback.value = params.feedback
+            if (params.wet !== undefined) nodes.delay.wet.rampTo(params.wet, 0.1)
+            if (params.feedback !== undefined) nodes.delay.feedback.rampTo(params.feedback, 0.1)
             if (params.delayTime !== undefined) nodes.delay.delayTime.value = params.delayTime
         } else if (effect === 'distortion') {
-            if (params.wet !== undefined) nodes.distortion.wet.value = params.wet
+            if (params.wet !== undefined) nodes.distortion.wet.rampTo(params.wet, 0.1)
             if (params.amount !== undefined) nodes.distortion.distortion = params.amount
+        } else if (effect === 'compressor') {
+            if (params.threshold !== undefined) nodes.compressor.threshold.rampTo(params.threshold, 0.1)
+            if (params.ratio !== undefined) nodes.compressor.ratio.rampTo(params.ratio, 0.1)
+            if (params.attack !== undefined) nodes.compressor.attack.rampTo(params.attack, 0.1)
+            if (params.release !== undefined) nodes.compressor.release.rampTo(params.release, 0.1)
         }
+    },
+
+    loadFxPreset: (presetName) => {
+        const preset = FX_PRESETS[presetName]
+        if (!preset) return
+
+        const nodes = get().masterFXNodes
+        set({
+            fx: preset,
+            masterEQ: preset.eq
+        })
+
+        if (!nodes) return
+
+        // Apply to Tone Nodes
+        nodes.reverb.wet.rampTo(preset.reverb.wet, 0.2)
+        nodes.reverb.decay = preset.reverb.decay
+
+        nodes.delay.wet.rampTo(preset.delay.wet, 0.2)
+        nodes.delay.feedback.rampTo(preset.delay.feedback, 0.2)
+        nodes.delay.delayTime.value = preset.delay.delayTime
+
+        nodes.distortion.wet.rampTo(preset.distortion.wet, 0.2)
+        nodes.distortion.distortion = preset.distortion.amount
+
+        nodes.compressor.threshold.rampTo(preset.compressor.threshold, 0.2)
+        nodes.compressor.ratio.rampTo(preset.compressor.ratio, 0.2)
+        nodes.compressor.attack.rampTo(preset.compressor.attack, 0.2)
+        nodes.compressor.release.rampTo(preset.compressor.release, 0.2)
+
+        nodes.eqLow.gain.rampTo(preset.eq.low, 0.2)
+        nodes.eqLowMid.gain.rampTo(preset.eq.lowMid, 0.2)
+        nodes.eqHighMid.gain.rampTo(preset.eq.highMid, 0.2)
+        nodes.eqHigh.gain.rampTo(preset.eq.high, 0.2)
     },
 
     panic: () => {
@@ -654,6 +705,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             nodes.distortion.dispose()
             nodes.delay.dispose()
             nodes.reverb.dispose()
+            nodes.compressor.dispose()
             nodes.masterBus.dispose()
             if (nodes.sidechainNodes) {
                 Object.values(nodes.sidechainNodes).forEach((n: any) => n.dispose?.())

@@ -3,6 +3,7 @@ import cors from 'cors'
 import { Telegraf } from 'telegraf'
 import crypto from 'crypto'
 import path from 'path'
+import db from './db'
 
 // В продакшене используйте переменные окружения
 const BOT_TOKEN = process.env.BOT_TOKEN
@@ -138,6 +139,60 @@ app.post('/upload-midi', async (req: Request, res: Response) => {
         res.status(500).send({ error: 'Не удалось отправить MIDI' })
     }
 })
+
+// --- Project API Endpoints ---
+
+// List projects (Leaderboard)
+app.get('/api/projects', (req: Request, res: Response) => {
+    try {
+        const limit = parseInt(req.query.limit as string) || 20;
+        const offset = parseInt(req.query.offset as string) || 0;
+        const projects = db.getProjects.all(limit, offset);
+        res.json(projects);
+    } catch (e) {
+        console.error('Failed to list projects', e);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get single project
+app.get('/api/projects/:id', (req: Request, res: Response) => {
+    try {
+        const project = db.getProjectById.get(req.params.id);
+        if (!project) return res.status(404).json({ error: 'Project not found' });
+        res.json(project);
+    } catch (e) {
+        console.error('Failed to get project', e);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Create/Share project
+app.post('/api/projects', (req: Request, res: Response) => {
+    try {
+        const { name, author, data, parent_id } = req.body;
+        if (!name || !data) return res.status(400).json({ error: 'Name and Data required' });
+        
+        const result = db.insertProject.run(name, author || 'Anonymous', JSON.stringify(data), parent_id || null);
+        res.json({ success: true, id: result.lastInsertRowid });
+    } catch (e) {
+        console.error('Failed to save project', e);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Like project
+app.post('/api/projects/:id/like', (req: Request, res: Response) => {
+    try {
+        const result = db.incrementLikes.run(req.params.id);
+        if (result.changes === 0) return res.status(404).json({ error: 'Project not found' });
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Failed to like project', e);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 
 const PORT = (process as any).env.PORT || 3001
 app.listen(PORT, () => console.log(`Backend MIDI server running on port ${PORT}`))

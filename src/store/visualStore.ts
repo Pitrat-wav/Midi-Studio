@@ -198,7 +198,7 @@ export const VISUALIZER_REGISTRY = [
 export type InstrumentType = 'drums' | 'bass' | 'harmony' | 'sequencer' | 'pads' | 'drone' | 'master' | 'mixer' | 'keyboard' | 'ml185' | 'snake' | 'sampler' | 'buchla'
 export type PerformanceMode = 'low' | 'medium' | 'high' | 'ultra'
 export type AestheticTheme = 'none' | 'cosmic' | 'cyber' | 'pixel' | 'southpark'
-export type AppView = '3D' | 'NODES' | 'LIVE' | 'ARRANGE' | 'VISUALIZER'
+export type AppView = '3D' | 'NODES' | 'LIVE' | 'ARRANGE' | 'VISUALIZER' | 'SOCIAL'
 
 export interface EnvironmentConditions {
     temperature: number // Celsius
@@ -435,7 +435,7 @@ export const useVisualStore = create<VisualState>((set) => ({
     }),
     setAppView: (view) => set({ appView: view }),
     cycleView: () => set((state) => {
-        const views: AppView[] = ['3D', 'NODES', 'LIVE', 'ARRANGE', 'VISUALIZER']
+        const views: AppView[] = ['3D', 'NODES', 'LIVE', 'ARRANGE', 'VISUALIZER', 'SOCIAL']
         const currentIndex = views.indexOf(state.appView)
         const nextIndex = (currentIndex + 1) % views.length
         return { appView: views[nextIndex] }

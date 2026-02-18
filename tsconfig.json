@@ -19,7 +19,6 @@
         "isolatedModules": true,
         "allowImportingTsExtensions": true,
         "noEmit": true,
-        "allowImportingTsExtensions": true,
         "jsx": "react-jsx",
         "baseUrl": ".",
         "paths": {

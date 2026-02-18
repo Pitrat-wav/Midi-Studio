@@ -45,6 +45,7 @@ import { VisualEngine } from './components/VisualEngine/VisualEngine'
 import { launchControlXL } from './lib/controllers/LaunchControlXL'
 import { VisualizerShop } from './components/VisualEngine/VisualizerShop'
 import { TerminalOverlay } from './components/HUD/TerminalOverlay'
+import { SocialHub } from './components/HUD/SocialHub'
 import './App.css'
 
 function App() {
@@ -149,6 +150,8 @@ function App() {
         }
     }, [isInitialized, isPlaying])
 
+    const toggleGamepadHelp = useVisualStore(s => s.toggleGamepadHelp)
+
     if (!isInitialized) {
         return (
             <div className="init-screen">
@@ -177,8 +180,6 @@ function App() {
             </div>
         )
     }
-
-    const toggleGamepadHelp = useVisualStore(s => s.toggleGamepadHelp)
 
     return (
         <ErrorBoundary>
@@ -264,6 +265,9 @@ function App() {
                 {/* Arrangement Timeline Editor */}
                 {activeView === 'ARRANGE' && <ArrangementEditor onClose={() => cycleView()} />}
 
+                {/* Social Hub */}
+                {activeView === 'SOCIAL' && <SocialHub />}
+
                 {/* AI Generation Tools */}
                 <AIPanel />
 
@@ -273,7 +277,7 @@ function App() {
                 <VisualizerShop />
 
                 {/* Instrument Navigation Bar (Holographic Quick-Bar) */}
-                {activeView !== 'NODES' && activeView !== 'ARRANGE' && activeView !== 'LIVE' && (
+                {activeView !== 'NODES' && activeView !== 'ARRANGE' && activeView !== 'LIVE' && activeView !== 'SOCIAL' && (
                     <InstrumentNavigation
                         currentInstrument={focusedInstrument}
                         onSelect={setFocusedInstrument}

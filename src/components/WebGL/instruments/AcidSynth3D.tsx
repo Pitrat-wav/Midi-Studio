@@ -2,7 +2,7 @@
  * AcidSynth3D — Premium "Glossy Magazine" Edition
  */
 
-import { useRef } from 'react'
+import { useRef, memo, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text, Float, MeshDistortMaterial, ContactShadows } from '@react-three/drei'
 import * as THREE from 'three'
@@ -12,29 +12,28 @@ import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
 import { useGestureStore } from '../../../logic/GestureManager'
 import { GenerativeKnob3D } from '../GenerativeKnob3D'
 
-export function AcidSynth3D() {
+// Separate component for the heavy visual part (Sphere, Chassis, Lights)
+// This component does NOT subscribe to reactive store updates, preventing re-renders.
+// It uses useFrame + getState() for 60fps updates.
+const LiquidCore = memo(() => {
     const meshRef = useRef<THREE.Mesh>(null!)
     const matRef = useRef<any>(null!)
 
-    // Subscribe to state changes for UI updates
-    const isPlaying = useBassStore(s => s.isPlaying)
-    const cutoff = useBassStore(s => s.cutoff)
-    const resonance = useBassStore(s => s.resonance)
-    const distortion = useBassStore(s => s.distortion)
-    
-    const setParams = useBassStore(s => s.setParams)
-    const togglePlay = useBassStore(s => s.togglePlay)
-    
     // Local refs for gesture logic
     const isDragging = useRef(false)
     const initialParams = useRef({ cutoff: 400, resonance: 1 })
+    
+    // Access gesture store for binding
+    const gestures = useGestureStore()
+    const setParams = useBassStore(s => s.setParams)
 
     useFrame((state) => {
         if (!meshRef.current) return
         
         // Access stores non-reactively for 60fps logic
         const bassState = useBassStore.getState()
-        const gestures = useGestureStore.getState()
+        const gestureState = useGestureStore.getState()
+        const isPlaying = bassState.isPlaying
 
         // Sync liquid movement with music
         const speedMultiplier = isPlaying ? 1 : 0.2
@@ -47,16 +46,12 @@ export function AcidSynth3D() {
         }
 
         // Gesture interaction (Sphere Drag)
-        // Check if drag is active and target is close to this mesh
-        // Note: Using world distance is a heuristic; ideally we'd check if targetPosition IS this mesh's position from onStart
-        // But onStart gives intersection point.
-        const isTarget = gestures.activeGesture === 'drag' && 
-                         gestures.targetPosition && 
-                         gestures.targetPosition.distanceTo(meshRef.current.position) < 3
+        const isTarget = gestureState.activeGesture === 'drag' && 
+                         gestureState.targetPosition && 
+                         gestureState.targetPosition.distanceTo(meshRef.current.position) < 3
 
         if (isTarget) {
             if (!isDragging.current) {
-                // Initialize drag state
                 isDragging.current = true
                 initialParams.current = { 
                     cutoff: bassState.cutoff, 
@@ -64,19 +59,15 @@ export function AcidSynth3D() {
                 }
             }
 
-            // Calculate delta from start position
-            // scale factors: dy * 50 for freq, dx * 0.5 for resonance
-            const dy = gestures.currentPos.y - gestures.startPos.y
-            const dx = gestures.currentPos.x - gestures.startPos.x
+            const dy = gestureState.currentPos.y - gestureState.startPos.y
+            const dx = gestureState.currentPos.x - gestureState.startPos.x
             
             const newCutoff = THREE.MathUtils.clamp(initialParams.current.cutoff - dy * 50, 50, 10000)
             const newRes = THREE.MathUtils.clamp(initialParams.current.resonance + dx * 0.5, 0.1, 20)
             
-            // Update store
             setParams({ cutoff: newCutoff, resonance: newRes })
         } else {
-            // Reset drag state if gesture ended or changed
-            if (isDragging.current && gestures.activeGesture !== 'drag') {
+            if (isDragging.current && gestureState.activeGesture !== 'drag') {
                 isDragging.current = false
             }
         }
@@ -84,11 +75,8 @@ export function AcidSynth3D() {
         meshRef.current.rotation.y = state.clock.elapsedTime * 0.1
     })
 
-    // Access gesture store for onStart binding in JSX (hook usage is fine here for event handlers)
-    const gestures = useGestureStore()
-
     return (
-        <group position={SPATIAL_LAYOUT.bass.position}>
+        <>
             {/* Glossy Studio lighting */}
             <spotLight position={[5, 5, 5]} intensity={50} angle={0.3} penumbra={1} castShadow color="#ffffff" />
             <spotLight position={[-5, 5, 5]} intensity={30} angle={0.2} penumbra={1} color="#3390ec" />
@@ -148,8 +136,22 @@ export function AcidSynth3D() {
             >
                 THE LIQUID BASS CORE — NO. 04
             </Text>
+        </>
+    )
+})
 
-            {/* Knobs / Regulators */}
+// Separate component for Controls to isolate re-renders
+const AcidControls = memo(() => {
+    const cutoff = useBassStore(s => s.cutoff)
+    const resonance = useBassStore(s => s.resonance)
+    const distortion = useBassStore(s => s.distortion)
+    const isPlaying = useBassStore(s => s.isPlaying)
+    
+    const setParams = useBassStore(s => s.setParams)
+    const togglePlay = useBassStore(s => s.togglePlay)
+
+    return (
+        <>
             <group position={[0, -0.5, 2.2]}>
                 <GenerativeKnob3D
                     position={[-1.5, 0, 0]}
@@ -188,8 +190,16 @@ export function AcidSynth3D() {
                 color="#ffffff"
                 size={0.6}
             />
+        </>
+    )
+})
 
+export const AcidSynth3D = memo(function AcidSynth3D() {
+    return (
+        <group position={SPATIAL_LAYOUT.bass.position}>
+            <LiquidCore />
+            <AcidControls />
             <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={10} blur={2} far={4} />
         </group>
     )
-}
+})

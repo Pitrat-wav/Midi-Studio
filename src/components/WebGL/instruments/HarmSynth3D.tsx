@@ -8,7 +8,7 @@
  * - Futuristic glass-rack aesthetic
  */
 
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, memo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text, Float } from '@react-three/drei'
 import { WhiskMaterial } from '../WhiskMaterial'
@@ -21,16 +21,23 @@ import { SPATIAL_LAYOUT } from '../../../lib/SpatialLayout'
 import { useGestureStore } from '../../../logic/GestureManager'
 import { audioReactiveVertexShader, fresnelFragmentShader } from '../../../shaders/audioReactive.glsl'
 
-function WavefoldingVisual({ position, timbre, order, harmonics, active, onGesture }: {
+// Separate component for Wavefolding Visual to isolate re-renders and logic
+const WavefoldingVisual = memo(function WavefoldingVisual({ position, onGesture }: {
     position: [number, number, number],
-    timbre: number,
-    order: number,
-    harmonics: number,
-    active: boolean,
     onGesture: (e: any) => void
 }) {
     const meshRef = useRef<THREE.Mesh>(null!)
     const theme = useVisualStore(s => s.aestheticTheme)
+    
+    // Subscribe to low-frequency changes for geometry updates
+    const order = useHarmStore(s => s.complexOrder)
+    const harmonics = useHarmStore(s => s.complexHarmonics)
+    const active = useHarmStore(s => s.complexMode)
+
+    // Memoize geometry args to prevent regeneration when other props change
+    const geometryArgs = useMemo(() => {
+        return [0.8, 0.3, 128, 32, Math.floor(2 + order * 3), Math.floor(3 + harmonics * 5)]
+    }, [order, harmonics])
 
     const uniforms = useMemo(() => ({
         uTime: { value: 0 },
@@ -43,6 +50,11 @@ function WavefoldingVisual({ position, timbre, order, harmonics, active, onGestu
 
     useFrame((state) => {
         if (!meshRef.current) return
+        
+        // Read high-frequency data directly from store to avoid re-renders
+        const harmState = useHarmStore.getState()
+        const timbre = harmState.complexTimbre
+        
         uniforms.uTime.value = state.clock.elapsedTime
         uniforms.uAudioIntensity.value = active ? 0.5 + timbre : 0.1
         uniforms.uPitch.value = timbre
@@ -58,7 +70,7 @@ function WavefoldingVisual({ position, timbre, order, harmonics, active, onGestu
             <mesh ref={meshRef} onPointerDown={onGesture}>
                 {theme === 'none' ? (
                     <>
-                        <torusKnotGeometry args={[0.8, 0.3, 128, 32, Math.floor(2 + order * 3), Math.floor(3 + harmonics * 5)]} />
+                        <torusKnotGeometry args={geometryArgs as any} />
                         <shaderMaterial
                             vertexShader={audioReactiveVertexShader}
                             fragmentShader={fresnelFragmentShader}
@@ -70,8 +82,8 @@ function WavefoldingVisual({ position, timbre, order, harmonics, active, onGestu
                         <icosahedronGeometry args={[1.2, 4]} />
                         <WhiskMaterial
                             baseColor="#ffffff"
-                            distort={0.4 + timbre * 0.4}
-                            speed={2 + harmonics * 5}
+                            // Note: WhiskMaterial currently ignores distort/speed if theme is active
+                            // We keep them for potential future support or fallback
                             emissive={theme === 'cosmic' ? "#ff00ff" : "#00ff88"}
                         />
                     </>
@@ -82,20 +94,15 @@ function WavefoldingVisual({ position, timbre, order, harmonics, active, onGestu
             </Text>
         </group>
     )
-}
+})
 
-export function HarmSynth3D() {
+export const HarmSynth3D = memo(function HarmSynth3D() {
     const isPlaying = useHarmStore(s => s.isPlaying)
     const setParam = useHarmStore(s => s.setParam)
     const togglePlay = useHarmStore(s => s.togglePlay)
-
-    // Complex params for WavefoldingVisual (Atomic selectors for simple ones)
-    const complexTimbre = useHarmStore(s => s.complexTimbre)
-    const complexOrder = useHarmStore(s => s.complexOrder)
-    const complexHarmonics = useHarmStore(s => s.complexHarmonics)
+    
+    // Low frequency subscriptions for UI toggles
     const complexMode = useHarmStore(s => s.complexMode)
-
-    // OSC Toggles (Atomic)
     const osc1Enabled = useHarmStore(s => s.osc1Enabled)
     const osc2Enabled = useHarmStore(s => s.osc2Enabled)
     const osc3Enabled = useHarmStore(s => s.osc3Enabled)
@@ -104,6 +111,9 @@ export function HarmSynth3D() {
     const layout = SPATIAL_LAYOUT.harmony.position
 
     useFrame(() => {
+        // Drag logic updates the store, but this component doesn't subscribe to the updated values
+        // (timbre, fmIndex) so it won't re-render 60fps.
+        // WavefoldingVisual reads them via getState().
         if (gestures.activeGesture === 'drag' && gestures.targetPosition && gestures.targetPosition.distanceTo(new THREE.Vector3(...layout)) < 5) {
             const dx = gestures.currentPos.x - gestures.startPos.x
             const dy = gestures.currentPos.y - gestures.startPos.y
@@ -119,10 +129,7 @@ export function HarmSynth3D() {
 
     // Group controls logically
     const buchlaPos: [number, number, number] = [layout[0], layout[1] + 2, layout[2]]
-    const osc1Pos: [number, number, number] = [layout[0] - 3, layout[1], layout[2]]
-    const osc2Pos: [number, number, number] = [layout[0], layout[1], layout[2]]
-    const osc3Pos: [number, number, number] = [layout[0] + 3, layout[1], layout[2]]
-
+    
     return (
         <group position={layout}>
             {/* Background glowing panel */}
@@ -141,17 +148,11 @@ export function HarmSynth3D() {
             <group position={[0, 3, 0]}>
                 <WavefoldingVisual
                     position={[0, 0, 0]}
-                    timbre={complexTimbre}
-                    order={complexOrder}
-                    harmonics={complexHarmonics}
-                    active={complexMode}
                     onGesture={(e) => {
                         e.stopPropagation()
                         gestures.onStart(e.clientX, e.clientY, e.point, e.pointerId)
                     }}
                 />
-
-                {/* Direct Modulation Logic handled in main useFrame */}
 
                 <Button3D
                     label="COMPLEX"
@@ -210,4 +211,4 @@ export function HarmSynth3D() {
             </Text>
         </group>
     )
-}
+})
