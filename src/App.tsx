@@ -293,15 +293,15 @@ function App() {
                 </button>
 
                 {/* 2D HUDs */}
-                {focusedInstrument === 'bass' && <BassScreen />}
-                {focusedInstrument === 'drums' && <DrumsScreen />}
-                {focusedInstrument === 'sampler' && <SamplerScreen />}
-                {focusedInstrument === 'harmony' && <HarmonyScreen />}
-                {focusedInstrument === 'buchla' && <Buchla259Screen />}
-                {focusedInstrument === 'pads' && <PadsScreen />}
-                {(focusedInstrument === 'sequencer' || focusedInstrument === 'ml185') && <SequencerScreen />}
-                {focusedInstrument === 'drone' && <DroneScreen />}
-                {focusedInstrument === 'master' && <MasterScreen />}
+                {focusedInstrument === 'bass' && <BassScreen key="bass" />}
+                {focusedInstrument === 'drums' && <DrumsScreen key="drums" />}
+                {focusedInstrument === 'sampler' && <SamplerScreen key="sampler" />}
+                {focusedInstrument === 'harmony' && <HarmonyScreen key="harmony" />}
+                {focusedInstrument === 'buchla' && <Buchla259Screen key="buchla" />}
+                {focusedInstrument === 'pads' && <PadsScreen key="pads" />}
+                {(focusedInstrument === 'sequencer' || focusedInstrument === 'ml185') && <SequencerScreen key="sequencer" />}
+                {focusedInstrument === 'drone' && <DroneScreen key="drone" />}
+                {focusedInstrument === 'master' && <MasterScreen key="master" />}
 
                 {/* Live Coding Terminal */}
                 <TerminalOverlay />

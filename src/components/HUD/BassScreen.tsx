@@ -1,12 +1,14 @@
 import React from 'react'
 import { useBassStore, useHarmonyStore, ROOTS, SCALES } from '../../store/instrumentStore'
 import { useVisualStore } from '../../store/visualStore'
+import { StudioScreen, StudioKnob, StudioButton, StudioDisplay, StudioSlider } from './StudioScreen'
 import './BassScreen.css'
 
 export const BassScreen: React.FC = () => {
     const store = useBassStore()
     const harmony = useHarmonyStore()
     const setFocusedInstrument = useVisualStore(s => s.setFocusInstrument)
+    const handleClose = () => setFocusedInstrument(null)
 
     const toggleStepParam = (index: number, field: 'active' | 'accent' | 'slide') => {
         const newPattern = [...store.pattern]
@@ -16,68 +18,151 @@ export const BassScreen: React.FC = () => {
     }
 
     return (
-        <div className="magazine-hud">
-            <div className="magazine-container">
-                {/* Hero Section */}
-                <header className="magazine-hero">
-                    <div>
-                        <div className="magazine-subtitle">The Premium Audio Series</div>
-                        <h1 className="magazine-title">Pure Bass</h1>
+        <StudioScreen
+            title="Acid Bass Engine"
+            subtitle={store.activeInstrument === 'acid' ? 'TB-303 Liquid' : 'FM Metallic'}
+            onClose={handleClose}
+            ledColor="blue"
+            className="bass-screen-studio"
+        >
+            <div className="bass-screen-content">
+                {/* Top Controls */}
+                <div className="bass-top-controls">
+                    <div className="engine-selector">
+                        <StudioButton
+                            label="ACID"
+                            onClick={() => store.setInstrument('acid')}
+                            active={store.activeInstrument === 'acid'}
+                        />
+                        <StudioButton
+                            label="FM"
+                            onClick={() => store.setInstrument('fm')}
+                            active={store.activeInstrument === 'fm'}
+                        />
                     </div>
-                    <button className="magazine-button" onClick={() => setFocusedInstrument(null)}>Close [✕]</button>
-                </header>
 
-                <div className="magazine-layout">
-                    {/* Left Column: Core Selection & Stats */}
-                    <aside className="magazine-column-left">
-                        <div className="parameter-display">
-                            <div className="parameter-label">Engine Selection</div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <button
-                                    className={`magazine-button ${store.activeInstrument === 'acid' ? 'active' : ''}`}
-                                    onClick={() => store.setInstrument('acid')}
-                                >
-                                    ACID LIQUID
-                                </button>
-                                <button
-                                    className={`magazine-button ${store.activeInstrument === 'fm' ? 'active' : ''}`}
-                                    onClick={() => store.setInstrument('fm')}
-                                >
-                                    FM METALLIC
-                                </button>
-                            </div>
-                        </div>
+                    <StudioDisplay
+                        value={store.activeInstrument === 'acid' ? 'LIQUID' : 'METAL'}
+                        color="blue"
+                        size="small"
+                    />
+                </div>
 
-                        <div className="parameter-display">
-                            <div className="parameter-label">Global Harmony</div>
-                            <div style={{ display: 'flex', gap: '20px' }}>
-                                <div style={{ flex: 1 }}>
-                                    <div className="parameter-label" style={{ fontSize: '8px' }}>Tonal Root</div>
-                                    <select
-                                        className="magazine-button"
-                                        style={{ width: '100%', appearance: 'none', background: '#000', textAlign: 'center' }}
-                                        value={harmony.root}
-                                        onChange={(e) => harmony.setRoot(e.target.value)}
-                                    >
-                                        {ROOTS.map(r => <option key={r} value={r}>{r}</option>)}
-                                    </select>
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div className="parameter-label" style={{ fontSize: '8px' }}>Musical Scale</div>
-                                    <select
-                                        className="magazine-button"
-                                        style={{ width: '100%', appearance: 'none', background: '#000', textAlign: 'center' }}
-                                        value={harmony.scale}
-                                        onChange={(e) => harmony.setScale(e.target.value as any)}
-                                    >
-                                        {SCALES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+                {/* Main Controls Grid */}
+                <div className="bass-controls-grid">
+                    {store.activeInstrument === 'acid' ? (
+                        <>
+                            <StudioKnob
+                                label="Cutoff"
+                                value={store.cutoff}
+                                min={0}
+                                max={100}
+                                onChange={(v) => store.setCutoff(v)}
+                                color="blue"
+                            />
+                            <StudioKnob
+                                label="Resonance"
+                                value={store.resonance}
+                                min={0}
+                                max={100}
+                                onChange={(v) => store.setResonance(v)}
+                                color="blue"
+                            />
+                            <StudioKnob
+                                label="Accent"
+                                value={store.accent}
+                                min={0}
+                                max={100}
+                                onChange={(v) => store.setAccent(v)}
+                                color="blue"
+                            />
+                            <StudioKnob
+                                label="Decay"
+                                value={store.decay}
+                                min={0}
+                                max={100}
+                                onChange={(v) => store.setDecay(v)}
+                                color="blue"
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <StudioKnob
+                                label="Modulator"
+                                value={store.fmMod}
+                                min={0}
+                                max={100}
+                                onChange={(v) => store.setFmMod(v)}
+                                color="blue"
+                            />
+                            <StudioKnob
+                                label="Ratio"
+                                value={store.fmRatio}
+                                min={0}
+                                max={100}
+                                onChange={(v) => store.setFmRatio(v)}
+                                color="blue"
+                            />
+                            <StudioKnob
+                                label="Feedback"
+                                value={store.fmFeedback}
+                                min={0}
+                                max={100}
+                                onChange={(v) => store.setFmFeedback(v)}
+                                color="blue"
+                            />
+                            <StudioKnob
+                                label="Level"
+                                value={store.level}
+                                min={0}
+                                max={100}
+                                onChange={(v) => store.setLevel(v)}
+                                color="blue"
+                            />
+                        </>
+                    )}
+                </div>
 
-                        <div className="parameter-display" style={{ marginTop: 'auto' }}>
-                            <div className="parameter-label">Status</div>
+                {/* Harmony Section */}
+                <div className="bass-harmony-section">
+                    <div className="harmony-controls">
+                        <label>Root</label>
+                        <select
+                            value={harmony.root}
+                            onChange={(e) => harmony.setRoot(e.target.value)}
+                            className="studio-select"
+                        >
+                            {ROOTS.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                    </div>
+                    <div className="harmony-controls">
+                        <label>Scale</label>
+                        <select
+                            value={harmony.scale}
+                            onChange={(e) => harmony.setScale(e.target.value as any)}
+                            className="studio-select"
+                        >
+                            {SCALES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
+                        </select>
+                    </div>
+                </div>
+
+                {/* Pattern Editor */}
+                <div className="bass-pattern-editor">
+                    <div className="pattern-steps">
+                        {store.pattern.map((step, i) => (
+                            <button
+                                key={i}
+                                className={`pattern-step ${step?.active ? 'active' : ''}`}
+                                onClick={() => toggleStepParam(i, 'active')}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </StudioScreen>
+    )
+}
                             <div className="parameter-value-large" style={{ fontSize: '1rem' }}>
                                 {store.activeInstrument === 'acid' ? 'LIQUID CRYSTAL ACTIVE' : 'FERRO-FLUID METALLIC'}
                             </div>
