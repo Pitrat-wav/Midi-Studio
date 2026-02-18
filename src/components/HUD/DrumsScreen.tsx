@@ -1,6 +1,13 @@
+/**
+ * DrumsScreen.tsx — TR-808/909 Style Drum Machine
+ * Studio 2026 Redesign
+ */
+
 import React from 'react'
 import { useDrumStore } from '../../store/instrumentStore'
 import { useVisualStore } from '../../store/visualStore'
+import { StudioScreen, StudioKnob, StudioButton, StudioDisplay } from './StudioScreen'
+import './DrumsScreen.css'
 
 export const DrumsScreen: React.FC = () => {
     const store = useDrumStore()
@@ -15,118 +22,136 @@ export const DrumsScreen: React.FC = () => {
         { id: 'ride', label: 'Ride', color: '#44ffff' }
     ] as const
 
-    const handleParamChange = (drum: any, field: string, value: number | boolean) => {
-        store.setParams(drum, { [field]: value })
+    const handleParamChange = (drum: typeof DRUMS[number]['id'] | string, field: string, value: number | boolean) => {
+        store.setParams(drum as any, { [field]: value })
     }
 
     const [selectedDrum, setSelectedDrum] = React.useState<string>('kick')
+    const handleClose = () => setFocusedInstrument(null)
 
     return (
-        <div className={`drums-screen hud-window hardware-panel kit-${store.kit}`}>
-            {/* ... rest of the existing JSX ... */}
-
-
-            {/* WOOD/PLASTIC SIDES */}
-            <div className="side-panel left" />
-            <div className="side-panel right" />
-
-            <div className="panel-content">
-                <div className="panel-header">
-                    <div className="branding">
-                        <span className="sub-brand">{store.kit === '808' ? 'Computer Composer' : 'Digital Drum System'}</span>
-                        <h1>{store.kit === '808' ? 'Rhythm Composer TR-808' : 'Rhythm Composer TR-909'}</h1>
+        <StudioScreen
+            title="TR Rhythm Composer"
+            subtitle={store.kit === '808' ? 'TR-808 Analog' : 'TR-909 Digital'}
+            onClose={handleClose}
+            ledColor="amber"
+            className="drums-screen-studio"
+        >
+            <div className="drums-screen-content">
+                {/* Top Controls */}
+                <div className="drums-top-controls">
+                    <div className="kit-selector">
+                        <StudioButton
+                            label="808"
+                            onClick={() => store.setKit('808')}
+                            active={store.kit === '808'}
+                        />
+                        <StudioButton
+                            label="909"
+                            onClick={() => store.setKit('909')}
+                            active={store.kit === '909'}
+                        />
                     </div>
-                    <div className="master-controls">
-                        <div className="master-knob">
-                            <label>VOLUME</label>
-                            <div className="knob-cap" />
-                        </div>
-                        <div className="kit-selectors">
-                            <button className={store.kit === '808' ? 'active' : ''} onClick={() => store.setKit('808')}>808</button>
-                            <button className={store.kit === '909' ? 'active' : ''} onClick={() => store.setKit('909')}>909</button>
-                        </div>
-                        <button className={`start-stop ${store.isPlaying ? 'playing' : ''}`} onClick={store.togglePlay}>
-                            {store.isPlaying ? 'STOP' : 'START'}
-                        </button>
-                        <button className="power-btn" onClick={() => setFocusedInstrument(null)}>OFF</button>
-                    </div>
+                    
+                    <StudioDisplay
+                        value={store.isPlaying ? 'PLAY' : 'STOP'}
+                        color={store.isPlaying ? 'green' : 'amber'}
+                        size="small"
+                    />
+                    
+                    <StudioButton
+                        label={store.isPlaying ? 'STOP' : 'START'}
+                        onClick={store.togglePlay}
+                        active={store.isPlaying}
+                        danger={!store.isPlaying}
+                    />
                 </div>
 
-                <div className="panel-control-bay">
+                {/* Drum Pads Grid */}
+                <div className="drum-pads-grid">
                     {DRUMS.map((d) => {
                         const drumState = (store as any)[d.id]
                         const isSelected = selectedDrum === d.id
+                        
                         return (
                             <div
                                 key={d.id}
-                                className={`inst-section ${isSelected ? 'selected' : ''}`}
+                                className={`drum-pad ${isSelected ? 'selected' : ''}`}
                                 onClick={() => setSelectedDrum(d.id)}
                             >
-                                <span className="inst-label">{d.label.toUpperCase()}</span>
-                                <div className="knobs-row">
-                                    <div className="hw-knob">
-                                        <label>PITCH</label>
-                                        <input
-                                            type="range" min="0" max="1" step="0.01"
-                                            value={drumState.pitch}
-                                            onChange={(e) => handleParamChange(d.id, 'pitch', parseFloat(e.target.value))}
+                                <div 
+                                    className="drum-pad-surface"
+                                    style={{ 
+                                        '--pad-color': d.color 
+                                    } as React.CSSProperties}
+                                />
+                                <span className="drum-pad-label">{d.label}</span>
+                                
+                                {isSelected && (
+                                    <div className="drum-pad-controls">
+                                        <StudioKnob
+                                            label="Level"
+                                            value={drumState?.level || 50}
+                                            min={0}
+                                            max={100}
+                                            onChange={(v) => handleParamChange(d.id, 'level', v)}
+                                            color="amber"
+                                            size="small"
+                                        />
+                                        <StudioKnob
+                                            label="Tune"
+                                            value={drumState?.tune || 50}
+                                            min={0}
+                                            max={100}
+                                            onChange={(v) => handleParamChange(d.id, 'tune', v)}
+                                            color="amber"
+                                            size="small"
                                         />
                                     </div>
-                                    <div className="hw-knob">
-                                        <label>DECAY</label>
-                                        <input
-                                            type="range" min="0.01" max="1" step="0.01"
-                                            value={drumState.decay}
-                                            onChange={(e) => handleParamChange(d.id, 'decay', parseFloat(e.target.value))}
-                                        />
-                                    </div>
-                                    <div className="hw-knob">
-                                        <label>LEVEL</label>
-                                        <input
-                                            type="range" min="-60" max="6" step="1"
-                                            value={drumState.volume}
-                                            onChange={(e) => handleParamChange(d.id, 'volume', parseFloat(e.target.value))}
-                                        />
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         )
                     })}
                 </div>
 
-                <div className="panel-sequencer-strip">
-                    <div className="seq-info">
+                {/* Step Sequencer */}
+                <div className="drum-sequencer">
+                    <div className="sequencer-header">
                         <span>EDITING: {selectedDrum.toUpperCase()}</span>
-                        <div className="seq-params">
+                        <div className="sequencer-params">
                             <label>STEPS</label>
                             <input
-                                type="number" min="1" max="32"
-                                value={(store as any)[selectedDrum].steps}
+                                type="number" 
+                                min="1" 
+                                max="32"
+                                value={(store as any)[selectedDrum]?.steps || 16}
                                 onChange={(e) => handleParamChange(selectedDrum, 'steps', parseInt(e.target.value))}
                             />
                             <label>PULSES</label>
                             <input
-                                type="number" min="0" max={(store as any)[selectedDrum].steps}
-                                value={(store as any)[selectedDrum].pulses}
+                                type="number" 
+                                min="0" 
+                                max={(store as any)[selectedDrum]?.steps || 16}
+                                value={(store as any)[selectedDrum]?.pulses || 4}
                                 onChange={(e) => handleParamChange(selectedDrum, 'pulses', parseInt(e.target.value))}
                             />
                         </div>
                     </div>
-                    <div className="step-buttons">
-                        {store.activePatterns[selectedDrum as keyof typeof store.activePatterns]?.map((active: boolean, i: number) => (
-                            <div
-                                key={i}
-                                className={`hw-step ${active ? 'active' : ''}`}
-                                onClick={() => store.toggleStep(selectedDrum as any, i)}
-                                style={{ cursor: 'pointer' }}
-                            >
-                                <div className="led" />
-                                <div className="btn-cap" />
-                            </div>
-                        ))}
+                    
+                    <div className="sequencer-steps">
+                        {Array.from({ length: 16 }).map((_, i) => {
+                            const active = (store as any).activePatterns[selectedDrum]?.[i]
+                            return (
+                                <button
+                                    key={i}
+                                    className={`step-button ${active ? 'active' : ''}`}
+                                    onClick={() => store.toggleStep(selectedDrum as any, i)}
+                                />
+                            )
+                        })}
                     </div>
                 </div>
             </div>
-        </div>
+        </StudioScreen>
     )
 }

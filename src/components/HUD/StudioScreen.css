@@ -1,0 +1,519 @@
+/* ============================================================================
+   STUDIO SCREEN — 2D Instrument Controller Base Styles
+   ============================================================================ */
+
+/* Overlay Background */
+.studio-screen-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Main Screen Container */
+.studio-screen {
+    position: relative;
+    background: var(--gradient-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-xl);
+    padding: 0;
+    min-width: 600px;
+    max-width: 90vw;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 
+        var(--panel-shadow),
+        0 0 40px rgba(0, 240, 255, 0.1);
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Neon Border Effect */
+.studio-screen-neon-border {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-xl);
+    pointer-events: none;
+    box-shadow: 
+        inset 0 0 40px rgba(0, 240, 255, calc(0.1 * var(--glow-intensity, 1))),
+        0 0 20px rgba(0, 240, 255, calc(0.2 * var(--glow-intensity, 1)));
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+/* Studio Header */
+.studio-screen-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-m) var(--space-l);
+    background: var(--gradient-metal-dark);
+    border-bottom: 1px solid var(--neon-blue-dim);
+}
+
+.studio-screen-title-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+}
+
+.studio-screen-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.title-text {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--font-tech);
+    letter-spacing: var(--tracking-tech);
+    color: var(--neon-blue);
+    text-transform: uppercase;
+    text-shadow: 0 0 10px var(--neon-blue-glow);
+}
+
+.title-subtitle {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.studio-screen-led {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full);
+    background: var(--led-color, var(--neon-blue));
+    box-shadow: 0 0 10px var(--led-color, var(--neon-blue));
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.studio-screen-close {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    padding: var(--space-s) var(--space-m);
+    background: transparent;
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.studio-screen-close:hover {
+    border-color: var(--neon-red);
+    color: var(--neon-red);
+    box-shadow: var(--glow-red);
+    transform: translateY(-1px);
+}
+
+.studio-screen-close:active {
+    transform: translateY(1px);
+}
+
+.close-hint {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-sm);
+}
+
+/* Studio Content */
+.studio-screen-content {
+    padding: var(--space-l);
+    overflow-y: auto;
+    max-height: calc(85vh - 80px);
+}
+
+.studio-screen-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.studio-screen-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.studio-screen-content::-webkit-scrollbar-thumb {
+    background: var(--neon-blue-dim);
+    border-radius: var(--radius-full);
+}
+
+/* ============================================================================
+   STUDIO KNOB — Rotary Control
+   ============================================================================ */
+
+.studio-knob-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.studio-knob-wrapper {
+    position: relative;
+    width: 48px;
+    height: 48px;
+}
+
+.studio-knob {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--gradient-metal);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.1s;
+}
+
+.knob-marker {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 12px;
+    background: var(--neon-blue);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 5px var(--neon-blue);
+}
+
+.studio-knob-blue .knob-marker { background: var(--neon-blue); box-shadow: 0 0 5px var(--neon-blue); }
+.studio-knob-amber .knob-marker { background: var(--neon-amber); box-shadow: 0 0 5px var(--neon-amber); }
+.studio-knob-green .knob-marker { background: var(--neon-green); box-shadow: 0 0 5px var(--neon-green); }
+
+.studio-knob-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+}
+
+.studio-knob-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-param);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}
+
+.studio-knob-value {
+    font-family: var(--font-mono);
+    font-size: var(--text-value);
+    color: var(--neon-blue);
+    font-weight: var(--font-medium);
+}
+
+/* Size Variants */
+.studio-knob-small .studio-knob-wrapper { width: 36px; height: 36px; }
+.studio-knob-small .knob-marker { width: 2px; height: 8px; top: 4px; }
+.studio-knob-small .studio-knob-label { font-size: 10px; }
+
+.studio-knob-large .studio-knob-wrapper { width: 64px; height: 64px; }
+.studio-knob-large .knob-marker { width: 4px; height: 16px; top: 8px; }
+
+/* ============================================================================
+   STUDIO SLIDER — Fader Control
+   ============================================================================ */
+
+.studio-slider-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-s);
+}
+
+.studio-slider-container.horizontal {
+    flex-direction: row;
+}
+
+.studio-slider-wrapper {
+    position: relative;
+}
+
+.studio-slider-input {
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--gradient-metal-dark);
+    border-radius: var(--radius-sm);
+    outline: none;
+    cursor: pointer;
+}
+
+/* Horizontal Slider */
+.studio-slider-input[type="range"] {
+    height: 4px;
+    width: 150px;
+}
+
+.studio-slider-input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    background: var(--gradient-metal);
+    border: 1px solid var(--neon-blue-dim);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.15s;
+}
+
+.studio-slider-input[type="range"]::-webkit-slider-thumb:hover {
+    border-color: var(--neon-blue);
+    box-shadow: var(--glow-blue);
+}
+
+/* Vertical Slider */
+.studio-slider-container.vertical .studio-slider-input {
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+}
+
+.studio-slider-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, 
+        var(--neon-green) 0%, 
+        var(--neon-amber) 60%, 
+        var(--neon-red) 90%
+    );
+    border-radius: var(--radius-sm);
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.studio-slider-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-param);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}
+
+.studio-slider-value {
+    font-family: var(--font-mono);
+    font-size: var(--text-value);
+    color: var(--neon-blue);
+    font-weight: var(--font-medium);
+    min-width: 50px;
+    text-align: center;
+}
+
+/* ============================================================================
+   STUDIO DISPLAY — LED/LCD Screen
+   ============================================================================ */
+
+.studio-display-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.studio-display {
+    background: var(--material-led);
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-sm);
+    padding: var(--space-s) var(--space-m);
+    font-family: var(--font-mono);
+    text-shadow: 0 0 10px currentColor;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+.studio-display-blue {
+    color: var(--neon-blue);
+    border-color: var(--neon-blue-dim);
+}
+
+.studio-display-amber {
+    color: var(--neon-amber);
+    border-color: var(--neon-amber-dim);
+}
+
+.studio-display-green {
+    color: var(--neon-green);
+    border-color: var(--neon-green-dim);
+}
+
+.studio-display-red {
+    color: var(--neon-red);
+    border-color: var(--neon-red-dim);
+}
+
+/* Size Variants */
+.studio-display-small {
+    font-size: var(--text-base);
+    min-height: 36px;
+}
+
+.studio-display-medium {
+    font-size: var(--text-meter);
+    min-height: 48px;
+}
+
+.studio-display-large {
+    font-size: var(--text-display);
+    min-height: 80px;
+}
+
+.studio-display-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-param);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}
+
+/* ============================================================================
+   STUDIO BUTTON
+   ============================================================================ */
+
+.studio-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-s);
+    padding: var(--space-s) var(--space-m);
+    background: var(--gradient-metal);
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--font-tech);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.studio-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(0, 240, 255, 0.2) 50%, 
+        transparent 100%
+    );
+    transition: left 0.3s;
+}
+
+.studio-button:hover {
+    border-color: var(--neon-blue);
+    box-shadow: var(--glow-blue);
+    transform: translateY(-1px);
+}
+
+.studio-button:hover::before {
+    left: 100%;
+}
+
+.studio-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.studio-button.active {
+    background: var(--neon-blue-dim);
+    border-color: var(--neon-blue);
+    box-shadow: var(--glow-blue), inset 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.studio-button.danger {
+    border-color: var(--neon-red-dim);
+}
+
+.studio-button.danger:hover {
+    border-color: var(--neon-red);
+    box-shadow: var(--glow-red);
+}
+
+.studio-button.danger.active {
+    background: var(--neon-red-dim);
+    border-color: var(--neon-red);
+    box-shadow: var(--glow-red), inset 0 0 10px rgba(255, 42, 42, 0.2);
+}
+
+.button-icon {
+    font-size: var(--text-base);
+}
+
+/* ============================================================================
+   STUDIO VU METER
+   ============================================================================ */
+
+.studio-vu-meter-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-s);
+}
+
+.studio-vu-meters {
+    display: flex;
+    gap: var(--space-s);
+}
+
+.studio-vu-meter {
+    width: 24px;
+}
+
+.vu-meter-bar {
+    width: 100%;
+    height: 120px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.vu-meter-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, 
+        var(--neon-green) 0%, 
+        var(--neon-amber) 60%, 
+        var(--neon-red) 90%
+    );
+    transition: height 0.1s ease-out;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.studio-vu-meter-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-param);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}

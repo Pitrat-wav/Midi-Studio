@@ -1,0 +1,187 @@
+/* DrumsScreen — Studio 2026 Styles */
+
+.drums-screen-studio {
+    min-width: 800px;
+    max-width: 95vw;
+}
+
+.drums-screen-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-l);
+}
+
+/* Top Controls */
+.drums-top-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-m);
+    background: var(--gradient-metal-dark);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--neon-amber-dim);
+}
+
+.kit-selector {
+    display: flex;
+    gap: var(--space-s);
+}
+
+/* Drum Pads Grid */
+.drum-pads-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-m);
+}
+
+.drum-pad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-s);
+    padding: var(--space-m);
+    background: var(--gradient-metal);
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.drum-pad:hover {
+    border-color: var(--neon-blue);
+    box-shadow: var(--glow-blue);
+    transform: translateY(-2px);
+}
+
+.drum-pad.selected {
+    border-color: var(--neon-amber);
+    box-shadow: var(--glow-amber);
+}
+
+.drum-pad-surface {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-md);
+    background: var(--pad-color);
+    box-shadow: 
+        inset 0 2px 4px rgba(255, 255, 255, 0.2),
+        0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.1s;
+}
+
+.drum-pad:active .drum-pad-surface {
+    transform: scale(0.95);
+    box-shadow: 
+        inset 0 2px 8px rgba(0, 0, 0, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.drum-pad.selected .drum-pad-surface {
+    box-shadow: 
+        inset 0 2px 4px rgba(255, 255, 255, 0.3),
+        0 0 20px var(--pad-color);
+}
+
+.drum-pad-label {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--font-tech);
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}
+
+.drum-pad-controls {
+    display: flex;
+    gap: var(--space-m);
+    margin-top: var(--space-s);
+}
+
+/* Step Sequencer */
+.drum-sequencer {
+    background: var(--gradient-metal-dark);
+    border: 1px solid var(--neon-amber-dim);
+    border-radius: var(--radius-lg);
+    padding: var(--space-l);
+}
+
+.sequencer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-m);
+    padding-bottom: var(--space-m);
+    border-bottom: 1px solid var(--neon-amber-dim);
+}
+
+.sequencer-header span {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--neon-amber);
+    font-weight: var(--font-bold);
+}
+
+.sequencer-params {
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+}
+
+.sequencer-params label {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+.sequencer-params input[type="number"] {
+    background: var(--studio-dark);
+    border: 1px solid var(--neon-amber-dim);
+    border-radius: var(--radius-sm);
+    color: var(--neon-amber);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    padding: var(--space-xs) var(--space-s);
+    width: 60px;
+}
+
+.sequencer-steps {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: var(--space-xs);
+}
+
+.step-button {
+    aspect-ratio: 1;
+    background: var(--gradient-metal-dark);
+    border: 1px solid var(--neon-blue-dim);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.step-button:hover {
+    border-color: var(--neon-blue);
+    transform: translateY(-1px);
+}
+
+.step-button:active {
+    transform: translateY(1px);
+}
+
+.step-button.active {
+    background: var(--neon-amber);
+    border-color: var(--neon-amber);
+    box-shadow: var(--glow-amber);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .drum-pads-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .drums-screen-studio {
+        min-width: auto;
+        width: 95vw;
+    }
+}
