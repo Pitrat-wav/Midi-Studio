@@ -151,8 +151,6 @@ function App() {
         }
     }, [isInitialized, isPlaying])
 
-    const toggleGamepadHelp = useVisualStore(s => s.toggleGamepadHelp)
-
     if (!isInitialized) {
         return (
             <div className="init-screen">
