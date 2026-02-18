@@ -1,24 +1,25 @@
+/* ============================================================================
+   LANDING PAGE — Glossy Magazine Style
+   Использует дизайн-систему из index.css
+   ============================================================================ */
+
 .landing-container {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #050508;
-    color: white;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    inset: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-primary);
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    z-index: 9999;
+    z-index: var(--z-max);
 }
 
 .background-glow {
     position: absolute;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #050508 70%);
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, var(--color-bg) 70%);
     opacity: 0.8;
 }
 
@@ -27,7 +28,7 @@
     z-index: 10;
     width: 100%;
     max-width: 800px;
-    padding: 40px;
+    padding: var(--space-2xl);
     text-align: center;
 }
 
@@ -35,64 +36,65 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 80px;
+    margin-bottom: var(--space-4xl);
 }
 
 .logo-section {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: var(--space-m);
 }
 
 .logo-icon {
-    font-size: 2.5rem;
+    font-size: var(--text-3xl);
     filter: drop-shadow(0 0 10px rgba(51, 144, 236, 0.5));
 }
 
 .title-text {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: 4px;
+    font-size: var(--text-xl);
+    font-weight: var(--font-black);
+    letter-spacing: var(--tracking-widest);
     margin: 0;
 }
 
 .title-text span {
-    color: #3390ec;
+    color: var(--color-primary);
 }
 
 .version-badge {
-    padding: 4px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    font-size: 0.7rem;
-    letter-spacing: 2px;
-    background: rgba(255, 255, 255, 0.05);
+    padding: var(--space-xs) var(--space-m);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wider);
+    background: var(--color-border);
 }
 
 .tagline {
-    font-size: 3.5rem;
-    font-weight: 900;
-    margin-bottom: 20px;
+    font-size: var(--text-5xl);
+    font-weight: var(--font-black);
+    margin-bottom: var(--space-l);
     line-height: 1.1;
-    background: linear-gradient(135deg, #fff 0%, #3390ec 100%);
+    background: linear-gradient(135deg, var(--magazine-white) 0%, var(--color-primary) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .description {
-    font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: var(--text-lg);
+    color: var(--color-text-muted);
     max-width: 500px;
-    margin: 0 auto 60px;
+    margin: 0 auto var(--space-3xl);
     line-height: 1.6;
 }
 
+/* Launch Button */
 .launch-btn {
     position: relative;
     background: transparent;
     border: none;
-    padding: 20px 60px;
+    padding: var(--space-l) var(--space-3xl);
     cursor: pointer;
     overflow: visible;
 }
@@ -100,10 +102,10 @@
 .btn-label {
     position: relative;
     z-index: 2;
-    color: white;
-    font-weight: 800;
-    letter-spacing: 3px;
-    font-size: 1.1rem;
+    color: var(--color-text);
+    font-weight: var(--font-black);
+    letter-spacing: var(--tracking-widest);
+    font-size: var(--text-base);
     transition: letter-spacing 0.3s ease;
 }
 
@@ -114,8 +116,8 @@
     transform: translate(-50%, -50%);
     width: 100%;
     height: 100%;
-    background: #3390ec;
-    border-radius: 5px;
+    background: var(--color-primary);
+    border-radius: var(--radius-md);
     filter: blur(20px);
     opacity: 0.3;
     transition: opacity 0.3s ease, filter 0.3s ease;
@@ -128,13 +130,13 @@
     left: 0;
     width: 100%;
     height: 100%;
-    border: 1px solid #3390ec;
-    border-radius: 5px;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-md);
     transition: all 0.3s ease;
 }
 
 .launch-btn.hover .btn-label {
-    letter-spacing: 5px;
+    letter-spacing: var(--tracking-widest);
 }
 
 .launch-btn.hover .btn-glow {
@@ -144,57 +146,69 @@
 
 .launch-btn.hover::after {
     transform: scale(1.05);
-    background: rgba(51, 144, 236, 0.1);
+    background: var(--color-primary-light);
 }
 
+/* Footer */
 .landing-footer {
-    margin-top: 100px;
+    margin-top: var(--space-4xl);
 }
 
 .feature-grid {
     display: flex;
     justify-content: center;
-    gap: 40px;
-    margin-bottom: 40px;
+    gap: var(--space-2xl);
+    margin-bottom: var(--space-2xl);
 }
 
 .feature-item {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-s);
 }
 
 .f-icon {
-    font-size: 1.2rem;
+    font-size: var(--text-xl);
 }
 
 .f-label {
-    font-size: 0.7rem;
-    letter-spacing: 2px;
-    color: rgba(255, 255, 255, 0.4);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wider);
+    color: var(--color-text-disabled);
 }
 
 .shortcuts-bar {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.3);
-    letter-spacing: 1px;
+    font-size: var(--text-sm);
+    color: var(--color-text-disabled);
+    letter-spacing: var(--tracking-wide);
 }
 
 .s-key {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-border);
     padding: 2px 6px;
-    border-radius: 3px;
-    color: rgba(255, 255, 255, 0.7);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
     margin: 0 5px;
 }
 
-@media (max-width: 600px) {
+/* Responsive */
+@media (max-width: 768px) {
     .tagline {
-        font-size: 2rem;
+        font-size: var(--text-2xl);
     }
 
     .feature-grid {
         flex-direction: column;
-        gap: 20px;
+        gap: var(--space-l);
+    }
+
+    .landing-header {
+        flex-direction: column;
+        gap: var(--space-m);
+        margin-bottom: var(--space-2xl);
+    }
+
+    .content-wrapper {
+        padding: var(--space-l);
     }
 }

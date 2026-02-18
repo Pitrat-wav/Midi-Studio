@@ -1,11 +1,12 @@
 /**
  * WebGLScene — Main 3D Canvas
- * 
+ *
  * Renders all instruments in 3D space with camera management.
+ * Includes resize handler for proper canvas sizing.
  */
 
-import { Suspense, useState, useEffect, useRef } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
 import { useVisualStore } from '../../store/visualStore'
 import { AllInstruments3D } from './instruments/AllInstruments3D'
 import { CameraController } from './CameraController'
@@ -24,6 +25,31 @@ import { SpectrumAnalyzer3D } from './visualizers/SpectrumAnalyzer3D'
 import { WaveformScope3D } from './visualizers/WaveformScope3D'
 // Postprocessing library removed due to crashes - using custom shaders instead
 import type { InstrumentType } from '../../lib/SpatialLayout'
+
+// ============================================================================
+// RESIZE HANDLER COMPONENT
+// ============================================================================
+
+function ResizeHandler() {
+    const { size, camera, gl } = useThree()
+
+    useEffect(() => {
+        // Update camera aspect ratio on resize (works for PerspectiveCamera)
+        if ('aspect' in camera) {
+            camera.aspect = size.width / size.height
+            camera.updateProjectionMatrix()
+        }
+
+        // Update renderer size
+        gl.setSize(size.width, size.height, false)
+
+        // Set pixel ratio for sharp rendering
+        const pixelRatio = Math.min(window.devicePixelRatio, 2)
+        gl.setPixelRatio(pixelRatio)
+    }, [size.width, size.height, camera, gl])
+
+    return null
+}
 
 interface WebGLSceneProps {
     focusInstrument?: InstrumentType | null
@@ -104,8 +130,21 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
         >
             <GlobalHUD />
 
-            <Canvas camera={{ position: [0, 15, 15], fov: 75 }}>
+            <Canvas
+                camera={{ position: [0, 15, 15], fov: 75 }}
+                gl={{
+                    antialias: true,
+                    alpha: true,
+                    preserveDrawingBuffer: false,
+                    powerPreference: 'high-performance'
+                }}
+                dpr={[1, 2]}
+                resize={{ scroll: false, debounce: { scroll: 0, resize: 0 } }}
+            >
                 <Suspense fallback={null}>
+                    {/* Resize handler for proper canvas sizing */}
+                    <ResizeHandler />
+
                     {/* Background gradient/noise */}
                     <GenerativeBackground />
 

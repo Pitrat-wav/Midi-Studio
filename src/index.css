@@ -1,249 +1,602 @@
-/* Import premium fonts for Glossy Magazine look */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Inter:wght@100..900&family=Bangers&family=Permanent+Marker&display=swap');
+/* ============================================================================
+   MIDI STUDIO — GLOBAL STYLES & DESIGN SYSTEM
+   Версия: 2.0 (Полный рефакторинг UX/UI)
+   ============================================================================ */
 
-:root {
-  --tg-theme-bg-color: transparent;
-  --tg-theme-text-color: #ffffff;
-  --tg-theme-hint-color: rgba(255, 255, 255, 0.6);
-  --tg-theme-link-color: #3390ec;
-  --tg-theme-button-color: #3390ec;
-  --tg-theme-button-text-color: #ffffff;
-  --tg-theme-secondary-bg-color: rgba(30, 30, 30, 0.4);
-  --tg-theme-header-bg-color: rgba(20, 20, 20, 0.6);
-  --tg-theme-accent-text-color: #3390ec;
-  --tg-theme-section-bg-color: transparent;
-  --tg-theme-destructive-text-color: #ff3b30;
-
-  /* Design System Tokens */
-  --space-unit: 4px;
-  --space-xs: calc(var(--space-unit) * 1);
-  /* 4px */
-  --space-s: calc(var(--space-unit) * 2);
-  /* 8px */
-  --space-m: calc(var(--space-unit) * 4);
-  /* 16px */
-  --space-l: calc(var(--space-unit) * 6);
-  /* 24px */
-  --space-xl: calc(var(--space-unit) * 8);
-  /* 32px */
-
-  --radius-s: 8px;
-  --radius-m: 12px;
-  --radius-l: 16px;
-  --radius-xl: 24px;
-
-  --glass-bg: rgba(15, 15, 15, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-blur: 16px;
-
-  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.04);
-  --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.08);
-
-  --vh: 1vh;
-
-  /* Glossy Magazine Tokens */
-  --magazine-white: #ffffff;
-  --magazine-black: #050505;
-  --magazine-accent: #3390ec;
-  --magazine-gold: #c5a059;
-  --magazine-serif: 'Cormorant Garamond', serif;
-  --magazine-sans: 'Inter', sans-serif;
-  --magazine-gloss: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.1) 100%);
+/* ============================================================================
+   1. CSS RESET (Modern)
+   ============================================================================ */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-/* South Park Theme Overrides */
-body.southpark-theme {
-  --tg-theme-bg-color: #42B4E6;
-  --tg-theme-text-color: #000000;
-  --tg-theme-hint-color: rgba(0, 0, 0, 0.6);
-  --tg-theme-link-color: #F26A1B;
-  --tg-theme-button-color: #F26A1B;
-  --tg-theme-button-text-color: #ffffff;
-  --tg-theme-secondary-bg-color: rgba(255, 255, 255, 0.9);
-  --tg-theme-header-bg-color: rgba(240, 240, 240, 0.95);
-  --tg-theme-accent-text-color: #E9E330;
-  --tg-theme-section-bg-color: rgba(255, 255, 255, 0.85);
-
-  /* Construction paper style */
-  --glass-bg: rgba(255, 255, 255, 0.95);
-  --glass-border: rgba(0, 0, 0, 0.2);
-  --glass-blur: 0px;
-
-  --shadow-soft: 0 3px 6px rgba(0, 0, 0, 0.2);
-  --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.3);
-
-  background: #42B4E6;
-  font-family: 'Bangers', 'Permanent Marker', cursive, sans-serif;
-}
-
-body.southpark-theme .card {
-  background: var(--glass-bg);
-  backdrop-filter: none;
-  border: 3px solid #000000;
-  border-radius: 12px;
-  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
-  clip-path: polygon(0% 5px, 5px 5px, 5px 0%,
-      calc(100% - 5px) 0%, calc(100% - 5px) 5px, 100% 5px,
-      100% calc(100% - 5px), calc(100% - 5px) calc(100% - 5px), calc(100% - 5px) 100%,
-      5px 100%, 5px calc(100% - 5px), 0% calc(100% - 5px));
-}
-
-body.southpark-theme button {
-  border: 2px solid #000000;
-  font-family: 'Bangers', cursive;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
-}
-
-body.southpark-theme button:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --glass-bg: rgba(28, 28, 30, 0.8);
-    --glass-border: rgba(255, 255, 255, 0.1);
-  }
-}
-
-/* Base Styles */
-* {
-  box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: #050505;
-  color: #fff;
-  overflow-x: hidden;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  line-height: 1.4;
+    min-height: 100vh;
+    line-height: 1.5;
+    overflow-x: hidden;
+}
+
+img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+}
+
+input, button, textarea, select {
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+ul, ol {
+    list-style: none;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+    line-height: 1.2;
+}
+
+p {
+    text-wrap: pretty;
+}
+
+/* ============================================================================
+   2. Z-INDEX SYSTEM (Stacking Context Layers)
+   ============================================================================ */
+:root {
+    --z-base: 0;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-overlay: 300;
+    --z-modal: 400;
+    --z-popover: 500;
+    --z-tooltip: 600;
+    --z-notification: 700;
+    --z-max: 9999;
+}
+
+/* ============================================================================
+   3. COLOR PALETTE
+   ============================================================================ */
+:root {
+    /* Primary Colors */
+    --color-primary: #3390ec;
+    --color-primary-hover: #2578c9;
+    --color-primary-light: rgba(51, 144, 236, 0.1);
+    --color-primary-border: rgba(51, 144, 236, 0.3);
+
+    /* Accent Colors */
+    --color-accent: #00ffaa;
+    --color-accent-hover: #00cc88;
+    --color-accent-light: rgba(0, 255, 170, 0.1);
+    --color-accent-border: rgba(0, 255, 170, 0.3);
+
+    /* Semantic Colors */
+    --color-success: #4cd964;
+    --color-warning: #ffcc00;
+    --color-error: #ff3b30;
+    --color-info: #3390ec;
+
+    /* Neutrals */
+    --color-bg: #050508;
+    --color-bg-elevated: #1a1a1a;
+    --color-bg-overlay: rgba(0, 0, 0, 0.8);
+    --color-text: #ffffff;
+    --color-text-muted: rgba(255, 255, 255, 0.6);
+    --color-text-disabled: rgba(255, 255, 255, 0.3);
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-border-hover: rgba(255, 255, 255, 0.2);
+
+    /* Magazine Theme */
+    --magazine-white: #ffffff;
+    --magazine-black: #050505;
+    --magazine-gold: #c5a059;
+    --magazine-serif: 'Cormorant Garamond', serif;
+    --magazine-sans: 'Inter', sans-serif;
+}
+
+/* South Park Theme */
+body.southpark-theme {
+    --color-bg: #42B4E6;
+    --color-text: #000000;
+    --color-text-muted: rgba(0, 0, 0, 0.6);
+    --color-primary: #F26A1B;
+    --color-primary-hover: #d95a12;
+    --color-accent: #E9E330;
+    --color-border: rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================================================
+   4. SPACING SYSTEM (8px Grid)
+   ============================================================================ */
+:root {
+    --space-unit: 4px;
+    --space-xs: calc(var(--space-unit) * 1);   /* 4px */
+    --space-s: calc(var(--space-unit) * 2);    /* 8px */
+    --space-m: calc(var(--space-unit) * 4);    /* 16px */
+    --space-l: calc(var(--space-unit) * 6);    /* 24px */
+    --space-xl: calc(var(--space-unit) * 8);   /* 32px */
+    --space-2xl: calc(var(--space-unit) * 12); /* 48px */
+    --space-3xl: calc(var(--space-unit) * 16); /* 64px */
+    --space-4xl: calc(var(--space-unit) * 20); /* 80px */
+}
+
+/* ============================================================================
+   5. TYPOGRAPHY SYSTEM
+   ============================================================================ */
+:root {
+    /* Font Families */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-display: 'Cormorant Garamond', serif;
+    --font-mono: 'Courier New', Courier, monospace;
+    --font-gloss: 'Bangers', cursive;
+    --font-hand: 'Permanent Marker', cursive;
+
+    /* Font Sizes */
+    --text-xs: 0.75rem;    /* 12px */
+    --text-sm: 0.875rem;   /* 14px */
+    --text-base: 1rem;     /* 16px */
+    --text-lg: 1.125rem;   /* 18px */
+    --text-xl: 1.25rem;    /* 20px */
+    --text-2xl: 1.5rem;    /* 24px */
+    --text-3xl: 2rem;      /* 32px */
+    --text-4xl: 2.5rem;    /* 40px */
+    --text-5xl: 3.5rem;    /* 56px */
+
+    /* Font Weights */
+    --font-light: 300;
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 800;
+    --font-black: 900;
+
+    /* Letter Spacing */
+    --tracking-tighter: -0.05em;
+    --tracking-tight: -0.02em;
+    --tracking-normal: 0;
+    --tracking-wide: 0.05em;
+    --tracking-wider: 0.1em;
+    --tracking-widest: 0.2em;
+}
+
+/* ============================================================================
+   6. BORDER RADIUS
+   ============================================================================ */
+:root {
+    --radius-none: 0;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+    --radius-full: 9999px;
+}
+
+/* ============================================================================
+   7. SHADOWS
+   ============================================================================ */
+:root {
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.2);
+    --shadow-glow-primary: 0 0 20px rgba(51, 144, 236, 0.4);
+    --shadow-glow-accent: 0 0 20px rgba(0, 255, 170, 0.4);
+}
+
+/* ============================================================================
+   8. GLASS MORPHISM
+   ============================================================================ */
+:root {
+    --glass-bg: rgba(15, 15, 15, 0.6);
+    --glass-bg-heavy: rgba(20, 20, 20, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-blur: 16px;
+}
+
+/* ============================================================================
+   9. BASE STYLES
+   ============================================================================ */
+body {
+    font-family: var(--font-primary);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.5;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #root {
-  min-height: 100vh;
-  min-height: calc(var(--vh, 1vh) * 100);
-  display: flex;
-  flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Typography */
-h1,
-h2,
-h3,
-h4 {
-  margin: 0;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+/* ============================================================================
+   10. FOCUS STATES (Accessibility)
+   ============================================================================ */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 }
 
-h3 {
-  font-size: 17px;
+/* Remove default focus for mouse users */
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+    outline: none;
 }
 
-/* Components */
-button {
-  cursor: pointer;
-  border: none;
-  border-radius: var(--radius-m);
-  padding: 12px 20px;
-  font-size: 15px;
-  font-weight: 600;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-s);
-  min-height: 44px;
-  /* Mobile touch target */
+/* ============================================================================
+   11. LAYOUT UTILITIES
+   ============================================================================ */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-m);
 }
 
-button:active {
-  transform: scale(0.97);
+/* Flexbox Utilities */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.flex-wrap { flex-wrap: wrap; }
+.items-start { align-items: flex-start; }
+.items-center { align-items: center; }
+.items-end { align-items: flex-end; }
+.items-stretch { align-items: stretch; }
+.justify-start { justify-content: flex-start; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+.gap-xs { gap: var(--space-xs); }
+.gap-s { gap: var(--space-s); }
+.gap-m { gap: var(--space-m); }
+.gap-l { gap: var(--space-l); }
+.gap-xl { gap: var(--space-xl); }
+
+/* Grid Utilities */
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+    .md\:grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+    .md\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
 }
 
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+/* ============================================================================
+   12. TYPOGRAPHY UTILITIES
+   ============================================================================ */
+.text-xs { font-size: var(--text-xs); }
+.text-sm { font-size: var(--text-sm); }
+.text-base { font-size: var(--text-base); }
+.text-lg { font-size: var(--text-lg); }
+.text-xl { font-size: var(--text-xl); }
+.text-2xl { font-size: var(--text-2xl); }
+.text-3xl { font-size: var(--text-3xl); }
+.text-4xl { font-size: var(--text-4xl); }
+.text-5xl { font-size: var(--text-5xl); }
+
+.font-light { font-weight: var(--font-light); }
+.font-normal { font-weight: var(--font-normal); }
+.font-medium { font-weight: var(--font-medium); }
+.font-semibold { font-weight: var(--font-semibold); }
+.font-bold { font-weight: var(--font-bold); }
+.font-extrabold { font-weight: var(--font-extrabold); }
+
+.tracking-tighter { letter-spacing: var(--tracking-tighter); }
+.tracking-tight { letter-spacing: var(--tracking-tight); }
+.tracking-normal { letter-spacing: var(--tracking-normal); }
+.tracking-wide { letter-spacing: var(--tracking-wide); }
+.tracking-wider { letter-spacing: var(--tracking-wider); }
+.tracking-widest { letter-spacing: var(--tracking-widest); }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-primary { color: var(--color-primary); }
+.text-accent { color: var(--color-accent); }
+.text-muted { color: var(--color-text-muted); }
+.text-success { color: var(--color-success); }
+.text-error { color: var(--color-error); }
+
+/* ============================================================================
+   13. SPACING UTILITIES
+   ============================================================================ */
+.p-xs { padding: var(--space-xs); }
+.p-s { padding: var(--space-s); }
+.p-m { padding: var(--space-m); }
+.p-l { padding: var(--space-l); }
+.p-xl { padding: var(--space-xl); }
+
+.px-s { padding-left: var(--space-s); padding-right: var(--space-s); }
+.px-m { padding-left: var(--space-m); padding-right: var(--space-m); }
+.px-l { padding-left: var(--space-l); padding-right: var(--space-l); }
+
+.py-s { padding-top: var(--space-s); padding-bottom: var(--space-s); }
+.py-m { padding-top: var(--space-m); padding-bottom: var(--space-m); }
+.py-l { padding-top: var(--space-l); padding-bottom: var(--space-l); }
+
+.m-xs { margin: var(--space-xs); }
+.m-s { margin: var(--space-s); }
+.m-m { margin: var(--space-m); }
+.m-l { margin: var(--space-l); }
+.m-xl { margin: var(--space-xl); }
+
+.mb-s { margin-bottom: var(--space-s); }
+.mb-m { margin-bottom: var(--space-m); }
+.mb-l { margin-bottom: var(--space-l); }
+.mb-xl { margin-bottom: var(--space-xl); }
+.mb-2xl { margin-bottom: var(--space-2xl); }
+
+.mt-s { margin-top: var(--space-s); }
+.mt-m { margin-top: var(--space-m); }
+.mt-l { margin-top: var(--space-l); }
+.mt-xl { margin-top: var(--space-xl); }
+
+/* ============================================================================
+   14. COMPONENT BASE STYLES
+   ============================================================================ */
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-s);
+    padding: var(--space-s) var(--space-l);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    border-radius: var(--radius-md);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 44px;
+    cursor: pointer;
+    user-select: none;
 }
 
-.app-container {
-  padding: var(--space-m);
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-l);
-  max-width: 600px;
-  margin: 0 auto;
-  width: 100%;
+.btn:active {
+    transform: scale(0.97);
 }
 
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary {
+    background: var(--color-primary);
+    color: var(--magazine-white);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    box-shadow: var(--shadow-glow-primary);
+}
+
+.btn-accent {
+    background: var(--color-accent);
+    color: var(--magazine-black);
+}
+
+.btn-accent:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+    box-shadow: var(--shadow-glow-accent);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+}
+
+.btn-outline:hover:not(:disabled) {
+    border-color: var(--color-border-hover);
+    background: var(--color-bg-elevated);
+}
+
+/* Cards */
 .card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-radius: var(--radius-l);
-  padding: var(--space-m);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-radius: var(--radius-xl);
+    padding: var(--space-m);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-lg);
 }
 
-/* Glossy Magazine HUD Base */
-.magazine-hud {
-  background: var(--magazine-black);
-  color: var(--magazine-white);
-  font-family: var(--magazine-sans);
-  padding: 40px;
-  position: relative;
-  overflow-y: auto;
-  max-height: 85vh;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 50px 100px rgba(0, 0, 0, 1);
-}
-
-.magazine-hud h1,
-.magazine-hud h2 {
-  font-family: var(--magazine-serif);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 300;
-  margin-bottom: 20px;
-}
-
-.icon-button {
-  padding: 8px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.knob-label {
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: var(--tg-theme-hint-color);
-  letter-spacing: 0.05em;
-}
-
-/* Scrollbar */
+/* ============================================================================
+   15. SCROLLBAR STYLING
+   ============================================================================ */
 ::-webkit-scrollbar {
-  width: 4px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.2);
-  border-radius: 10px;
+    background: var(--color-border-hover);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
+}
+
+/* ============================================================================
+   16. ANIMATIONS
+   ============================================================================ */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Animation Utilities */
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+.animate-fade-out { animation: fadeOut 0.3s ease-out; }
+.animate-slide-down { animation: slideDown 0.3s ease-out; }
+.animate-slide-up { animation: slideUp 0.3s ease-out; }
+.animate-scale-in { animation: scaleIn 0.2s ease-out; }
+.animate-spin { animation: spin 1s linear infinite; }
+
+/* ============================================================================
+   17. RESPONSIVE UTILITIES
+   ============================================================================ */
+@media (max-width: 768px) {
+    .md\:hidden { display: none; }
+    .md\:flex { display: flex; }
+    .md\:grid { display: grid; }
+    
+    .md\:text-sm { font-size: var(--text-sm); }
+    .md\:text-base { font-size: var(--text-base); }
+    .md\:text-lg { font-size: var(--text-lg); }
+    
+    .md\:p-s { padding: var(--space-s); }
+    .md\:p-m { padding: var(--space-m); }
+}
+
+@media (max-width: 480px) {
+    .sm\:hidden { display: none; }
+    .sm\:flex { display: flex; }
+    .sm\:grid { display: grid; }
+}
+
+/* ============================================================================
+   18. ACCESSIBILITY
+   ============================================================================ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--color-primary);
+    color: var(--magazine-white);
+    padding: var(--space-s) var(--space-m);
+    z-index: var(--z-max);
+    transition: top 0.2s;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* ============================================================================
+   19. PRINT STYLES
+   ============================================================================ */
+@media print {
+    *, *::before, *::after {
+        background: transparent !important;
+        color: #000 !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+    
+    body {
+        background: #fff;
+        color: #000;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
 }
