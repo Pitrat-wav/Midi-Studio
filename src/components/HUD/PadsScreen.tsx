@@ -1,41 +1,58 @@
 import React from 'react'
 import { usePadStore, useHarmonyStore, ROOTS, SCALES } from '../../store/instrumentStore'
 import { useVisualStore } from '../../store/visualStore'
+import { StudioScreen, StudioKnob, StudioButton, StudioDisplay } from './StudioScreen'
 import './PadsScreen.css'
 
 export const PadsScreen: React.FC = () => {
     const store = usePadStore()
     const harmony = useHarmonyStore()
     const setFocusedInstrument = useVisualStore(s => s.setFocusInstrument)
+    const handleClose = () => setFocusedInstrument(null)
 
     return (
-        <div className="pads-screen hud-window">
-            <div className="hud-header">
-                <h2>☁️ AMBIENT STRATOSPHERE</h2>
-                <div className="hud-header-actions">
-                    <button className="hud-close" onClick={() => setFocusedInstrument(null)}>✕</button>
+        <StudioScreen
+            title="Ambient Stratosphere"
+            subtitle="Atmospheric Pad Engine"
+            onClose={handleClose}
+            ledColor="purple"
+            className="pads-screen-studio"
+        >
+            <div className="pads-screen-content">
+                {/* Top Controls */}
+                <div className="pads-top-controls">
+                    <StudioButton
+                        label={store.active ? 'ACTIVE' : 'STANDBY'}
+                        onClick={() => store.setParams({ active: !store.active })}
+                        active={store.active}
+                        icon={store.active ? '◉' : '○'}
+                    />
+                    <StudioDisplay
+                        value={`${Math.round(store.brightness * 100)}%`}
+                        label="BRIGHTNESS"
+                        color="purple"
+                        size="small"
+                    />
                 </div>
-            </div>
 
-            <div className="ambient-container">
-                {/* Global Harmony */}
-                <div className="ambient-harmony-row">
-                    <div className="ambient-param">
-                        <label>ROOT NOTE</label>
+                {/* Harmony Section */}
+                <div className="pads-harmony-section">
+                    <div className="harmony-controls">
+                        <label>Root Note</label>
                         <select
                             value={harmony.root}
                             onChange={(e) => harmony.setRoot(e.target.value)}
-                            className="ambient-select"
+                            className="studio-select"
                         >
                             {ROOTS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
-                    <div className="ambient-param">
-                        <label>SCALE</label>
+                    <div className="harmony-controls">
+                        <label>Scale</label>
                         <select
                             value={harmony.scale}
                             onChange={(e) => harmony.setScale(e.target.value as any)}
-                            className="ambient-select"
+                            className="studio-select"
                         >
                             {SCALES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
                         </select>
@@ -43,41 +60,66 @@ export const PadsScreen: React.FC = () => {
                 </div>
 
                 {/* Main Controls */}
-                <div className="ambient-main-controls">
-                    <div className="ambient-toggle"
-                        onClick={() => store.setParams({ active: !store.active })}
-                    >
-                        <div className={`ambient-power-icon ${store.active ? 'active' : ''}`}>
-                            {store.active ? '◉' : '○'}
-                        </div>
-                        <span>{store.active ? 'ATMOSPHERE ACTIVE' : 'ATMOSPHERE STANDBY'}</span>
+                <div className="pads-controls-grid">
+                    <StudioKnob
+                        label="Brightness"
+                        value={store.brightness * 100}
+                        min={0}
+                        max={100}
+                        onChange={(v) => store.setParams({ brightness: v / 100 })}
+                        color="purple"
+                    />
+                    <StudioKnob
+                        label="Complexity"
+                        value={store.complexity * 100}
+                        min={0}
+                        max={100}
+                        onChange={(v) => store.setParams({ complexity: v / 100 })}
+                        color="purple"
+                    />
+                    <StudioKnob
+                        label="Spread"
+                        value={store.spread * 100}
+                        min={0}
+                        max={100}
+                        onChange={(v) => store.setParams({ spread: v / 100 })}
+                        color="purple"
+                    />
+                    <StudioKnob
+                        label="Modulation"
+                        value={store.modulation * 100}
+                        min={0}
+                        max={100}
+                        onChange={(v) => store.setParams({ modulation: v / 100 })}
+                        color="purple"
+                    />
+                </div>
+
+                {/* Voice Mode */}
+                <div className="pads-voice-section">
+                    <label>Voice Mode</label>
+                    <div className="voice-mode-selector">
+                        <StudioButton
+                            label="Poly"
+                            onClick={() => store.setParams({ voiceMode: 'poly' })}
+                            active={store.voiceMode === 'poly'}
+                        />
+                        <StudioButton
+                            label="Mono"
+                            onClick={() => store.setParams({ voiceMode: 'mono' })}
+                            active={store.voiceMode === 'mono'}
+                        />
+                        <StudioButton
+                            label="Unison"
+                            onClick={() => store.setParams({ voiceMode: 'unison' })}
+                            active={store.voiceMode === 'unison'}
+                        />
                     </div>
-
-                    <div className="ambient-sliders">
-                        <div className="ambient-slider-group">
-                            <label>BRIGHTNESS</label>
-                            <input
-                                type="range"
-                                min="0"
-                                max="1"
-                                step="0.01"
-                                value={store.brightness}
-                                onChange={(e) => store.setParams({ brightness: parseFloat(e.target.value) })}
-                                className="ambient-slider"
-                            />
-                            <span className="ambient-value">{Math.round(store.brightness * 100)}%</span>
-                        </div>
-
-                        <div className="ambient-slider-group">
-                            <label>COMPLEXITY</label>
-                            <input
-                                type="range"
-                                min="0"
-                                max="1"
-                                step="0.01"
-                                value={store.complexity}
-                                onChange={(e) => store.setParams({ complexity: parseFloat(e.target.value) })}
-                                className="ambient-slider"
+                </div>
+            </div>
+        </StudioScreen>
+    )
+}
                             />
                             <span className="ambient-value">{Math.round(store.complexity * 100)}%</span>
                         </div>
