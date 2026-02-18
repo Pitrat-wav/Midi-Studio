@@ -114,7 +114,7 @@ export function HandVision3D() {
             ))}
 
             {/* Draw lines for bones */}
-            <line ref={lineRef}>
+            <line ref={lineRef as any}>
                 <bufferGeometry attach="geometry">
                     <bufferAttribute
                         attach="attributes-position"
