@@ -13,27 +13,20 @@ interface GenerativeGrid3DProps {
 }
 
 export function GenerativeGrid3D({ pattern, currentStep, color, position, onToggleStep }: GenerativeGrid3DProps) {
-    console.log('🎨 GenerativeGrid3D render - pattern:', pattern, 'isArray:', Array.isArray(pattern), 'length:', pattern?.length)
     const groupRef = useRef<THREE.Group>(null!)
 
     // CRITICAL: Freeze pattern in useMemo to prevent race conditions
     const safePattern = useMemo(() => {
-        console.log('🔒 useMemo check - pattern:', pattern)
         if (!pattern || !Array.isArray(pattern) || pattern.length === 0) {
-            console.warn('⚠️ Invalid pattern, returning null')
             return null
         }
         // Create a COPY to freeze the data
         const copy = [...pattern]
-        console.log('✅ Pattern frozen, length:', copy.length)
         return copy
     }, [pattern])
 
-    console.log('🎯 safePattern:', safePattern)
-
     // If pattern is not valid, don't render anything
     if (!safePattern) {
-        console.log('❌ safePattern is null, not rendering')
         return null
     }
 
@@ -50,23 +43,22 @@ export function GenerativeGrid3D({ pattern, currentStep, color, position, onTogg
                     onClick={() => onToggleStep?.(i)}
                 />
             ))}
-
-            {/* Scanning Beam */}
-            <mesh position={[currentStep * 0.25 - 2, 0, 0.1]}>
-                <planeGeometry args={[0.05, 0.4]} />
-                <meshBasicMaterial color="white" transparent opacity={0.5} />
-            </mesh>
         </group>
     )
 }
 
-function StepCube({ index, active, isCurrent, color, position, onClick }: any) {
+function StepCube({ active, isCurrent, color, position, onClick }: any) {
     const meshRef = useRef<THREE.Mesh>(null!)
 
     useFrame((state) => {
+        const t = state.clock.getElapsedTime()
         if (meshRef.current) {
-            const targetScale = isCurrent ? 1.5 : (active ? 1.1 : 0.8)
-            meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.2)
+            // Pulse animation for current step
+            if (isCurrent) {
+                meshRef.current.scale.setScalar(1 + Math.sin(t * 10) * 0.1)
+            } else {
+                meshRef.current.scale.setScalar(1)
+            }
         }
     })
 
@@ -74,18 +66,14 @@ function StepCube({ index, active, isCurrent, color, position, onClick }: any) {
         <mesh
             ref={meshRef}
             position={position}
-            onClick={(e) => {
-                e.stopPropagation()
-                onClick()
-            }}
+            onClick={onClick}
+            scale={active ? 1.1 : 0.8}
         >
-            <boxGeometry args={[0.2, 0.2, 0.1]} />
+            <boxGeometry args={[0.2, 0.2, 0.2]} />
             <meshStandardMaterial
-                color={active ? color : "#222"}
-                emissive={active ? color : "#000"}
-                emissiveIntensity={isCurrent ? 2 : (active ? 0.5 : 0)}
-                metalness={0.9}
-                roughness={0.1}
+                color={active ? color : '#333333'}
+                emissive={active ? color : '#000000'}
+                emissiveIntensity={active ? 0.5 : 0}
             />
         </mesh>
     )
