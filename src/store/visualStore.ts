@@ -12,7 +12,8 @@ export const PRESETS = [
     { name: 'WHISK: COSMIC', color: '#1a0030', stars: 4000, haze: 0.02, light1: '#ff00ff', light2: '#00ffff', texture: '/assets/visuals/whisk_preset_1.png' },
     { name: 'WHISK: CYBER', color: '#001a1a', stars: 3000, haze: 0.015, light1: '#00ff88', light2: '#ffcc00', texture: '/assets/visuals/whisk_preset_2.png' },
     { name: 'WHISK: PIXEL', color: '#332255', stars: 1000, haze: 0.005, light1: '#ff00ff', light2: '#ffff00', texture: '/assets/visuals/whisk_preset_3.png' },
-    { name: 'SOUTH PARK ROCK', color: '#87CEEB', stars: 800, haze: 0.003, light1: '#FFD700', light2: '#228B22', texture: '/assets/visuals/south_park_rock.png' }
+    { name: 'SOUTH PARK ROCK', color: '#87CEEB', stars: 800, haze: 0.003, light1: '#FFD700', light2: '#228B22', texture: '/assets/visuals/south_park_rock.png' },
+    { name: 'STUDIO 2026', color: '#0a0a0f', stars: 0, haze: 0, light1: '#00f0ff', light2: '#bf00ff', studio: true }
 ]
 
 export const VISUALIZER_REGISTRY = [
