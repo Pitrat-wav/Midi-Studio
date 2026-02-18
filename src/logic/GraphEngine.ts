@@ -725,6 +725,60 @@ export class GraphEngine {
                 }).toDestination();
                 wrapper = { node: synth, inputs: { 'trig': synth, 'note': synth } }
             }
+            else if (data.type === 'lib_perc') {
+                const synth = new Tone.MembraneSynth().toDestination();
+                wrapper = { node: synth, inputs: { 'trig': synth, 'note': synth } }
+            }
+            else if (data.type === 'io_audio_in') {
+                const mic = new Tone.UserMedia();
+                wrapper = { node: mic, inputs: {}, outputs: { 'out': mic } }
+            }
+            else if (data.type === 'note_arp') {
+                // Simple arpeggiator using Sequence
+                const seq = new Tone.Sequence((time, note) => {
+                    synth.triggerAttackRelease(note, "8n", time);
+                }, [["C4", "E4", "G4"], ["D4", "F4", "A4"]], "8n").start();
+                const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                wrapper = { node: seq, inputs: { 'note': seq, 'sync': seq as any }, outputs: { 'out': synth } }
+            }
+            else if (data.type === 'note_chord') {
+                const chord = new Tone.PolySynth(Tone.Synth).toDestination();
+                wrapper = { node: chord, inputs: { 'notes': chord }, outputs: { 'out': chord } }
+            }
+            else if (data.type === 'ai_chat') {
+                const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                wrapper = { node: synth, inputs: { 'note': synth }, outputs: { 'out': synth } }
+            }
+            else if (data.type === 'adv_vocoder') {
+                // Simple formant filter as vocoder substitute
+                const filter = new Tone.Filter({
+                    frequency: 2000,
+                    type: 'bandpass',
+                    Q: 5
+                });
+                wrapper = { node: filter, inputs: { 'mod': filter, 'car': filter } }
+            }
+            else if (data.type === 'adv_prob_seq') {
+                const seqScript = this.createScriptNode(`
+                    const length = 8;
+                    const probs = Array(length).fill(0.7);
+                    function process(inputs, output, time) {
+                        if (inputs[0][0] > 0.5) {
+                            const step = (time * 10) % length | 0;
+                            output[0][0] = Math.random() < probs[step] ? 1 : 0;
+                        }
+                    }
+                `);
+                wrapper = { node: seqScript, inputs: { 'clock': seqScript } }
+            }
+            else if (data.type === 'adv_granular') {
+                const player = new Tone.Player().toDestination();
+                wrapper = {
+                    node: player,
+                    inputs: { 'in': player, 'pos': player.playbackRate, 'size': player.volume },
+                    outputs: { 'out': player }
+                }
+            }
 
             else if (data.type === 'adv_math_exp') {
                 const ctx = Tone.getContext().rawContext
