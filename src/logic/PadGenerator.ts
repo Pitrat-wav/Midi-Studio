@@ -18,7 +18,7 @@ export function generatePadProgression(root: string, scaleType: ScaleType, compl
         const third = notes[(degree + 2) % notes.length] + '3'
         const fifth = notes[(degree + 4) % notes.length] + '3'
 
-        let chord = [base, third, fifth]
+        const chord = [base, third, fifth]
 
         if (complexity > 0.6) {
             chord.push(notes[(degree + 6) % notes.length] + '4')

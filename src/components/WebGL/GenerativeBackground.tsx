@@ -9,22 +9,11 @@ import { SouthParkWorld } from './SouthParkWorld'
 import { PlanetField } from './PlanetField'
 import { StudioRoom } from './StudioRoom'
 
-export function GenerativeBackground() {
+function DefaultBackground() {
     const isPlaying = useAudioStore(s => s.isPlaying)
     const presetIndex = useVisualStore(s => s.backgroundPreset)
-    const aestheticTheme = useVisualStore(s => s.aestheticTheme)
     const bridge = useAudioVisualBridge()
     const meshRef = useRef<THREE.Mesh>(null!)
-
-    // Use Studio 2026 environment
-    if (aestheticTheme === 'studio') {
-        return <StudioRoom />
-    }
-
-    // Use South Park 2.5D world if that theme is active
-    if (aestheticTheme === 'southpark') {
-        return <SouthParkWorld />
-    }
 
     const preset = (PRESETS && Array.isArray(PRESETS) && PRESETS.length > 0)
         ? PRESETS[presetIndex % PRESETS.length]
@@ -110,4 +99,20 @@ export function GenerativeBackground() {
             />
         </group>
     )
+}
+
+export function GenerativeBackground() {
+    const aestheticTheme = useVisualStore(s => s.aestheticTheme)
+
+    // Use Studio 2026 environment
+    if (aestheticTheme === 'studio') {
+        return <StudioRoom />
+    }
+
+    // Use South Park 2.5D world if that theme is active
+    if (aestheticTheme === 'southpark') {
+        return <SouthParkWorld />
+    }
+
+    return <DefaultBackground />
 }

@@ -75,7 +75,8 @@ export class GraphEngine {
             })
 
             // 2. Rebuild Connections
-            const edgesChanged = JSON.stringify(state.edges) !== JSON.stringify(prevState.edges)
+            const edgesChanged = JSON.stringify(state.edges.map(e => ({ s: e.source, t: e.target, sh: e.sourceHandle, th: e.targetHandle }))) !==
+                JSON.stringify(prevState.edges.map(e => ({ s: e.source, t: e.target, sh: e.sourceHandle, th: e.targetHandle })))
             const portalParamsChanged = state.nodes.some((n) => {
                 const prev = prevState.nodes.find(p => p.id === n.id)
                 return prev && (n.data.params.portalId !== prev.data.params.portalId)
@@ -555,7 +556,7 @@ export class GraphEngine {
             else if (data.type === 'adv_wavefolder') {
                 const shaper = new Tone.WaveShaper((val) => {
                     const gain = data.params.gain || 2;
-                    let x = val * gain;
+                    const x = val * gain;
                     return Math.sin(x); // Simple Sine Fold
                 })
                 wrapper = { node: shaper, inputs: { 'in': shaper, 'gain': shaper } }

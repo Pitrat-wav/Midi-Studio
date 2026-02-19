@@ -112,7 +112,7 @@ export function LavaLamp2D() {
         uTime: { value: 0 },
         uIntensity: { value: 0 },
         uResolution: { value: new THREE.Vector2(viewport.width, viewport.height) }
-    }), [])
+    }), [viewport.width, viewport.height])
 
     useFrame((state) => {
         uniforms.uTime.value = state.clock.getElapsedTime()
@@ -161,18 +161,15 @@ export function NeonWavelet() {
 }
 
 function WaveMaterial2D({ intensity, offset }: { intensity: number, offset: number }) {
-    const matRef = useRef<THREE.ShaderMaterial>(null!)
+    const uniforms = useMemo(() => ({ uTime: { value: 0 }, uIntensity: { value: 0 } }), [])
     useFrame((state) => {
-        if (matRef.current) {
-            matRef.current.uniforms.uTime.value = state.clock.getElapsedTime() + offset
-            matRef.current.uniforms.uIntensity.value = intensity
-        }
+        uniforms.uTime.value = state.clock.getElapsedTime() + offset
+        uniforms.uIntensity.value = intensity
     })
     return (
         <shaderMaterial
-            ref={matRef}
             transparent
-            uniforms={{ uTime: { value: 0 }, uIntensity: { value: 0 } }}
+            uniforms={uniforms}
             vertexShader={`
                 varying vec2 vUv;
                 uniform float uTime;
@@ -219,6 +216,13 @@ export function BinaryStar2D() {
 export function GradientFlow() {
     const intensity = useVisualStore(s => s.globalAudioIntensity)
     const { viewport } = useThree()
+    const uniforms = useMemo(() => ({ uTime: { value: 0 }, uIntensity: { value: 0 } }), [])
+
+    useFrame((state) => {
+        uniforms.uTime.value = state.clock.getElapsedTime()
+        uniforms.uIntensity.value = intensity
+    })
+
     return (
         <mesh>
             <planeGeometry args={[viewport.width, viewport.height]} />
@@ -235,7 +239,7 @@ export function GradientFlow() {
                         gl_FragColor = vec4(mix(c1, c2, mixVal), 1.0);
                     }
                 `}
-                uniforms={{ uTime: { value: 0 }, uIntensity: { value: intensity } }}
+                uniforms={uniforms}
             />
         </mesh>
     )
@@ -305,7 +309,7 @@ export function MondrianComposition() {
             })
         }
         return b
-    }, [viewport])
+    }, [viewport.width, viewport.height])
 
     return (
         <group>
@@ -359,7 +363,7 @@ export function KandinskyAbstract() {
             })
         }
         return e
-    }, [viewport])
+    }, [viewport.width, viewport.height])
 
     const groupRef = useRef<THREE.Group>(null!)
     useFrame((state) => {

@@ -70,9 +70,9 @@ function NebulaField({ intensity, grit, chaos }: { intensity: number, grit: numb
 
     const uniforms = useMemo(() => ({
         uTime: { value: 0 },
-        uIntensity: { value: intensity },
-        uChaos: { value: chaos },
-        uGrit: { value: grit }
+        uIntensity: { value: 0 },
+        uChaos: { value: 0 },
+        uGrit: { value: 0 }
     }), [])
 
     useFrame((state) => {

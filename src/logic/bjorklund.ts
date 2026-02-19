@@ -6,9 +6,9 @@ export function bjorklund(steps: number, pulses: number): number[] {
     if (pulses <= 0) return new Array(steps).fill(0)
     if (pulses >= steps) return new Array(steps).fill(1)
 
-    let pattern: any[] = []
-    let counts: number[] = []
-    let remainders: number[] = []
+    const pattern: any[] = []
+    const counts: number[] = []
+    const remainders: number[] = []
     let divisor = steps - pulses
 
     remainders.push(pulses)

@@ -312,10 +312,10 @@ export class HarmSynth {
         for (let i = 0; i < 4096; i++) {
             const val = (i / 4095) * 2 - 1
             let x = val * (1 + cTimbre * 10)
-            let symmetry = (cHarmonics - 0.5) * 0.8
+            const symmetry = (cHarmonics - 0.5) * 0.8
             x += symmetry
             for (let j = 0; j < 4; j++) {
-                let stageIntensity = Math.max(0, Math.min(1, cOrder * 5 - j))
+                const stageIntensity = Math.max(0, Math.min(1, cOrder * 5 - j))
                 if (stageIntensity > 0) {
                     let folded = x
                     if (folded > 1) folded = 2 - folded

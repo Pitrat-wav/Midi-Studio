@@ -68,6 +68,18 @@ function NodeEditorContent({ onClose }: { onClose: () => void }) {
     const [selectedIndex, setSelectedIndex] = useState(0)
     const searchInputRef = useRef<HTMLInputElement>(null)
 
+    const filteredNodes = useMemo(() =>
+        Object.entries(NODE_DEFS).filter(([key, def]) =>
+            def.label?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            key.toLowerCase().includes(searchQuery.toLowerCase())
+        ), [searchQuery]
+    )
+
+    const onAddNodeFromSearch = useCallback((type: string) => {
+        addNode(type as NodeType, 400, 300)
+        setSearchOpen(false)
+    }, [addNode])
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === '/' && !searchOpen && !inspectorNodeId) {
@@ -97,25 +109,13 @@ function NodeEditorContent({ onClose }: { onClose: () => void }) {
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [searchOpen, inspectorNodeId, selectedIndex, searchQuery])
+    }, [searchOpen, inspectorNodeId, selectedIndex, searchQuery, filteredNodes, onAddNodeFromSearch])
 
     useEffect(() => {
         if (searchOpen && searchInputRef.current) {
             setTimeout(() => searchInputRef.current?.focus(), 50)
         }
     }, [searchOpen])
-
-    const filteredNodes = useMemo(() =>
-        Object.entries(NODE_DEFS).filter(([key, def]) =>
-            def.label?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            key.toLowerCase().includes(searchQuery.toLowerCase())
-        ), [searchQuery]
-    )
-
-    const onAddNodeFromSearch = (type: string) => {
-        addNode(type as NodeType, 400, 300)
-        setSearchOpen(false)
-    }
 
     const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: any) => {
         setInspectorNodeId(node.id)

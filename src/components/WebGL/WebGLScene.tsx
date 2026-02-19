@@ -66,9 +66,6 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
     // Use external focus if provided, otherwise use internal (Store)
     const focusInstrument = externalFocus ?? internalFocus
 
-    // Don't render if WebGL disabled
-    if (!webglEnabled) return null
-
     const gestures = useGestureStore()
     const cycleFocusInstrument = useVisualStore(s => s.cycleFocusInstrument)
     const lastGesture = useRef(gestures.activeGesture)
@@ -99,6 +96,9 @@ export function WebGLScene({ focusInstrument: externalFocus, cameraMode = 'overv
 
     // Hand tracking initialization (effect only)
     useHandTracking()
+
+    // Don't render if WebGL disabled
+    if (!webglEnabled) return null
 
     return (
         <div

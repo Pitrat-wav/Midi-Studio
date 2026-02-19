@@ -243,7 +243,7 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
             setTrackSetting('group_drums', { isGroup: true, isCollapsed: false } as any)
             setTrackSetting('drums', { parentId: 'group_drums' } as any)
         }
-    }, [tracksState])
+    }, [tracksState, setTrackSetting])
 
     useEffect(() => {
         // Initialize Theme
@@ -314,7 +314,7 @@ export function ArrangementEditor({ onClose }: { onClose: () => void }) {
             window.removeEventListener('keydown', onKeyDown)
             window.removeEventListener('keyup', onKeyUp)
         }
-    }, [deleteSelectedClips, duplicateSelectedClips])
+    }, [deleteSelectedClips, duplicateSelectedClips, markers])
 
     // Sync Audio Players with Clips
     useEffect(() => {

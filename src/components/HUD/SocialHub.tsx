@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { getApiUrl } from '../../logic/apiConfig'
 import { ProjectManager } from '../../logic/ProjectManager'
 import { useVisualStore } from '../../store/visualStore'
@@ -26,7 +26,7 @@ export function SocialHub() {
     const cycleView = useVisualStore(s => s.cycleView)
     const API_URL = getApiUrl((import.meta as any).env)
 
-    const fetchProjects = async () => {
+    const fetchProjects = useCallback(async () => {
         setLoading(true)
         try {
             const res = await fetch(`${API_URL}/api/projects`)
@@ -39,11 +39,11 @@ export function SocialHub() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [API_URL])
 
     useEffect(() => {
         if (activeTab === 'feed') fetchProjects()
-    }, [activeTab])
+    }, [activeTab, fetchProjects])
 
     const handleSave = async () => {
         if (!projectName) {

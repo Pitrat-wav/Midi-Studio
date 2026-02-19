@@ -63,7 +63,7 @@ export class AudioTrackManager {
         }
 
         // AUTO-CROSSFADES (Audio Hygiene)
-        ; (player as any).fadeIn = 0.01
+         (player as any).fadeIn = 0.01
             ; (player as any).fadeOut = 0.01
 
         // Wait for buffer to load

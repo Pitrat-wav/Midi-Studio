@@ -195,7 +195,7 @@ class AudioVisualBridgeClass {
             this.uniforms.uHighFreq = highFreq
 
             // Decay pulses (60fps smooth)
-            for (let id in this.pulses) {
+            for (const id in this.pulses) {
                 this.pulses[id] = Math.max(0, this.pulses[id] - 0.05)
             }
 

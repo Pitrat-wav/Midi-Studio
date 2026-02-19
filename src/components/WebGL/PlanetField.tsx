@@ -52,12 +52,22 @@ export function PlanetField({ mode = 'cosmic' }: PlanetProps) {
 }
 
 function Planet({ data, mode }: { data: any, mode: 'cosmic' | 'cartoon' }) {
-    const meshRef = useRef<THREE.Mesh>(null!)
     const currentTextureUrl = useAIStore(s => s.currentTextureUrl)
 
-    // Attempt to load AI texture if it exists
-    // We use a safe check because useTexture might throw or wait
-    const aiTexture = currentTextureUrl ? useTexture(currentTextureUrl) : null
+    if (currentTextureUrl) {
+        return <PlanetWithTexture data={data} mode={mode} url={currentTextureUrl} />
+    }
+
+    return <PlanetContent data={data} mode={mode} texture={null} />
+}
+
+function PlanetWithTexture({ data, mode, url }: { data: any, mode: 'cosmic' | 'cartoon', url: string }) {
+    const texture = useTexture(url)
+    return <PlanetContent data={data} mode={mode} texture={texture} />
+}
+
+function PlanetContent({ data, mode, texture }: { data: any, mode: 'cosmic' | 'cartoon', texture: THREE.Texture | null }) {
+    const meshRef = useRef<THREE.Mesh>(null!)
 
     useFrame(({ clock }) => {
         if (!meshRef.current) return
@@ -85,16 +95,16 @@ function Planet({ data, mode }: { data: any, mode: 'cosmic' | 'cartoon' }) {
                 {mode === 'cartoon' ? (
                     <meshStandardMaterial
                         color={data.color}
-                        map={aiTexture}
+                        map={texture}
                         flatShading
                         toneMapped={false}
                     />
                 ) : (
                     <MeshDistortMaterial
-                        color={aiTexture ? "#ffffff" : data.color}
-                        map={aiTexture}
-                        metalness={aiTexture ? 0.2 : 0.9}
-                        roughness={aiTexture ? 0.8 : 0.1}
+                        color={texture ? "#ffffff" : data.color}
+                        map={texture}
+                        metalness={texture ? 0.2 : 0.9}
+                        roughness={texture ? 0.8 : 0.1}
                         distort={data.distort}
                         speed={data.speed * 5}
                     />

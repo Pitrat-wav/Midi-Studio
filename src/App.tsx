@@ -8,7 +8,7 @@
  * - Все параметры управляются через 3D controls
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { LandingPage } from './components/LandingPage'
 import { useAudioStore } from './store/audioStore'
 import { useVisualStore } from './store/visualStore'
@@ -69,11 +69,20 @@ function App() {
     const [showFAQ, setShowFAQ] = useState(false)
     const recalculateRouting = useAudioStore(s => s.recalculateRouting)
     const edges = useNodeStore(s => s.edges)
+    const prevEdgesKeyRef = useRef<string>('')
 
     // Sync Node Routing on Init
     useEffect(() => {
         if (isInitialized) {
-            recalculateRouting(edges)
+            const currentKey = edges
+                .map(e => `${e.source}-${e.target}`)
+                .sort()
+                .join('|')
+
+            if (currentKey !== prevEdgesKeyRef.current) {
+                recalculateRouting(edges)
+                prevEdgesKeyRef.current = currentKey
+            }
         }
     }, [isInitialized, recalculateRouting, edges])
 
