@@ -224,7 +224,7 @@ function sanitizeFilename(filename: any): string {
     }
 
     // Извлекаем только имя файла, удаляя пути
-    let base = path.basename(filename)
+    const base = path.basename(filename)
 
     // Проверка на пустое имя
     if (!base || base === '' || base === '.') {

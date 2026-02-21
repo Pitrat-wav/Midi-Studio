@@ -135,10 +135,6 @@ function CrowdSprite({ position, index }: { position: [number, number, number]; 
 }
 
 export function SouthParkWorld() {
-    const theme = useVisualStore((s) => s.aestheticTheme)
-
-    if (theme !== 'southpark') return null
-
     const crowdPositions = useMemo(() => {
         const positions: [number, number, number][] = []
         for (let i = 0; i < 30; i++) {

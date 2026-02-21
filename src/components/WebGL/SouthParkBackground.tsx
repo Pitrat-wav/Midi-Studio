@@ -84,11 +84,6 @@ function PaperCloud({ position, scale = 1 }: { position: [number, number, number
 // --- MAIN COMPONENT ---
 
 export function SouthParkBackground() {
-    const theme = useVisualStore(s => s.aestheticTheme)
-
-    // Only render if South Park theme is active
-    if (theme !== 'southpark') return null
-
     // Background texture (optional if using 3D mountains, but keeps the distant vibe)
     const texture = useMemo(() => {
         const loader = new THREE.TextureLoader()

@@ -356,7 +356,7 @@ export function SequencerLoop() {
             loop.dispose()
             metronomeSynthRef.current?.dispose()
         }
-    }, [isInitialized, bassSynth, fmBass, leadSynth, drumMachine, harmSynth, padSynth])
+    }, [isInitialized, bassSynth, fmBass, leadSynth, drumMachine, harmSynth, padSynth, bridge])
 
     return null
 }
