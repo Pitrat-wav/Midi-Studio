@@ -93,7 +93,7 @@ export const StudioScreen: React.FC<StudioScreenProps> = ({
                         <div ref={ledRef} className="studio-screen-led" />
                     </div>
                     
-                    <button className="studio-screen-close" onClick={onClose}>
+                    <button className="studio-screen-close" onClick={onClose} aria-label="Close">
                         <span>✕</span>
                         <span className="close-hint">ESC</span>
                     </button>
@@ -119,6 +119,7 @@ interface StudioKnobProps {
     value: number
     min?: number
     max?: number
+    defaultValue?: number
     onChange: (value: number) => void
     color?: 'blue' | 'amber' | 'green'
     size?: 'small' | 'medium' | 'large'
@@ -129,6 +130,7 @@ export const StudioKnob: React.FC<StudioKnobProps> = ({
     value,
     min = 0,
     max = 100,
+    defaultValue,
     onChange,
     color = 'blue',
     size = 'medium'
@@ -137,7 +139,19 @@ export const StudioKnob: React.FC<StudioKnobProps> = ({
     const rotation = -135 + (percentage * 2.7) // 270 degree range
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange(parseFloat(e.target.value))
+        const newVal = parseFloat(e.target.value)
+        onChange(newVal)
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.selectionChanged()
+        }
+    }
+
+    const handleDoubleClick = () => {
+        const resetVal = defaultValue !== undefined ? defaultValue : (max + min) / 2
+        onChange(resetVal)
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success')
+        }
     }
     
     return (
@@ -146,6 +160,7 @@ export const StudioKnob: React.FC<StudioKnobProps> = ({
                 <div 
                     className="studio-knob"
                     style={{ transform: `rotate(${rotation}deg)` }}
+                    onDoubleClick={handleDoubleClick}
                 >
                     <div className="knob-marker" />
                 </div>
@@ -157,6 +172,7 @@ export const StudioKnob: React.FC<StudioKnobProps> = ({
                     value={value}
                     onChange={handleChange}
                     className="studio-knob-input"
+                    aria-label={label}
                 />
             </div>
             <span className="studio-knob-label">{label}</span>
@@ -173,6 +189,7 @@ interface StudioSliderProps {
     value: number
     min?: number
     max?: number
+    defaultValue?: number
     onChange: (value: number) => void
     vertical?: boolean
     color?: 'blue' | 'amber' | 'green'
@@ -183,12 +200,25 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
     value,
     min = 0,
     max = 100,
+    defaultValue,
     onChange,
     vertical = false,
     color = 'blue'
 }) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange(parseFloat(e.target.value))
+        const newVal = parseFloat(e.target.value)
+        onChange(newVal)
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.selectionChanged()
+        }
+    }
+
+    const handleDoubleClick = () => {
+        const resetVal = defaultValue !== undefined ? defaultValue : (max + min) / 2
+        onChange(resetVal)
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success')
+        }
     }
     
     const percentage = ((value - min) / (max - min)) * 100
@@ -196,7 +226,7 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
     return (
         <div className={`studio-slider-container ${vertical ? 'vertical' : 'horizontal'}`}>
             <span className="studio-slider-label">{label}</span>
-            <div className={`studio-slider-wrapper studio-slider-${color}`}>
+            <div className={`studio-slider-wrapper studio-slider-${color}`} onDoubleClick={handleDoubleClick}>
                 <input
                     type="range"
                     min={min}
@@ -206,6 +236,7 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
                     onChange={handleChange}
                     className="studio-slider-input"
                     style={vertical ? { height: '120px' } : { width: '150px' }}
+                    aria-label={label}
                 />
                 {vertical && (
                     <div 
@@ -263,10 +294,18 @@ export const StudioButton: React.FC<StudioButtonProps> = ({
     danger = false,
     icon
 }) => {
+    const handleClick = () => {
+        if (onClick) onClick()
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+        }
+    }
+
     return (
         <button 
             className={`studio-button ${active ? 'active' : ''} ${danger ? 'danger' : ''}`}
-            onClick={onClick}
+            onClick={handleClick}
+            aria-pressed={active}
         >
             {icon && <span className="button-icon">{icon}</span>}
             <span className="button-label">{label}</span>

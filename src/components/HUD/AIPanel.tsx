@@ -26,6 +26,8 @@ export function AIPanel() {
             <button
                 className={`ai-toggle-btn ${isOpen ? 'active' : ''}`}
                 onClick={() => setIsOpen(!isOpen)}
+                aria-label="AI Texture Lab"
+                title="AI Texture Lab"
             >
                 <Wand2 size={24} />
             </button>
@@ -40,7 +42,7 @@ export function AIPanel() {
                     >
                         <header>
                             <h3><Sparkles size={16} /> AI TEXTURE LAB</h3>
-                            <button onClick={() => setIsOpen(false)}><X size={16} /></button>
+                            <button onClick={() => setIsOpen(false)} aria-label="Close"><X size={16} /></button>
                         </header>
 
                         <div className="ai-content">
