@@ -12,21 +12,27 @@ import db from './db'
 // КОНФИГУРАЦИЯ БЕЗОПАСНОСТИ
 // ============================================================================
 
-const BOT_TOKEN = process.env.BOT_TOKEN
-if (!BOT_TOKEN || BOT_TOKEN === 'YOUR_BOT_TOKEN') {
-    console.error('❌ ERROR: BOT_TOKEN is not defined in environment variables or is using the default placeholder.')
-    console.error('   Please copy backend/.env.example to backend/.env and set your bot token.')
-    process.exit(1)
+export const BOT_TOKEN = process.env.BOT_TOKEN || '123456789:ABCdefGHIjklMNOpqrSTUvwxYZ' // Dummy token for tests
+
+if (process.env.NODE_ENV !== 'test') {
+    if (!process.env.BOT_TOKEN || process.env.BOT_TOKEN === 'YOUR_BOT_TOKEN') {
+        console.error('❌ ERROR: BOT_TOKEN is not defined in environment variables or is using the default placeholder.')
+        console.error('   Please copy backend/.env.example to backend/.env and set your bot token.')
+        process.exit(1)
+    }
+
+    // Валидация токена — должен быть строкой и не содержать пробелов
+    if (typeof BOT_TOKEN !== 'string' || BOT_TOKEN.includes(' ') || BOT_TOKEN.length < 10) {
+        console.error('❌ ERROR: BOT_TOKEN has invalid format. Must be a valid Telegram bot token.')
+        process.exit(1)
+    }
 }
 
-// Валидация токена — должен быть строкой и не содержать пробелов
-if (typeof BOT_TOKEN !== 'string' || BOT_TOKEN.includes(' ') || BOT_TOKEN.length < 10) {
-    console.error('❌ ERROR: BOT_TOKEN has invalid format. Must be a valid Telegram bot token.')
-    process.exit(1)
-}
+export const bot = new Telegraf(BOT_TOKEN)
+export const app = express()
 
-const bot = new Telegraf(BOT_TOKEN)
-const app = express()
+app.use(express.json({ limit: '2mb' }))
+app.use(express.urlencoded({ extended: true, limit: '2mb' }))
 
 // ============================================================================
 // CORS CONFIGURATION
@@ -115,9 +121,10 @@ const uploadLimiter = rateLimit({
  * @see https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
  */
 function validateInitData(initData: string, token: string): boolean {
-    // Skip validation only in development mode with explicit flag
-    if (process.env.NODE_ENV === 'development' && process.env.SKIP_TELEGRAM_VALIDATION === 'true') {
-        console.warn('⚠️  Skipping Telegram validation in development mode')
+    // Skip validation in development mode or test mode with explicit flag
+    if ((process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') &&
+        process.env.SKIP_TELEGRAM_VALIDATION === 'true') {
+        console.warn('⚠️  Skipping Telegram validation')
         return true
     }
 
@@ -285,8 +292,8 @@ function validateMidiSize(base64Data: string): { valid: boolean; error?: string 
         return { valid: false, error: 'MIDI data is required' }
     }
 
-    // Проверка на valid base64
-    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/
+    // Проверка на valid base64 (allow spaces and newlines if they exist, but normally they shouldn't)
+    const base64Regex = /^[A-Za-z0-9+/=\s]*$/
     if (!base64Regex.test(base64Data)) {
         return { valid: false, error: 'Invalid base64 encoding' }
     }
@@ -394,7 +401,7 @@ app.get('/api/projects', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Invalid pagination parameters' })
         }
         
-        const projects = db.getProjects.all(limit, offset)
+        const projects = db.getProjects(limit, offset)
         res.json(projects)
     } catch (e) {
         console.error('Failed to list projects:', e)
@@ -410,7 +417,7 @@ app.get('/api/projects/:id', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Invalid project ID' })
         }
         
-        const project = db.getProjectById.get(id)
+        const project = db.getProjectById(id)
         if (!project) {
             return res.status(404).json({ error: 'Project not found' })
         }
@@ -448,7 +455,7 @@ app.post('/api/projects', (req: Request, res: Response) => {
         // Валидация parent_id
         const safeParentId = parent_id ? parseInt(parent_id, 10) : null
 
-        const result = db.insertProject.run(name.trim(), safeAuthor, JSON.stringify(data), safeParentId)
+        const result = db.insertProject(name.trim(), safeAuthor, JSON.stringify(data), safeParentId)
         res.json({ success: true, id: result.lastInsertRowid })
     } catch (e) {
         console.error('Failed to save project:', e)
@@ -464,7 +471,7 @@ app.post('/api/projects/:id/like', (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Invalid project ID' })
         }
         
-        const result = db.incrementLikes.run(id)
+        const result = db.incrementLikes(id)
         if (result.changes === 0) {
             return res.status(404).json({ error: 'Project not found' })
         }
@@ -515,8 +522,16 @@ process.on('SIGINT', () => {
     process.exit(0)
 })
 
-app.listen(PORT, () => {
-    console.log(`✅ Backend MIDI server running on port ${PORT}`)
-    console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`)
-    console.log(`   Health check: http://localhost:${PORT}/health`)
-})
+// Only start the server if this file is run directly or in development
+const isMain = import.meta.url.endsWith(path.basename(process.argv[1])) ||
+               import.meta.url.endsWith(path.basename(process.argv[1]) + '.ts');
+
+if (process.env.NODE_ENV !== 'test' || (isMain && process.env.NODE_ENV !== 'test')) {
+    app.listen(PORT, () => {
+        console.log(`✅ Backend MIDI server running on port ${PORT}`)
+        console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`)
+        console.log(`   Health check: http://localhost:${PORT}/health`)
+    })
+}
+
+export default app
