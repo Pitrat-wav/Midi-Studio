@@ -12,7 +12,7 @@ if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true })
 }
 
-const dbPath = path.join(dataDir, 'projects.db')
+const dbPath = process.env.NODE_ENV === 'test' ? ':memory:' : path.join(dataDir, 'projects.db')
 const db = new Database(dbPath)
 
 // ============================================================================
@@ -94,8 +94,9 @@ function runMigrations() {
         db.exec(`
             CREATE TRIGGER IF NOT EXISTS update_projects_updated_at 
             AFTER UPDATE ON projects
+            FOR EACH ROW
             BEGIN
-                UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id
+                UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
             END
         `)
         db.exec('INSERT INTO _migrations (version) VALUES (3)')
