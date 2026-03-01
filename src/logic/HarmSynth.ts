@@ -1,4 +1,5 @@
 import * as Tone from 'tone'
+import { BaseSynth } from './BaseSynth'
 
 export type HarmOscType = 'sawtooth' | 'square' | 'triangle' | 'sine'
 
@@ -207,7 +208,7 @@ class HarmVoice {
     }
 }
 
-export class HarmSynth {
+export class HarmSynth extends BaseSynth {
     private voicePool: HarmVoice[] = []
     private activeVoices: Set<HarmVoice> = new Set()
     private maxVoices = 16
@@ -243,8 +244,9 @@ export class HarmSynth {
     private sharedCurve = new Float32Array(4096)
     private lastCurveParams = { timbre: -1, order: -1, harmonics: -1 }
 
-    private initialized = false
-    constructor() { }
+    constructor() {
+        super()
+    }
 
     public init() {
         if (this.initialized) return
@@ -257,7 +259,7 @@ export class HarmSynth {
         this.chorus = new Tone.Chorus(4, 2.5, 0.5).start()
         this.delay = new Tone.FeedbackDelay('8n', 0.5)
         this.reverb = new Tone.Reverb(2)
-        this.outputGain = new Tone.Volume(0)
+        this.outputGain = new Tone.Volume(this._volume)
 
         this.directBus.chain(this.filter1, this.filter2, this.outputGain)
         this.fxBus.chain(this.distortion, this.phaser, this.chorus, this.delay, this.reverb, this.outputGain)
@@ -339,7 +341,6 @@ export class HarmSynth {
     setDelay(time: string, feedback: number, wet: number) { if (this.delay) { this.delay.delayTime.value = time; this.delay.feedback.value = feedback; this.delay.wet.value = wet } }
     setReverb(decay: number, wet: number) { if (this.reverb) { this.reverb.decay = decay; this.reverb.wet.value = wet } }
     setFilter(idx: 1 | 2, freq: number, q: number, type: BiquadFilterType) { const f = idx === 1 ? this.filter1 : this.filter2; if (f) { f.frequency.value = freq; f.Q.value = q; f.type = type } }
-    setVolume(db: number) { this.outputGain?.volume.rampTo(db, 0.1) }
     setOscType(idx: 1 | 2 | 3, type: HarmOscType) { (this.settings as any)[`osc${idx}`].type = type }
     setOscDetune(idx: 1 | 2 | 3, detune: number) { (this.settings as any)[`osc${idx}`].detune = detune }
     setEnv(target: 'osc1' | 'osc2' | 'osc3' | 'noise', params: ADSRParams) { (this.settings as any)[target].env = params }
@@ -364,5 +365,19 @@ export class HarmSynth {
     setComplexParams(params: Partial<BuchlaParams>) {
         this.settings.complex = { ...this.settings.complex, ...params }
         this.activeVoices.forEach(v => this.updateWavefolder(v, this.settings.complex.timbre, this.settings.complex.order, this.settings.complex.harmonics))
+    }
+
+    public override dispose() {
+        this.voicePool.forEach(v => v.dispose())
+        this.fxBus?.dispose()
+        this.directBus?.dispose()
+        this.filter1?.dispose()
+        this.filter2?.dispose()
+        this.distortion?.dispose()
+        this.phaser?.dispose()
+        this.chorus?.dispose()
+        this.delay?.dispose()
+        this.reverb?.dispose()
+        super.dispose()
     }
 }

@@ -306,10 +306,12 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             set({ loadingStep: 'Constructing Synths (Drums)...' })
             await new Promise(r => setTimeout(r, 10))
             const drums = new DrumMachine()
+            drums.init()
 
             set({ loadingStep: 'Constructing Synths (Pads)...' })
             await new Promise(r => setTimeout(r, 10))
             const pads = new PadSynth()
+            pads.init()
 
             set({ loadingStep: 'Constructing Synths (Harm)...' })
             await new Promise(r => setTimeout(r, 10))
@@ -319,6 +321,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             set({ loadingStep: 'Constructing Synths (Sampler)...' })
             await new Promise(r => setTimeout(r, 10))
             const sampler = new SamplerInstrument()
+            sampler.init()
             await sampler.load(useSamplerStore.getState().url)
 
             set({ loadingStep: 'Connecting Modules...' })
@@ -354,21 +357,20 @@ export const useAudioStore = create<AudioState>((set, get) => ({
             }
 
             // Pads
-            if (pads?.synth) pads.synth.connect(channels['pads'])
+            if (pads?.outputGain) pads.outputGain.connect(channels['pads'])
 
             // Harm
-            if ((harm as any).outputGain) (harm as any).outputGain.connect(channels['harm'])
-            else if ((harm as any).output) (harm as any).output.connect(channels['harm'])
+            if (harm?.outputGain) harm.outputGain.connect(channels['harm'])
 
             // Sampler
-            sampler.volume.connect(channels['sampler'])
+            if (sampler.outputGain) sampler.outputGain.connect(channels['sampler'])
 
 
             // Apply initial volumes (already set during channel creation, but let's be sure for instrument internal levels)
             bass?.setVolume(0) // Let channels handle the actual mix
             lead?.setVolume(0)
             drums?.setVolume(0)
-            if (pads?.synth?.volume) pads.synth.volume.value = 0
+            pads?.setVolume(0)
             harm?.setVolume(0)
             sampler.setVolume(0)
 
@@ -870,10 +872,9 @@ export const useAudioStore = create<AudioState>((set, get) => ({
                 else if (trackId === 'harm') synth = new HarmSynth()
                 else if (trackId === 'drums') synth = new DrumMachine()
 
-                if (synth && 'init' in synth) synth.init()
                 if (synth) {
-                    const out = synth.outputGain || synth.output || synth.synth || synth.volume
-                    if (out) out.toDestination()
+                    synth.init()
+                    if (synth.outputGain) synth.outputGain.toDestination()
                 }
 
                 trackClips.forEach(clip => {

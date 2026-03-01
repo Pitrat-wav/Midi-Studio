@@ -1,19 +1,19 @@
 import * as Tone from 'tone'
+import { BaseSynth } from './BaseSynth'
 
-export class FMBass {
+export class FMBass extends BaseSynth {
     private synth: Tone.FMSynth | undefined
     private dist: Tone.Distortion | undefined
-    private outputGain: Tone.Volume | undefined
+    public outputGain: Tone.Volume | undefined
 
     private _harmonicity = 1.5
     private _modulationIndex = 10
-    private _volume = 0
     private _attack = 0.01
     private _decay = 0.2
 
-    private initialized = false
-
-    constructor() { }
+    constructor() {
+        super()
+    }
 
     public init() {
         if (this.initialized) return
@@ -72,11 +72,6 @@ export class FMBass {
         }
     }
 
-    setVolume(db: number) {
-        this._volume = db
-        if (this.outputGain) this.outputGain.volume.value = db
-    }
-
     triggerNote(note: string, duration: string, time: number, velocity: number = 0.8) {
         if (!this.initialized) this.init()
         if (!this.synth) return
@@ -86,5 +81,11 @@ export class FMBass {
         } catch (e) {
             console.error("FMBass: triggerNote error", e)
         }
+    }
+
+    public override dispose() {
+        this.synth?.dispose()
+        this.dist?.dispose()
+        super.dispose()
     }
 }

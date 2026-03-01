@@ -1,6 +1,7 @@
 import * as Tone from 'tone'
+import { BaseSynth } from './BaseSynth'
 
-export class AcidSynth {
+export class AcidSynth extends BaseSynth {
     public synth: Tone.PolySynth<Tone.MonoSynth> | undefined
     public dist: Tone.Distortion | undefined
     public outputGain: Tone.Volume | undefined
@@ -10,13 +11,12 @@ export class AcidSynth {
     private _envMod = 0.5
     private _decay = 0.2
     private _oscType: "sawtooth" | "square" | "sine" = "sawtooth"
-    private _volume = 0
     private _slideTime = 0.1
     private _distortionAmount = 0.4
 
-    private initialized = false
-
-    constructor() { }
+    constructor() {
+        super()
+    }
 
     public init() {
         if (this.initialized) return
@@ -112,13 +112,6 @@ export class AcidSynth {
         }
     }
 
-    setVolume(db: number) {
-        this._volume = db
-        if (this.outputGain) {
-            this.outputGain.volume.value = db
-        }
-    }
-
     setParams(cutoff: number, resonance: number, envMod: number = 0.5, decay: number = 0.2) {
         this._cutoff = cutoff
         this._resonance = resonance
@@ -168,5 +161,11 @@ export class AcidSynth {
         } catch (e) {
             console.error("AcidSynth: triggerNote error", e)
         }
+    }
+
+    public override dispose() {
+        this.synth?.dispose()
+        this.dist?.dispose()
+        super.dispose()
     }
 }

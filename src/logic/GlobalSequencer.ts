@@ -93,9 +93,7 @@ export function startSequencerLoop() {
         if (drums.isPlaying && drumMachine && isTrackActive('drums')) {
             const patterns = drums.activePatterns
 
-            if (drumMachine.output) {
-                drumMachine.output.volume.value = Tone.gainToDb(autoVolDrums)
-            }
+            drumMachine.setVolume(Tone.gainToDb(autoVolDrums)) // Use standardized setVolume
 
             if (patterns.kick[step] && !drums.kick.muted) {
                 drumMachine.triggerDrum('kick', time)
@@ -127,9 +125,8 @@ export function startSequencerLoop() {
 
             if (bassStep && bassStep.active) {
                 if (bass.activeInstrument === 'acid' && bassSynth) {
-                    if (bassSynth.outputGain) {
-                        bassSynth.outputGain.volume.value = Tone.gainToDb(autoVolBass)
-                    }
+                    bassSynth.setVolume(Tone.gainToDb(autoVolBass))
+
                     const isContinuing = prevBassStep?.active && prevBassStep?.slide
                     bassSynth.triggerNote(
                         bassStep.note,
@@ -153,9 +150,7 @@ export function startSequencerLoop() {
 
         if (leadSynth && isTrackActive('lead')) {
             // Apply volume
-            if (leadSynth.outputGain) {
-                leadSynth.outputGain.volume.value = Tone.gainToDb(autoVolLead)
-            }
+            leadSynth.setVolume(Tone.gainToDb(autoVolLead))
 
             if (seq.isStagesPlaying) {
                 try {
@@ -194,9 +189,7 @@ export function startSequencerLoop() {
 
         if (pads.active && padSynth && totalStep % 32 === 0 && isTrackActive('pads')) {
             try {
-                if (padSynth.synth) {
-                    padSynth.synth.volume.value = Tone.gainToDb(autoVolPads)
-                }
+                padSynth.setVolume(Tone.gainToDb(autoVolPads))
                 const progression = generatePadProgression(
                     harmony.root,
                     harmony.scale,
@@ -219,9 +212,7 @@ export function startSequencerLoop() {
 
         if (harm.isPlaying && harmSynth && totalStep % 32 === 0 && isTrackActive('harm')) {
             try {
-                if (harmSynth.outputGain) {
-                    harmSynth.outputGain.volume.value = Tone.gainToDb(autoVolHarm)
-                }
+                harmSynth.setVolume(Tone.gainToDb(autoVolHarm))
                 const rootNote = harmony.root + '2'
                 const rootMidi = Tone.Frequency(rootNote).toMidi()
                 harmSynth.triggerNote(rootNote, '2n', time, 0.7)
