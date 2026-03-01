@@ -1,11 +1,19 @@
 import * as Tone from 'tone'
+import { BaseSynth } from './BaseSynth'
 
-export class PadSynth {
-    synth: Tone.PolySynth
-    filter: Tone.Filter
-    reverb: Tone.Reverb
+export class PadSynth extends BaseSynth {
+    synth: Tone.PolySynth | undefined
+    filter: Tone.Filter | undefined
+    reverb: Tone.Reverb | undefined
+    public outputGain: Tone.Volume | undefined
 
     constructor() {
+        super()
+    }
+
+    public init() {
+        if (this.initialized) return
+
         this.filter = new Tone.Filter({
             type: 'lowpass',
             frequency: 1000,
@@ -32,14 +40,24 @@ export class PadSynth {
         })
         this.synth.maxPolyphony = 6
 
-        this.synth.chain(this.filter, this.reverb)
+        this.outputGain = new Tone.Volume(this._volume)
+        this.synth.chain(this.filter, this.reverb, this.outputGain)
+        this.initialized = true
     }
 
     triggerChord(notes: string[], duration: string, time: number, velocity: number = 0.4) {
-        this.synth.triggerAttackRelease(notes, duration, time, velocity)
+        if (!this.initialized) this.init()
+        this.synth?.triggerAttackRelease(notes, duration, time, velocity)
     }
 
     setParams(brightness: number) {
-        this.filter.frequency.exponentialRampTo(brightness * 4000 + 200, 0.1)
+        this.filter?.frequency.exponentialRampTo(brightness * 4000 + 200, 0.1)
+    }
+
+    public override dispose() {
+        this.synth?.dispose()
+        this.filter?.dispose()
+        this.reverb?.dispose()
+        super.dispose()
     }
 }

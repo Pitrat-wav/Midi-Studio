@@ -1,18 +1,25 @@
 import * as Tone from 'tone'
+import { BaseSynth } from './BaseSynth'
 
-export class DrumMachine {
-    public kick: Tone.MembraneSynth
-    public snare: Tone.NoiseSynth
-    public hihat: Tone.NoiseSynth
-    public hihatOpen: Tone.NoiseSynth
-    public clap: Tone.NoiseSynth
-    public ride: Tone.MetalSynth
-    comp: Tone.Compressor
-    public output: Tone.Volume
+export class DrumMachine extends BaseSynth {
+    public kick: Tone.MembraneSynth | undefined
+    public snare: Tone.NoiseSynth | undefined
+    public hihat: Tone.NoiseSynth | undefined
+    public hihatOpen: Tone.NoiseSynth | undefined
+    public clap: Tone.NoiseSynth | undefined
+    public ride: Tone.MetalSynth | undefined
+    comp: Tone.Compressor | undefined
+    public outputGain: Tone.Volume | undefined
 
     constructor() {
-        this.output = new Tone.Volume(0)
-        this.comp = new Tone.Compressor(-24, 4).connect(this.output)
+        super()
+    }
+
+    public init() {
+        if (this.initialized) return
+
+        this.outputGain = new Tone.Volume(this._volume)
+        this.comp = new Tone.Compressor(-24, 4).connect(this.outputGain)
 
         this.kick = new Tone.MembraneSynth({
             pitchDecay: 0.05,
@@ -51,72 +58,86 @@ export class DrumMachine {
             octaves: 1.5,
             volume: -12
         }).connect(this.comp)
-    }
 
-    setVolume(db: number) {
-        this.output.volume.value = db
+        this.initialized = true
     }
 
     setKit(kit: '808' | '909') {
+        if (!this.initialized) this.init()
         if (kit === '808') {
-            this.kick.set({
+            this.kick?.set({
                 pitchDecay: 0.05,
                 octaves: 10,
                 oscillator: { type: 'sine' },
                 envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4 }
             })
-            this.snare.set({
+            this.snare?.set({
                 noise: { type: 'white' },
                 envelope: { attack: 0.005, decay: 0.2, sustain: 0.02 }
             })
-            this.hihat.set({ noise: { type: 'white' }, envelope: { decay: 0.05 } })
-            this.hihatOpen.set({ noise: { type: 'white' }, envelope: { decay: 0.3 } })
-            this.ride.set({ envelope: { decay: 1.0 }, harmonicity: 5.1 })
+            this.hihat?.set({ noise: { type: 'white' }, envelope: { decay: 0.05 } })
+            this.hihatOpen?.set({ noise: { type: 'white' }, envelope: { decay: 0.3 } })
+            this.ride?.set({ envelope: { decay: 1.0 }, harmonicity: 5.1 })
         } else {
             // 909 Settings
-            this.kick.set({
+            this.kick?.set({
                 pitchDecay: 0.02,
                 octaves: 4,
                 oscillator: { type: 'sine' },
                 envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 1 }
             })
-            this.snare.set({
+            this.snare?.set({
                 noise: { type: 'pink' }, // Pink noise for 909 snare body
                 envelope: { attack: 0.001, decay: 0.15, sustain: 0 }
             })
             // 909 Hats are metallic/cymbal-like, but we use NoiseSynth. Use Pink for darker/thicker or modify envelope
-            this.hihat.set({ noise: { type: 'pink' }, envelope: { decay: 0.03 } })
-            this.hihatOpen.set({ noise: { type: 'pink' }, envelope: { decay: 0.2 } })
-            this.ride.set({ envelope: { decay: 2.0 }, harmonicity: 5.1 })
+            this.hihat?.set({ noise: { type: 'pink' }, envelope: { decay: 0.03 } })
+            this.hihatOpen?.set({ noise: { type: 'pink' }, envelope: { decay: 0.2 } })
+            this.ride?.set({ envelope: { decay: 2.0 }, harmonicity: 5.1 })
         }
     }
 
     setDrumParams(drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride', pitch: number, decay: number) {
+        if (!this.initialized) this.init()
         // Simplified mapping for synth params
-        if (drum === 'kick') {
+        if (drum === 'kick' && this.kick) {
             this.kick.envelope.decay = decay
             // pitch mapping if needed
         }
-        if (drum === 'hihat' || drum === 'hihatOpen') {
-            this[drum].envelope.decay = decay * 0.5
+        if ((drum === 'hihat' || drum === 'hihatOpen') && this[drum]) {
+            this[drum]!.envelope.decay = decay * 0.5
         }
-        if (drum === 'ride') {
+        if (drum === 'ride' && this.ride) {
             this.ride.envelope.decay = decay * 2
         }
     }
 
     setDrumVolume(drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride', volume: number) {
-        if (this[drum]) {
-            this[drum].volume.value = volume
+        if (!this.initialized) this.init()
+        const inst = (this as any)[drum]
+        if (inst) {
+            inst.volume.value = volume
         }
     }
 
     triggerDrum(drum: 'kick' | 'snare' | 'hihat' | 'hihatOpen' | 'clap' | 'ride', time: number, velocity: number = 0.8) {
-        if (drum === 'kick') this.kick.triggerAttackRelease('C1', '8n', time, velocity)
-        else if (drum === 'snare') this.snare.triggerAttackRelease('8n', time, velocity)
-        else if (drum === 'hihat') this.hihat.triggerAttackRelease('32n', time, velocity)
-        else if (drum === 'hihatOpen') this.hihatOpen.triggerAttackRelease('16n', time, velocity)
-        else if (drum === 'clap') this.clap.triggerAttackRelease('8n', time, velocity)
-        else if (drum === 'ride') this.ride.triggerAttackRelease('16n', time, velocity)
+        if (!this.initialized) this.init()
+        if (drum === 'kick') this.kick?.triggerAttackRelease('C1', '8n', time, velocity)
+        else if (drum === 'snare') this.snare?.triggerAttackRelease('8n', time, velocity)
+        else if (drum === 'hihat') this.hihat?.triggerAttackRelease('32n', time, velocity)
+        else if (drum === 'hihatOpen') this.hihatOpen?.triggerAttackRelease('16n', time, velocity)
+        else if (drum === 'clap') this.clap?.triggerAttackRelease('8n', time, velocity)
+        else if (drum === 'ride') this.ride?.triggerAttackRelease('16n', time, velocity)
+    }
+
+    public override dispose() {
+        this.kick?.dispose()
+        this.snare?.dispose()
+        this.hihat?.dispose()
+        this.hihatOpen?.dispose()
+        this.clap?.dispose()
+        this.ride?.dispose()
+        this.comp?.dispose()
+        super.dispose()
     }
 }
