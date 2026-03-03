@@ -6,14 +6,18 @@ class ExpressionProcessor extends AudioWorkletProcessor {
         this.port.onmessage = (e) => {
             if (e.data.type === 'compile') {
                 try {
-                    // Safe-ish factory for the expression
-                    // We wrap it in a try-catch to prevent worker crash
-                    const funcBody = `
-                        try {
-                            return ${e.data.formula};
-                        } catch(e) { return 0; }
-                    `;
-                    this.expr = new Function('in1', 'in2', 'in3', 'in4', 'time', 'sampleRate', funcBody);
+                    // Shadow APIs that could exfiltrate data (fetch, WebSocket)
+                    // or escape the sandbox (eval, Function).
+                    const funcBody = `"use strict";
+try { return ${e.data.formula}; } catch(e) { return 0; }`;
+                    const factory = new Function(
+                        'in1', 'in2', 'in3', 'in4', 'time', 'sampleRate',
+                        'fetch', 'WebSocket', 'indexedDB', 'eval', 'Function',
+                        funcBody
+                    );
+                    this.expr = (in1, in2, in3, in4, time, sr) =>
+                        factory(in1, in2, in3, in4, time, sr,
+                            undefined, undefined, undefined, undefined, undefined);
                 } catch (err) {
                     // Fallback to zero on syntax error
                     this.expr = () => 0;

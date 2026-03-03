@@ -6,15 +6,25 @@ class ScriptProcessor extends AudioWorkletProcessor {
         this.port.onmessage = (e) => {
             if (e.data.type === 'compile') {
                 try {
-                    // Create reusable process function from string
-                    const factory = new Function('memory', 'console', `
-                        ${e.data.code}
-                        return {
-                            init: typeof init !== 'undefined' ? init : null,
-                            process: typeof process !== 'undefined' ? process : null
-                        }
-                    `);
-                    const lib = factory(this.memory, console);
+                    // Shadow APIs available in AudioWorkletGlobalScope that could
+                    // exfiltrate data (fetch, WebSocket) or escape the sandbox (eval, Function).
+                    // window/document/localStorage are already absent in this scope.
+                    const factory = new Function(
+                        'memory', 'console',
+                        'fetch', 'WebSocket', 'indexedDB',
+                        'eval', 'Function',
+                        `"use strict";
+${e.data.code}
+return {
+    init: typeof init !== 'undefined' ? init : null,
+    process: typeof process !== 'undefined' ? process : null
+}`
+                    );
+                    const lib = factory(
+                        this.memory, console,
+                        undefined, undefined, undefined,
+                        undefined, undefined
+                    );
                     if (lib.init && typeof lib.init === 'function') lib.init();
                     this.userProcess = lib.process;
                 } catch (err) {

@@ -91,6 +91,48 @@ export class GraphEngine {
         })
     }
 
+    /**
+     * Executes user DSP code in a restricted context on the main thread
+     * (ScriptProcessorNode fallback path).
+     *
+     * Dangerous browser APIs are shadowed as `undefined` so user scripts
+     * cannot exfiltrate data or manipulate the DOM.
+     * AudioWorklet path is already isolated by the browser — this only
+     * applies to the legacy ScriptProcessorNode fallback.
+     */
+    private static sandboxedLib(
+        code: string,
+        memory: Float32Array
+    ): {
+        init: (() => void) | null
+        process: ((input: Float32Array, output: Float32Array) => void) | null
+    } {
+        const factory = new Function(
+            'memory', 'console',
+            // Shadow browser APIs that could exfiltrate data or mutate the DOM
+            'window', 'document', 'location', 'history',
+            'fetch', 'XMLHttpRequest', 'WebSocket',
+            'localStorage', 'sessionStorage', 'indexedDB',
+            'navigator', 'alert', 'confirm', 'prompt', 'open',
+            // Shadow eval + Function to prevent sandbox escape
+            'eval', 'Function',
+            `"use strict";
+${code}
+return {
+    init: typeof init !== 'undefined' ? init : null,
+    process: typeof process !== 'undefined' ? process : null
+}`
+        )
+        return factory(
+            memory, console,
+            undefined, undefined, undefined, undefined,
+            undefined, undefined, undefined,
+            undefined, undefined, undefined,
+            undefined, undefined, undefined, undefined, undefined,
+            undefined, undefined
+        )
+    }
+
     static createScriptNode(code: string) {
         const ctx = Tone.getContext().rawContext
 
@@ -106,12 +148,7 @@ export class GraphEngine {
             const memory = new Float32Array(1024)
 
             try {
-                // Create reusable process function from string
-                const factory = new Function('memory', 'console', `
-                    ${code}
-                    return { init: typeof init !== 'undefined' ? init : null, process: typeof process !== 'undefined' ? process : null }
-                 `)
-                const lib = factory(memory, console)
+                const lib = GraphEngine.sandboxedLib(code, memory)
                 if (lib.init && typeof lib.init === 'function') lib.init()
                 ;(scriptNode as any)._userProcess = lib.process
             } catch (err) {
@@ -963,13 +1000,9 @@ export class GraphEngine {
 
         if (!(wrap.node instanceof ScriptProcessorNode)) return
         try {
-            const factory = new Function('memory', 'console', `
-                ${code}
-                return { init: typeof init !== 'undefined' ? init : null, process: typeof process !== 'undefined' ? process : null }
-            `)
-            const lib = factory((wrap.node as any)._memory, console)
+            const lib = GraphEngine.sandboxedLib(code, (wrap.node as any)._memory)
             if (lib.init && typeof lib.init === 'function') lib.init()
-                ; (wrap.node as any)._userProcess = lib.process
+            ;(wrap.node as any)._userProcess = lib.process
         } catch (e) {
             logger.error('Script Update Failed', e)
         }
