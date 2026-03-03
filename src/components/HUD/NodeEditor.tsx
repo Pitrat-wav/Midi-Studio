@@ -66,6 +66,7 @@ function NodeEditorContent({ onClose }: { onClose: () => void }) {
     const [searchOpen, setSearchOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)
+    const [scriptError, setScriptError] = useState<string | null>(null)
     const searchInputRef = useRef<HTMLInputElement>(null)
 
     const filteredNodes = useMemo(() =>
@@ -117,6 +118,16 @@ function NodeEditorContent({ onClose }: { onClose: () => void }) {
         }
     }, [searchOpen])
 
+    useEffect(() => {
+        const onScriptError = (e: Event) => {
+            const detail = (e as CustomEvent<{ error: string }>).detail
+            setScriptError(detail.error)
+            setTimeout(() => setScriptError(null), 5000)
+        }
+        window.addEventListener('SCRIPT_NODE_ERROR', onScriptError)
+        return () => window.removeEventListener('SCRIPT_NODE_ERROR', onScriptError)
+    }, [])
+
     const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: any) => {
         setInspectorNodeId(node.id)
     }, [])
@@ -165,6 +176,17 @@ function NodeEditorContent({ onClose }: { onClose: () => void }) {
 
     return (
         <div className="node-editor-layout">
+            {scriptError && (
+                <div style={{
+                    position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+                    background: '#2a0a0a', border: '1px solid #ff4444', color: '#ff8888',
+                    padding: '8px 16px', borderRadius: 6, zIndex: 1000,
+                    fontFamily: 'monospace', fontSize: 12, maxWidth: 480,
+                    boxShadow: '0 2px 12px rgba(255,0,0,0.3)'
+                }}>
+                    ⚠ Script Node error: {scriptError}
+                </div>
+            )}
             <div className="node-sidebar">
                 <header>
                     <h2>THE GRID</h2>

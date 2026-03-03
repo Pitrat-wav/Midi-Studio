@@ -125,7 +125,10 @@ function App() {
         GamepadManager.init()
         launchControlXL.init()
         GraphEngine.init() // Initialize graph without direct edges arg
-        return () => GraphEngine.dispose()
+        return () => {
+            GraphEngine.dispose()
+            GamepadManager.dispose()
+        }
     }, [])
 
     // Initialize AudioVisualBridge when audio engine is ready

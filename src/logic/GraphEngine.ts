@@ -2,6 +2,9 @@ import * as Tone from 'tone'
 import { useNodeStore, NodeData, NodeType } from '../store/nodeStore'
 import { Edge, Node } from 'reactflow'
 import { hasCycle } from './graphUtils.ts'
+import WasmProcessorUrl from '../audio/worklets/WasmProcessor.js?url'
+import ExpressionProcessorUrl from '../audio/worklets/ExpressionProcessor.js?url'
+import ScriptProcessorUrl from '../audio/worklets/ScriptProcessor.js?url'
 
 // Map visual Node IDs to Tone AudioNodes AND their inputs
 interface AudioNodeWrapper {
@@ -30,12 +33,11 @@ export class GraphEngine {
     static async initWorklet() {
         const ctx = Tone.getContext().rawContext
         try {
-            // Note: In development we use the source path. In build we might need a different strategy.
-            await ctx.audioWorklet.addModule('/src/audio/worklets/WasmProcessor.js')
-            await ctx.audioWorklet.addModule('/src/audio/worklets/ExpressionProcessor.js')
-            await ctx.audioWorklet.addModule('/src/audio/worklets/ScriptProcessor.js')
+            await ctx.audioWorklet.addModule(WasmProcessorUrl)
+            await ctx.audioWorklet.addModule(ExpressionProcessorUrl)
+            await ctx.audioWorklet.addModule(ScriptProcessorUrl)
         } catch (e) {
-            // Silent fail - fallback to JS DSP
+            console.warn('[GraphEngine] AudioWorklet init failed, falling back to JS DSP:', e)
         }
     }
 
@@ -112,7 +114,9 @@ export class GraphEngine {
                 if (lib.init && typeof lib.init === 'function') lib.init()
                 ;(scriptNode as any)._userProcess = lib.process
             } catch (err) {
-                // Silent fail for script errors
+                const errMsg = err instanceof Error ? err.message : String(err)
+                console.warn('[ScriptNode] Compilation error:', errMsg)
+                window.dispatchEvent(new CustomEvent('SCRIPT_NODE_ERROR', { detail: { error: errMsg } }))
             }
 
             (scriptNode as any)._memory = memory
@@ -208,7 +212,7 @@ export class GraphEngine {
             }
             else if (data.type === 'audio_reverb') {
                 const rev = new Tone.Reverb({ decay: data.params.decay || 1.5, preDelay: data.params.preDelay || 0.01 })
-                rev.generate().catch(() => {})  // Silent fail for IR generation
+                rev.generate().catch((err) => console.warn('[GraphEngine] Reverb IR generation failed:', err))
                 wrapper = { node: rev, inputs: { 'in': rev } }
             }
             else if (data.type === 'audio_vca') {
@@ -265,7 +269,7 @@ export class GraphEngine {
             else if (data.type === 'fx_reverb') {
                 const rev = new Tone.Reverb({ decay: data.params.decay || 1.5, preDelay: data.params.preDelay || 0.01 })
                 rev.wet.value = data.params.wet || 0.5
-                rev.generate()
+                rev.generate().catch((err) => console.warn('[GraphEngine] Reverb (fx) IR generation failed:', err))
                 wrapper = { node: rev, inputs: { 'in': rev } }
             }
             else if (data.type === 'audio_phaser') {

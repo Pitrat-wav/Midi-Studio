@@ -119,6 +119,7 @@ class AudioVisualBridgeClass {
             console.log('✅ AudioVisualBridge initialized')
         } catch (error) {
             console.error('Failed to initialize AudioVisualBridge:', error)
+            throw error
         }
     }
 

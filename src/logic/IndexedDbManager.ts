@@ -10,7 +10,7 @@ export class IndexedDbManager {
     async init(): Promise<void> {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(this.dbName, 1)
-            request.onerror = () => reject('Failed to open IndexedDB')
+            request.onerror = () => reject(new Error(`Failed to open IndexedDB: ${request.error?.message}`))
             request.onsuccess = () => {
                 this.db = request.result
                 resolve()
@@ -35,7 +35,7 @@ export class IndexedDbManager {
             const store = transaction.objectStore(this.storeName)
             const request = store.put(blob, id)
             request.onsuccess = () => resolve()
-            request.onerror = () => reject('Error saving blob')
+            request.onerror = () => reject(new Error(`Error saving blob "${id}": ${request.error?.message}`))
         })
     }
 
@@ -46,7 +46,7 @@ export class IndexedDbManager {
             const store = transaction.objectStore(this.storeName)
             const request = store.get(id)
             request.onsuccess = () => resolve(request.result || null)
-            request.onerror = () => reject('Error getting blob')
+            request.onerror = () => reject(new Error(`Error getting blob "${id}": ${request.error?.message}`))
         })
     }
 
@@ -57,7 +57,7 @@ export class IndexedDbManager {
             const store = transaction.objectStore(this.storeName)
             const request = store.delete(id)
             request.onsuccess = () => resolve()
-            request.onerror = () => reject('Error deleting blob')
+            request.onerror = () => reject(new Error(`Error deleting blob "${id}": ${request.error?.message}`))
         })
     }
 
@@ -68,7 +68,7 @@ export class IndexedDbManager {
             const store = transaction.objectStore(this.storeName)
             const request = store.clear()
             request.onsuccess = () => resolve()
-            request.onerror = () => reject('Error clearing store')
+            request.onerror = () => reject(new Error(`Error clearing store: ${request.error?.message}`))
         })
     }
 }

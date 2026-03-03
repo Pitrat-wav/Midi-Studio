@@ -17,6 +17,9 @@ class GamepadManagerClass {
     private rafId: number | null = null
     private lastButtons: boolean[] = []
     private lastButtonTimes: number[] = [] // Debounce tracking
+    private initialized = false
+    private onConnected: ((e: GamepadEvent) => void) | null = null
+    private onDisconnected: ((e: GamepadEvent) => void) | null = null
 
     // DualSense Mapping (Standard API)
     // 0: Cross, 1: Circle, 2: Square, 3: Triangle
@@ -26,17 +29,35 @@ class GamepadManagerClass {
     // 16: PS Button, 17: Touchpad Click
 
     init() {
-        window.addEventListener("gamepadconnected", (e) => {
+        if (this.initialized) return
+        this.initialized = true
+
+        this.onConnected = (e: GamepadEvent) => {
             console.log("🎮 Gamepad connected:", e.gamepad.id)
             this.gamepadIndex = e.gamepad.index
             this.startLoop()
-        })
+        }
 
-        window.addEventListener("gamepaddisconnected", (e) => {
+        this.onDisconnected = (_e: GamepadEvent) => {
             console.log("🎮 Gamepad disconnected")
             this.gamepadIndex = null
             if (this.rafId) cancelAnimationFrame(this.rafId)
-        })
+            this.rafId = null
+        }
+
+        window.addEventListener("gamepadconnected", this.onConnected)
+        window.addEventListener("gamepaddisconnected", this.onDisconnected)
+    }
+
+    dispose() {
+        if (this.onConnected) window.removeEventListener("gamepadconnected", this.onConnected)
+        if (this.onDisconnected) window.removeEventListener("gamepaddisconnected", this.onDisconnected)
+        if (this.rafId) cancelAnimationFrame(this.rafId)
+        this.rafId = null
+        this.gamepadIndex = null
+        this.initialized = false
+        this.onConnected = null
+        this.onDisconnected = null
     }
 
     private startLoop() {
