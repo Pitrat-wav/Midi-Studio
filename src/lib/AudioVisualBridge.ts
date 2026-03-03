@@ -13,6 +13,7 @@
 
 import * as Tone from 'tone'
 import { useVisualStore } from '../store/visualStore'
+import { logger } from '../utils/logger'
 
 export interface MIDIEventData {
     type: 'noteOn' | 'noteOff' | 'cc' | 'aftertouch'
@@ -93,7 +94,7 @@ class AudioVisualBridgeClass {
      */
     async init() {
         if (this.isInitialized) {
-            console.warn('AudioVisualBridge already initialized')
+            logger.warn('AudioVisualBridge already initialized')
             return
         }
 
@@ -116,9 +117,9 @@ class AudioVisualBridgeClass {
             this.isInitialized = true
             this.startUpdateLoop()
 
-            console.log('✅ AudioVisualBridge initialized')
+            logger.info('✅ AudioVisualBridge initialized')
         } catch (error) {
-            console.error('Failed to initialize AudioVisualBridge:', error)
+            logger.error('Failed to initialize AudioVisualBridge:', error)
             throw error
         }
     }
@@ -128,14 +129,14 @@ class AudioVisualBridgeClass {
         if (enabled) {
             try {
                 await this.mic.open()
-                console.log('🎤 Microphone opened')
+                logger.info('🎤 Microphone opened')
             } catch (e) {
-                console.error('🎤 Mic access denied', e)
+                logger.error('🎤 Mic access denied', e)
                 useVisualStore.getState().toggleMic() // Reset store state if failed
             }
         } else {
             await this.mic.close()
-            console.log('🎤 Microphone closed')
+            logger.info('🎤 Microphone closed')
         }
     }
 
@@ -239,7 +240,7 @@ class AudioVisualBridgeClass {
      */
     register(id: string, callback: VisualCallback) {
         this.visualCallbacks.set(id, callback)
-        console.log(`📊 Registered visual component: ${id}`)
+        logger.debug(`📊 Registered visual component: ${id}`)
     }
 
     /**
@@ -247,7 +248,7 @@ class AudioVisualBridgeClass {
      */
     unregister(id: string) {
         this.visualCallbacks.delete(id)
-        console.log(`📊 Unregistered visual component: ${id}`)
+        logger.debug(`📊 Unregistered visual component: ${id}`)
     }
 
     /**
@@ -327,7 +328,7 @@ class AudioVisualBridgeClass {
         this.midiCallbacks.clear()
         this.isInitialized = false
 
-        console.log('🧹 AudioVisualBridge disposed')
+        logger.info('🧹 AudioVisualBridge disposed')
     }
 }
 

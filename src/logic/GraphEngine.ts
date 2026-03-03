@@ -5,6 +5,7 @@ import { hasCycle } from './graphUtils.ts'
 import WasmProcessorUrl from '../audio/worklets/WasmProcessor.js?url'
 import ExpressionProcessorUrl from '../audio/worklets/ExpressionProcessor.js?url'
 import ScriptProcessorUrl from '../audio/worklets/ScriptProcessor.js?url'
+import { logger } from '../utils/logger'
 
 // Map visual Node IDs to Tone AudioNodes AND their inputs
 interface AudioNodeWrapper {
@@ -37,7 +38,7 @@ export class GraphEngine {
             await ctx.audioWorklet.addModule(ExpressionProcessorUrl)
             await ctx.audioWorklet.addModule(ScriptProcessorUrl)
         } catch (e) {
-            console.warn('[GraphEngine] AudioWorklet init failed, falling back to JS DSP:', e)
+            logger.warn('[GraphEngine] AudioWorklet init failed, falling back to JS DSP:', e)
         }
     }
 
@@ -115,7 +116,7 @@ export class GraphEngine {
                 ;(scriptNode as any)._userProcess = lib.process
             } catch (err) {
                 const errMsg = err instanceof Error ? err.message : String(err)
-                console.warn('[ScriptNode] Compilation error:', errMsg)
+                logger.warn('[ScriptNode] Compilation error:', errMsg)
                 window.dispatchEvent(new CustomEvent('SCRIPT_NODE_ERROR', { detail: { error: errMsg } }))
             }
 
@@ -212,7 +213,7 @@ export class GraphEngine {
             }
             else if (data.type === 'audio_reverb') {
                 const rev = new Tone.Reverb({ decay: data.params.decay || 1.5, preDelay: data.params.preDelay || 0.01 })
-                rev.generate().catch((err) => console.warn('[GraphEngine] Reverb IR generation failed:', err))
+                rev.generate().catch((err) => logger.warn('[GraphEngine] Reverb IR generation failed:', err))
                 wrapper = { node: rev, inputs: { 'in': rev } }
             }
             else if (data.type === 'audio_vca') {
@@ -269,7 +270,7 @@ export class GraphEngine {
             else if (data.type === 'fx_reverb') {
                 const rev = new Tone.Reverb({ decay: data.params.decay || 1.5, preDelay: data.params.preDelay || 0.01 })
                 rev.wet.value = data.params.wet || 0.5
-                rev.generate().catch((err) => console.warn('[GraphEngine] Reverb (fx) IR generation failed:', err))
+                rev.generate().catch((err) => logger.warn('[GraphEngine] Reverb (fx) IR generation failed:', err))
                 wrapper = { node: rev, inputs: { 'in': rev } }
             }
             else if (data.type === 'audio_phaser') {
@@ -307,11 +308,11 @@ export class GraphEngine {
                             .then(bytes => {
                                 node.port.postMessage({ type: 'init', wasmBytes: bytes })
                             })
-                            .catch(err => console.error('WASM Loading Error:', err))
+                            .catch(err => logger.error('WASM Loading Error:', err))
                     }
                     wrapper = { node: node, inputs: { 'in': node } }
                 } catch (e) {
-                    console.error('AudioWorkletNode Creation Error:', e)
+                    logger.error('AudioWorkletNode Creation Error:', e)
                     // Fallback to gain (silent or passthrough)
                     const fallback = new Tone.Gain(1)
                     wrapper = { node: fallback, inputs: { 'in': fallback } }
@@ -806,7 +807,7 @@ export class GraphEngine {
                         }
                     }
                 } catch (e) {
-                    console.error('Expression Worklet error', e)
+                    logger.error('Expression Worklet error', e)
                     const fallback = new Tone.Gain(0)
                     wrapper = { node: fallback, inputs: { 'in': fallback } }
                 }
@@ -827,7 +828,7 @@ export class GraphEngine {
                 audioNodes.set(id, wrapper)
             }
         } catch (e) {
-            console.error(`GraphEngine Create Error ${id}`, e)
+            logger.error(`GraphEngine Create Error ${id}`, e)
         }
     }
 
@@ -970,7 +971,7 @@ export class GraphEngine {
             if (lib.init && typeof lib.init === 'function') lib.init()
                 ; (wrap.node as any)._userProcess = lib.process
         } catch (e) {
-            console.error('Script Update Failed', e)
+            logger.error('Script Update Failed', e)
         }
     }
 
@@ -1088,7 +1089,7 @@ export class GraphEngine {
                 const neighbors = adj.get(edge.source)
                 if (neighbors) neighbors.push(edge.target)
             } else {
-                console.warn(`🚫 GraphEngine: Blocked feedback loop involving ${edge.source}`)
+                logger.warn(`🚫 GraphEngine: Blocked feedback loop involving ${edge.source}`)
             }
         })
 

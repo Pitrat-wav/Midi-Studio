@@ -40,6 +40,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     pendingClips: { drums: null, bass: null, harmony: null, pads: null, sampler: null, harm: null },
 
     captureClip: (instId, slotIndex) => {
+        if (slotIndex < 0 || slotIndex >= MAX_SCENES) return
         let data: ClipData = {}
 
         switch (instId) {
@@ -82,7 +83,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     },
 
     triggerClip: (instId, slotIndex) => {
+        if (slotIndex < 0 || slotIndex >= MAX_SCENES) return
         const { clips, pendingClips } = get()
+        if (!clips[instId][slotIndex]) return // Nothing captured at this slot
         if (pendingClips[instId] === slotIndex) return // Already pending
 
         set(state => ({

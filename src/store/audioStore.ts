@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import * as Tone from 'tone'
+import { Edge } from 'reactflow'
 import { AcidSynth } from '../logic/AcidSynth'
 import { DrumMachine } from '../logic/DrumMachine'
 import { PadSynth } from '../logic/PadSynth'
@@ -13,6 +14,7 @@ import sampleManifest from '../data/sampleManifest.json'
 import { SNAPSHOT_LIBRARY } from '../data/snapshotLibrary'
 import { audioTrackManager } from '../logic/AudioTrackManager'
 import { FX_PRESETS, FxSettings } from '../data/fxPresets'
+import { logger } from '../utils/logger'
 
 export interface MasterFXNodes {
     distortion: Tone.Distortion
@@ -67,7 +69,7 @@ export interface AudioState {
     isMicMonitor: boolean
     // Routing & Effects
     channels: Record<string, Tone.Channel>
-    buses: { reverb: Tone.Channel, delay: Tone.Channel }
+    buses: { reverb: Tone.Channel | null, delay: Tone.Channel | null }
     sidechain: Tone.Compressor | null
     // Audio Tracks
     audioPlayers: Record<string, Tone.GrainPlayer | Tone.Player>
@@ -90,13 +92,13 @@ export interface AudioState {
     setSwing: (swing: number) => void
     setCurrentStep: (currentStep: number) => void
     setGlobalStep: (globalStep: number) => void
-    setFxParam: (effect: 'reverb' | 'delay' | 'distortion' | 'compressor', params: Partial<any>) => void
+    setFxParam: <E extends keyof FxSettings>(effect: E, params: Partial<FxSettings[E]>) => void
     loadFxPreset: (presetName: string) => void
     panic: () => void
     dispose: () => void
     masterEQ: { low: number, lowMid: number, highMid: number, high: number }
     setMasterEQ: (band: 'low' | 'lowMid' | 'highMid' | 'high', value: number) => void
-    recalculateRouting: (edges: any[]) => void
+    recalculateRouting: (edges: Edge[]) => void
     masterFXNodes: MasterFXNodes | null
     stutterInterval: ReturnType<typeof setInterval> | null
     // Snapshot Grid
@@ -110,23 +112,23 @@ export interface AudioState {
 
 export const useAudioStore = create<AudioState>((set, get) => {
     const initToneContext = async () => {
-        console.log('[Audio] Step 1: Tone.start()')
+        logger.info('[Audio] Step 1: Tone.start()')
         await Tone.start()
 
         // iOS Silent Switch Workaround
         set({ loadingStep: 'Unlocking Audio...' })
         const silentAudio = new Audio()
         silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAP8A/wD/'
-        silentAudio.play().catch(e => console.warn('Silent play failed', e))
+        silentAudio.play().catch(e => logger.warn('Silent play failed', e))
 
         if (Tone.context.state !== 'running') {
-            console.log('[Audio] Step 2: Resuming Context')
+            logger.info('[Audio] Step 2: Resuming Context')
             await Tone.context.resume()
         }
     }
 
     const initGlobalFX = async () => {
-        console.log('[Audio] Step 3: Global FX')
+        logger.info('[Audio] Step 3: Global FX')
         set({ loadingStep: 'Initializing Effects Chain...' })
 
         // 1. Master Bus & Channels
@@ -137,7 +139,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
         const channels: Record<string, Tone.Channel> = {}
         channelNames.forEach(name => {
             channels[name] = new Tone.Channel().connect(masterBus)
-            const vol = (get().volumes as any)[name] || 1
+            const vol = get().volumes[name as keyof AudioState['volumes']] ?? 1
             channels[name].volume.value = Tone.gainToDb(vol)
         })
 
@@ -221,7 +223,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
     }
 
     const initInstruments = async () => {
-        console.log('[Audio] Step 5: Instruments')
+        logger.info('[Audio] Step 5: Instruments')
 
         set({ loadingStep: 'Constructing Synths (Bass)...' })
         await new Promise(r => setTimeout(r, 10))
@@ -315,7 +317,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
         isMicMonitor: false,
 
         channels: {},
-        buses: { reverb: null as any, delay: null as any },
+        buses: { reverb: null, delay: null },
         sidechain: null,
 
         activeSnapshots: { drums: 0, bass: 0, lead: 0, pads: 0, sampler: 0, harm: 0 },
@@ -436,10 +438,10 @@ export const useAudioStore = create<AudioState>((set, get) => {
 
                 sessionStorage.setItem('midi_app_has_started', 'true')
                 set({ hasStarted: true })
-                console.log('Audio init success with Global FX & Mic')
+                logger.info('Audio init success with Global FX & Mic')
             } catch (e) {
                 set({ isInitializing: false, loadingStep: `Error: ${e}` })
-                console.error('Audio initialization failed', e)
+                logger.error('Audio initialization failed', e)
             }
         },
 
@@ -481,7 +483,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
                     mic.mute = !isMicMonitor
                     set({ isMicOpen: true })
                 } catch (e) {
-                    console.error('Failed to open mic', e)
+                    logger.error('Failed to open mic', e)
                     alert('Microphone access denied or error.')
                 }
             }
@@ -678,7 +680,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
                     Tone.Destination.volume.value = 0
                 }, 100)
             } catch (e) {
-                console.error('Panic failed', e)
+                logger.error('Panic failed', e)
             }
         },
 
@@ -691,8 +693,8 @@ export const useAudioStore = create<AudioState>((set, get) => {
                 clearInterval(stutterInterval)
                 set({ stutterInterval: null })
             }
-            if (bassSynth && 'dispose' in bassSynth) (bassSynth as any).dispose()
-            if (fmBass && 'dispose' in fmBass) (fmBass as any).dispose()
+            if (bassSynth) bassSynth.dispose()
+            if (fmBass) fmBass.dispose()
             if (samplerInstrument) samplerInstrument.dispose()
 
             Object.values(channels).forEach(ch => ch.dispose())
@@ -708,7 +710,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
                 nodes.compressor.dispose()
                 nodes.masterBus.dispose()
                 if (nodes.sidechainNodes) {
-                    Object.values(nodes.sidechainNodes).forEach((n: any) => n.dispose?.())
+                    Object.values(nodes.sidechainNodes).forEach(n => n.dispose())
                 }
             }
 
@@ -716,7 +718,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
             set({ isInitialized: false, hasStarted: false, isPlaying: false, bassSynth: null, fmBass: null, leadSynth: null, drumMachine: null, padSynth: null, harmSynth: null, samplerInstrument: null })
         },
 
-        recalculateRouting: (edges: any[]) => {
+        recalculateRouting: (edges: Edge[]) => {
             const state = get()
             if (!state.isInitialized) return
 
@@ -724,7 +726,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
             if (!nodes) return
 
             // --- CYCLE DETECTION HELPER ---
-            const hasCycle = (edgesToTest: any[]): boolean => {
+            const hasCycle = (edgesToTest: Edge[]): boolean => {
                 const adj = new Map<string, string[]>()
                 edgesToTest.forEach(e => {
                     if (!adj.has(e.source)) adj.set(e.source, [])
@@ -753,7 +755,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
             }
             // ------------------------------
 
-            console.log('[Audio] Recalculating Routing...', edges)
+            logger.info('[Audio] Recalculating Routing...', edges)
 
             // 1. Disconnect channels from masterBus to start fresh
             Object.values(state.channels).forEach(ch => ch.disconnect())
@@ -777,11 +779,11 @@ export const useAudioStore = create<AudioState>((set, get) => {
                     if (!hasCycle(testEdges)) {
                         safeEdges.push(edge)
                     } else {
-                        console.warn(`[Audio] Blocked feedback loop: ${edge.source} -> ${edge.target}`)
+                        logger.warn(`[Audio] Blocked feedback loop: ${edge.source} -> ${edge.target}`)
                     }
                 })
 
-                safeEdges.forEach((edge: any) => {
+                safeEdges.forEach((edge) => {
                     const source = getToneNode(edge.source)
                     const target = getToneNode(edge.target)
 
@@ -789,7 +791,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
                         try {
                             source.connect(target)
                         } catch (err) {
-                            console.warn(`[Audio] Connection failed: ${edge.source} -> ${edge.target}`, err)
+                            logger.warn(`[Audio] Connection failed: ${edge.source} -> ${edge.target}`, err)
                         }
                     }
                 })
@@ -860,7 +862,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
             const totalLengthTicks = useArrangementStore.getState().totalLengthTicks
             const totalLengthSeconds = (60 / bpm) * 4 * (totalLengthTicks / 16)
 
-            console.log(`❄️ Freezing track ${trackId} (${totalLengthSeconds.toFixed(2)}s)...`)
+            logger.info(`❄️ Freezing track ${trackId} (${totalLengthSeconds.toFixed(2)}s)...`)
 
             try {
                 const buffer = await Tone.Offline(async () => {
@@ -892,7 +894,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
                 const url = URL.createObjectURL(wavBlob)
                 setTrackFrozen(trackId, true, url)
             } catch (e) {
-                console.error('Freeze failed', e)
+                logger.error('Freeze failed', e)
             }
         }
     }

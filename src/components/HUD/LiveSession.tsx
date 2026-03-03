@@ -6,6 +6,23 @@ import { Play, Square, Zap, RefreshCw, Layout, Save } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './LiveSession.css'
 
+const INSTRUMENTS: readonly { id: InstrumentId, label: string, color: string }[] = [
+    { id: 'drums', label: 'DRUMS', color: '#00ffaa' },
+    { id: 'bass', label: 'BASS', color: '#00ccff' },
+    { id: 'harm', label: 'HARMONY', color: '#ffffff' },
+    { id: 'pads', label: 'PADS', color: '#ff00ff' },
+    { id: 'sampler', label: 'SAMPLER', color: '#ffaa00' }
+] as const
+
+const PERF_FX: readonly { id: string, label: string }[] = [
+    { id: 'tapeStop', label: 'TAPE STOP' },
+    { id: 'washOut', label: 'WASH OUT' },
+    { id: 'stutter', label: 'STUTTER' },
+    { id: 'glitch', label: 'GLITCH' },
+    { id: 'noise', label: 'NOISE' },
+    { id: 'riser', label: 'RISER' },
+] as const
+
 export function LiveSession() {
     const audio = useAudioStore()
     const visual = useVisualStore()
@@ -36,22 +53,8 @@ export function LiveSession() {
         audio.setFxParam('distortion', { amount: x * 0.8, wet: y })
     }
 
-    const instruments: { id: InstrumentId, label: string, color: string }[] = [
-        { id: 'drums', label: 'DRUMS', color: '#00ffaa' },
-        { id: 'bass', label: 'BASS', color: '#00ccff' },
-        { id: 'harm', label: 'HARMONY', color: '#ffffff' },
-        { id: 'pads', label: 'PADS', color: '#ff00ff' },
-        { id: 'sampler', label: 'SAMPLER', color: '#ffaa00' }
-    ]
-
-    const perfFx = [
-        { id: 'tapeStop', label: 'TAPE STOP' },
-        { id: 'washOut', label: 'WASH OUT' },
-        { id: 'stutter', label: 'STUTTER' },
-        { id: 'glitch', label: 'GLITCH' },
-        { id: 'noise', label: 'NOISE' },
-        { id: 'riser', label: 'RISER' },
-    ]
+    const instruments = INSTRUMENTS
+    const perfFx = PERF_FX
 
     return (
         <div className="live-session-overlay">
