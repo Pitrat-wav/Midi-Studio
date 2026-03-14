@@ -64,6 +64,41 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
         e.currentTarget.releasePointerCapture(e.pointerId)
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        let newValue = value
+        const range = max - min
+        const smallStep = step || range / 100
+        const largeStep = range / 10
+
+        if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+            newValue = Math.min(max, value + smallStep)
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+            newValue = Math.max(min, value - smallStep)
+        } else if (e.key === 'PageUp') {
+            newValue = Math.min(max, value + largeStep)
+        } else if (e.key === 'PageDown') {
+            newValue = Math.max(min, value - largeStep)
+        } else if (e.key === 'Home') {
+            newValue = min
+        } else if (e.key === 'End') {
+            newValue = max
+        } else {
+            return
+        }
+
+        e.preventDefault()
+        const steppedValue = Math.round(newValue / smallStep) * smallStep
+        // Use a more dynamic precision based on the step value
+        const precision = step < 0.01 ? 3 : 2
+        const finalValue = Number(steppedValue.toFixed(precision))
+        if (finalValue !== value) {
+            onChange(finalValue)
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.selectionChanged()
+            }
+        }
+    }
+
     const handleDoubleClick = () => {
         try {
             const resetValue = defaultValue !== undefined ? defaultValue : (max + min) / 2
@@ -100,6 +135,14 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onDoubleClick={handleDoubleClick}
+                onKeyDown={handleKeyDown}
+                role="slider"
+                tabIndex={0}
+                aria-label={label}
+                aria-valuemin={min}
+                aria-valuemax={max}
+                aria-valuenow={value}
+                aria-valuetext={step >= 1 ? Math.round(value).toString() : value.toFixed(2)}
                 style={{
                     width: size,
                     height: size,

@@ -126,8 +126,9 @@ export const BassScreen: React.FC = () => {
                 {/* Harmony Section */}
                 <div className="bass-harmony-section">
                     <div className="harmony-controls">
-                        <label>Root</label>
+                        <label htmlFor="bass-root">Root</label>
                         <select
+                            id="bass-root"
                             value={harmony.root}
                             onChange={(e) => harmony.setRoot(e.target.value)}
                             className="studio-select"
@@ -136,8 +137,9 @@ export const BassScreen: React.FC = () => {
                         </select>
                     </div>
                     <div className="harmony-controls">
-                        <label>Scale</label>
+                        <label htmlFor="bass-scale">Scale</label>
                         <select
+                            id="bass-scale"
                             value={harmony.scale}
                             onChange={(e) => harmony.setScale(e.target.value as any)}
                             className="studio-select"
@@ -155,6 +157,16 @@ export const BassScreen: React.FC = () => {
                                 key={i}
                                 className={`pattern-step ${step?.active ? 'active' : ''}`}
                                 onClick={() => toggleStepParam(i, 'active')}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault()
+                                        toggleStepParam(i, 'active')
+                                    }
+                                }}
+                                role="switch"
+                                tabIndex={0}
+                                aria-checked={step?.active}
+                                aria-label={`Step ${i + 1}`}
                             />
                         ))}
                     </div>

@@ -78,6 +78,16 @@ export const DrumsScreen: React.FC = () => {
                                 key={d.id}
                                 className={`drum-pad ${isSelected ? 'selected' : ''}`}
                                 onClick={() => setSelectedDrum(d.id)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault()
+                                        setSelectedDrum(d.id)
+                                    }
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={d.label}
+                                aria-selected={isSelected}
                             >
                                 <div 
                                     className="drum-pad-surface"
@@ -119,16 +129,18 @@ export const DrumsScreen: React.FC = () => {
                     <div className="sequencer-header">
                         <span>EDITING: {selectedDrum.toUpperCase()}</span>
                         <div className="sequencer-params">
-                            <label>STEPS</label>
+                            <label htmlFor="drum-steps">STEPS</label>
                             <input
+                                id="drum-steps"
                                 type="number" 
                                 min="1" 
                                 max="32"
                                 value={(store as any)[selectedDrum]?.steps || 16}
                                 onChange={(e) => handleParamChange(selectedDrum, 'steps', parseInt(e.target.value))}
                             />
-                            <label>PULSES</label>
+                            <label htmlFor="drum-pulses">PULSES</label>
                             <input
+                                id="drum-pulses"
                                 type="number" 
                                 min="0" 
                                 max={(store as any)[selectedDrum]?.steps || 16}
@@ -146,6 +158,16 @@ export const DrumsScreen: React.FC = () => {
                                     key={i}
                                     className={`step-button ${active ? 'active' : ''}`}
                                     onClick={() => store.toggleStep(selectedDrum as any, i)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault()
+                                            store.toggleStep(selectedDrum as any, i)
+                                        }
+                                    }}
+                                    role="switch"
+                                    tabIndex={0}
+                                    aria-checked={active}
+                                    aria-label={`Step ${i + 1}`}
                                 />
                             )
                         })}
