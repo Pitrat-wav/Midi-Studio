@@ -119,6 +119,7 @@ interface StudioKnobProps {
     value: number
     min?: number
     max?: number
+    step?: number
     defaultValue?: number
     onChange: (value: number) => void
     color?: 'blue' | 'amber' | 'green'
@@ -130,6 +131,7 @@ export const StudioKnob: React.FC<StudioKnobProps> = ({
     value,
     min = 0,
     max = 100,
+    step,
     defaultValue,
     onChange,
     color = 'blue',
@@ -168,7 +170,7 @@ export const StudioKnob: React.FC<StudioKnobProps> = ({
                     type="range"
                     min={min}
                     max={max}
-                    step={(max - min) / 100}
+                    step={step || (max - min) / 200}
                     value={value}
                     onChange={handleChange}
                     className="studio-knob-input"
@@ -189,6 +191,7 @@ interface StudioSliderProps {
     value: number
     min?: number
     max?: number
+    step?: number
     defaultValue?: number
     onChange: (value: number) => void
     vertical?: boolean
@@ -200,6 +203,7 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
     value,
     min = 0,
     max = 100,
+    step,
     defaultValue,
     onChange,
     vertical = false,
@@ -231,7 +235,7 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
                     type="range"
                     min={min}
                     max={max}
-                    step={(max - min) / 100}
+                    step={step || (max - min) / 200}
                     value={value}
                     onChange={handleChange}
                     className="studio-slider-input"
