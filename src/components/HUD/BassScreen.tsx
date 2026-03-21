@@ -153,8 +153,17 @@ export const BassScreen: React.FC = () => {
                         {store.pattern.map((step, i) => (
                             <button
                                 key={i}
+                                role="switch"
+                                aria-checked={!!step?.active}
+                                aria-label={`Step ${i + 1}`}
                                 className={`pattern-step ${step?.active ? 'active' : ''}`}
                                 onClick={() => toggleStepParam(i, 'active')}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault()
+                                        toggleStepParam(i, 'active')
+                                    }
+                                }}
                             />
                         ))}
                     </div>
