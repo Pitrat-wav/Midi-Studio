@@ -198,6 +198,15 @@
 .studio-knob-amber .knob-marker { background: var(--neon-amber); box-shadow: 0 0 5px var(--neon-amber); }
 .studio-knob-green .knob-marker { background: var(--neon-green); box-shadow: 0 0 5px var(--neon-green); }
 
+.studio-knob-wrapper:focus-within {
+    box-shadow: 0 0 0 2px var(--neon-blue);
+    border-radius: var(--radius-full);
+}
+
+.studio-knob-blue:focus-within { box-shadow: 0 0 15px var(--neon-blue-glow); }
+.studio-knob-amber:focus-within { box-shadow: 0 0 15px var(--neon-amber-glow); }
+.studio-knob-green:focus-within { box-shadow: 0 0 15px var(--neon-green-glow); }
+
 .studio-knob-input {
     position: absolute;
     inset: 0;
@@ -248,7 +257,17 @@
 
 .studio-slider-wrapper {
     position: relative;
+    border-radius: var(--radius-sm);
+    transition: box-shadow 0.2s;
 }
+
+.studio-slider-wrapper:focus-within {
+    box-shadow: 0 0 10px var(--neon-blue-glow);
+}
+
+.studio-slider-blue:focus-within { box-shadow: 0 0 10px var(--neon-blue-glow); }
+.studio-slider-amber:focus-within { box-shadow: 0 0 10px var(--neon-amber-glow); }
+.studio-slider-green:focus-within { box-shadow: 0 0 10px var(--neon-green-glow); }
 
 .studio-slider-input {
     -webkit-appearance: none;
