@@ -144,6 +144,9 @@ export const DrumsScreen: React.FC = () => {
                             return (
                                 <button
                                     key={i}
+                                    role="switch"
+                                    aria-checked={active ? 'true' : 'false'}
+                                    aria-label={`${selectedDrum.toUpperCase()} step ${i + 1}`}
                                     className={`step-button ${active ? 'active' : ''}`}
                                     onClick={() => store.toggleStep(selectedDrum as any, i)}
                                 />

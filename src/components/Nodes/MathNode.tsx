@@ -47,7 +47,7 @@ export const MathNode = memo(({ id, data, selected }: NodeProps<NodeData>) => {
                     <Calculator size={12} />
                 </div>
                 <span className="node-title">Math Expression</span>
-                <button className="node-close" onClick={() => removeNode(id)}>
+                <button className="node-close" aria-label="Close node" onClick={() => removeNode(id)}>
                     <X size={12} />
                 </button>
             </div>
