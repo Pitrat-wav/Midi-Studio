@@ -108,9 +108,12 @@
     transition: all 0.1s;
 }
 
-.pattern-step:hover {
+.pattern-step:hover,
+.pattern-step:focus-visible {
     border-color: var(--neon-blue);
+    box-shadow: var(--glow-blue);
     transform: translateY(-1px);
+    outline: none;
 }
 
 .pattern-step:active {

@@ -15,6 +15,10 @@ export const BassScreen: React.FC = () => {
         if (!newPattern[index]) return
         newPattern[index] = { ...newPattern[index], [field]: !newPattern[index][field] }
         store.setPattern(newPattern)
+
+        if (field === 'active' && window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+        }
     }
 
     return (
@@ -155,6 +159,8 @@ export const BassScreen: React.FC = () => {
                                 key={i}
                                 className={`pattern-step ${step?.active ? 'active' : ''}`}
                                 onClick={() => toggleStepParam(i, 'active')}
+                                aria-label={`Step ${i + 1}`}
+                                aria-pressed={step?.active}
                             />
                         ))}
                     </div>
