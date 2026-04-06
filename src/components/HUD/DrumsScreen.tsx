@@ -29,6 +29,13 @@ export const DrumsScreen: React.FC = () => {
     const [selectedDrum, setSelectedDrum] = React.useState<string>('kick')
     const handleClose = () => setFocusedInstrument(null)
 
+    const handleToggleStep = (drum: any, index: number) => {
+        store.toggleStep(drum, index)
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+        }
+    }
+
     return (
         <StudioScreen
             title="TR Rhythm Composer"
@@ -145,7 +152,9 @@ export const DrumsScreen: React.FC = () => {
                                 <button
                                     key={i}
                                     className={`step-button ${active ? 'active' : ''}`}
-                                    onClick={() => store.toggleStep(selectedDrum as any, i)}
+                                    onClick={() => handleToggleStep(selectedDrum as any, i)}
+                                    aria-label={`Step ${i + 1}`}
+                                    aria-pressed={active}
                                 />
                             )
                         })}
