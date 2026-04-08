@@ -47,10 +47,12 @@
     transition: all 0.15s;
 }
 
-.drum-pad:hover {
+.drum-pad:hover,
+.drum-pad:focus-visible {
     border-color: var(--neon-blue);
     box-shadow: var(--glow-blue);
     transform: translateY(-2px);
+    outline: none;
 }
 
 .drum-pad.selected {
@@ -162,9 +164,12 @@
     transition: all 0.1s;
 }
 
-.step-button:hover {
+.step-button:hover,
+.step-button:focus-visible {
     border-color: var(--neon-blue);
+    box-shadow: var(--glow-blue);
     transform: translateY(-1px);
+    outline: none;
 }
 
 .step-button:active {
