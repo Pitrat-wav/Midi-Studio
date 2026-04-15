@@ -77,7 +77,25 @@ export const DrumsScreen: React.FC = () => {
                             <div
                                 key={d.id}
                                 className={`drum-pad ${isSelected ? 'selected' : ''}`}
-                                onClick={() => setSelectedDrum(d.id)}
+                                onClick={() => {
+                                    setSelectedDrum(d.id)
+                                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault()
+                                        setSelectedDrum(d.id)
+                                        if (window.Telegram?.WebApp?.HapticFeedback) {
+                                            window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+                                        }
+                                    }
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`Select ${d.label}`}
+                                aria-selected={isSelected}
                             >
                                 <div 
                                     className="drum-pad-surface"
@@ -145,7 +163,14 @@ export const DrumsScreen: React.FC = () => {
                                 <button
                                     key={i}
                                     className={`step-button ${active ? 'active' : ''}`}
-                                    onClick={() => store.toggleStep(selectedDrum as any, i)}
+                                    onClick={() => {
+                                        store.toggleStep(selectedDrum as any, i)
+                                        if (window.Telegram?.WebApp?.HapticFeedback) {
+                                            window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+                                        }
+                                    }}
+                                    aria-label={`Step ${i + 1}`}
+                                    aria-pressed={active}
                                 />
                             )
                         })}

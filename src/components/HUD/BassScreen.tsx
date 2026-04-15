@@ -154,7 +154,14 @@ export const BassScreen: React.FC = () => {
                             <button
                                 key={i}
                                 className={`pattern-step ${step?.active ? 'active' : ''}`}
-                                onClick={() => toggleStepParam(i, 'active')}
+                                onClick={() => {
+                                    toggleStepParam(i, 'active')
+                                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+                                    }
+                                }}
+                                aria-label={`Step ${i + 1}`}
+                                aria-pressed={step?.active}
                             />
                         ))}
                     </div>
