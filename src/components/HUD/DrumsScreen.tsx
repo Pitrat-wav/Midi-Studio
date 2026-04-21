@@ -77,7 +77,20 @@ export const DrumsScreen: React.FC = () => {
                             <div
                                 key={d.id}
                                 className={`drum-pad ${isSelected ? 'selected' : ''}`}
-                                onClick={() => setSelectedDrum(d.id)}
+                                onClick={() => {
+                                    setSelectedDrum(d.id);
+                                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`${d.label} drum pad`}
+                                aria-selected={isSelected}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        setSelectedDrum(d.id);
+                                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                    }
+                                }}
                             >
                                 <div 
                                     className="drum-pad-surface"
@@ -145,7 +158,12 @@ export const DrumsScreen: React.FC = () => {
                                 <button
                                     key={i}
                                     className={`step-button ${active ? 'active' : ''}`}
-                                    onClick={() => store.toggleStep(selectedDrum as any, i)}
+                                    onClick={() => {
+                                        store.toggleStep(selectedDrum as any, i);
+                                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                    }}
+                                    aria-label={`Step ${i + 1}`}
+                                    aria-pressed={active}
                                 />
                             )
                         })}
