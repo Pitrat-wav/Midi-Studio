@@ -58,6 +58,12 @@
     box-shadow: var(--glow-amber);
 }
 
+.drum-pad:focus-visible {
+    outline: 2px solid var(--neon-blue);
+    outline-offset: 4px;
+    box-shadow: var(--glow-blue);
+}
+
 .drum-pad-surface {
     width: 60px;
     height: 60px;
@@ -175,6 +181,12 @@
     background: var(--neon-amber);
     border-color: var(--neon-amber);
     box-shadow: var(--glow-amber);
+}
+
+.step-button:focus-visible {
+    outline: 2px solid var(--neon-blue);
+    outline-offset: 2px;
+    box-shadow: var(--glow-blue);
 }
 
 /* Responsive */
