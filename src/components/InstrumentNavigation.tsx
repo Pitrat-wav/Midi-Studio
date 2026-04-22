@@ -41,8 +41,14 @@ export function InstrumentNavigation({ currentInstrument, onSelect }: Instrument
                     {/* Home/Studio Button */}
                     <button
                         className="nav-button"
-                        onClick={() => setAppView('3D')}
+                        onClick={() => {
+                            setAppView('3D')
+                            if (window.Telegram?.WebApp?.HapticFeedback) {
+                                window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+                            }
+                        }}
                         style={{ '--button-color': '#888888' } as any}
+                        aria-label="Studio (Shortcut: 0)"
                     >
                         <span className="nav-icon">🏛️</span>
                         <span className="nav-label">Studio</span>
@@ -77,7 +83,12 @@ export function InstrumentNavigation({ currentInstrument, onSelect }: Instrument
                                     e.preventDefault()
                                     e.stopPropagation()
                                     setVisualizerIndex(v.id)
+                                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+                                    }
                                 }}
+                                aria-label={`${v.name} (Shortcut: ${i + 1})`}
+                                aria-pressed={isActive}
                                 style={{
                                     '--button-color': '#3390ec',
                                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -108,11 +119,16 @@ export function InstrumentNavigation({ currentInstrument, onSelect }: Instrument
                                 e.preventDefault()
                                 e.stopPropagation()
                                 onSelect(instrument.id)
+                                if (window.Telegram?.WebApp?.HapticFeedback) {
+                                    window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+                                }
                             }}
                             style={{
                                 '--button-color': instrument.color
                             } as React.CSSProperties}
                             title={`${instrument.label} (${instrument.shortcut})`}
+                            aria-label={`${instrument.label} (Shortcut: ${instrument.shortcut})`}
+                            aria-pressed={isActive}
                         >
                             <span className="nav-icon">{instrument.icon}</span>
                             <span className="nav-label">{instrument.label}</span>

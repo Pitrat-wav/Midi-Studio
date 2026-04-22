@@ -43,10 +43,16 @@
     color: rgba(255, 255, 255, 0.6);
 }
 
-.nav-button:hover {
+.nav-button:hover,
+.nav-button:focus-visible {
     background: rgba(255, 255, 255, 0.1);
     transform: translateY(-4px);
     color: #ffffff;
+    outline: none;
+}
+
+.nav-button:focus-visible {
+    box-shadow: 0 0 0 2px var(--button-color, #3390ec), 0 0 20px var(--button-color, #3390ec);
 }
 
 .nav-button.active {
