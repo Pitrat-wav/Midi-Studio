@@ -62,14 +62,17 @@ export function InstrumentSearch({ onSelect }: InstrumentSearchProps) {
             if (e.key === 'ArrowDown') {
                 e.preventDefault()
                 setSelectedIndex(i => (i + 1) % results.length)
+                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault()
                 setSelectedIndex(i => (i - 1 + results.length) % results.length)
+                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
             } else if (e.key === 'Enter') {
                 e.preventDefault()
                 if (results[selectedIndex]) {
                     onSelect(results[selectedIndex])
                     setIsOpen(false)
+                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
                 }
             }
         }
@@ -95,6 +98,13 @@ export function InstrumentSearch({ onSelect }: InstrumentSearchProps) {
                     <input
                         ref={inputRef}
                         type="text"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-expanded={isOpen}
+                        aria-haspopup="listbox"
+                        aria-controls="instrument-search-results"
+                        aria-activedescendant={results.length > 0 ? `search-item-${results[selectedIndex]}` : undefined}
+                        aria-label="Search instruments"
                         value={query}
                         onChange={e => {
                             setQuery(e.target.value)
@@ -106,17 +116,21 @@ export function InstrumentSearch({ onSelect }: InstrumentSearchProps) {
                     <kbd className="esc-hint">ESC</kbd>
                 </div>
 
-                <div className="search-results">
+                <div className="search-results" role="listbox" id="instrument-search-results">
                     {results.length === 0 ? (
-                        <div className="search-empty">No instruments found</div>
+                        <div className="search-empty" role="status">No instruments found</div>
                     ) : (
                         results.map((key, index) => (
                             <div
                                 key={key}
+                                id={`search-item-${key}`}
+                                role="option"
+                                aria-selected={index === selectedIndex}
                                 className={`search-item ${index === selectedIndex ? 'active' : ''}`}
                                 onClick={() => {
                                     onSelect(key)
                                     setIsOpen(false)
+                                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
                                 }}
                                 onMouseEnter={() => setSelectedIndex(index)}
                             >
