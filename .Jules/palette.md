@@ -9,3 +9,7 @@
 ## 2025-05-15 - [Consistent Navigation Interactivity]
 **Learning:** Navigation buttons benefit from a combination of tactile (Haptic Feedback), semantic (ARIA labels/pressed), and visual (neon glow focus states) cues to provide a "premium" feel while remaining fully accessible to keyboard and screen reader users.
 **Action:** When implementing or updating navigation menus, always include `aria-label` with shortcut hints, `aria-pressed` for active states, Telegram haptics for clicks, and `:focus-visible` glow effects.
+
+## 2025-05-16 - [Tactile and Accessible Search Palettes]
+**Learning:** Search palettes (command palettes) benefit from the ARIA 1.2 combobox pattern for accessibility and Telegram's `selectionChanged` haptic feedback for a physical "clicky" feel during keyboard navigation.
+**Action:** For search lists, use `role="combobox"` on the input with `aria-activedescendant` pointing to the selected `role="option"`. Trigger `selectionChanged()` on ArrowUp/Down and `impactOccurred('light')` on selection.

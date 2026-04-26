@@ -36,14 +36,23 @@ export function VisualizerSearch() {
 
             if (e.key === 'ArrowDown') {
                 e.preventDefault()
-                setSelectedIndex(i => (i + 1) % results.length)
+                setSelectedIndex(i => {
+                    const next = (i + 1) % results.length
+                    window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+                    return next
+                })
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault()
-                setSelectedIndex(i => (i - 1 + results.length) % results.length)
+                setSelectedIndex(i => {
+                    const next = (i - 1 + results.length) % results.length
+                    window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+                    return next
+                })
             } else if (e.key === 'Enter') {
                 e.preventDefault()
                 if (results[selectedIndex]) {
                     setVisualizerIndex(results[selectedIndex].id)
+                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
                     setIsOpen(false)
                 }
             }
@@ -91,6 +100,12 @@ export function VisualizerSearch() {
                     <input
                         ref={inputRef}
                         type="text"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-expanded="true"
+                        aria-haspopup="listbox"
+                        aria-controls="visualizer-results"
+                        aria-activedescendant={results[selectedIndex] ? `v-option-${results[selectedIndex].id}` : undefined}
                         value={query}
                         onChange={e => {
                             setQuery(e.target.value)
@@ -110,20 +125,30 @@ export function VisualizerSearch() {
                     <kbd style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', color: '#666' }}>ESC</kbd>
                 </div>
 
-                <div className="search-results" style={{
-                    maxHeight: '400px',
-                    overflowY: 'auto',
-                    padding: '10px'
-                }}>
+                <div
+                    id="visualizer-results"
+                    className="search-results"
+                    role="listbox"
+                    aria-label="Visualizers"
+                    style={{
+                        maxHeight: '400px',
+                        overflowY: 'auto',
+                        padding: '10px'
+                    }}
+                >
                     {results.length === 0 ? (
-                        <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>No visualizers found</div>
+                        <div style={{ padding: '40px', textAlign: 'center', color: '#666' }} role="option">No visualizers found</div>
                     ) : (
                         results.map((v, index) => (
                             <div
                                 key={v.id}
+                                id={`v-option-${v.id}`}
                                 className={`search-item ${index === selectedIndex ? 'active' : ''}`}
+                                role="option"
+                                aria-selected={index === selectedIndex}
                                 onClick={() => {
                                     setVisualizerIndex(v.id)
+                                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
                                     setIsOpen(false)
                                 }}
                                 onMouseEnter={() => setSelectedIndex(index)}
