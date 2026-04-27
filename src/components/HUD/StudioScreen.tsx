@@ -172,10 +172,11 @@ export const StudioKnob: React.FC<StudioKnobProps> = ({
                     value={value}
                     onChange={handleChange}
                     className="studio-knob-input"
-                    aria-label={label}
+                    aria-label={label || 'Knob'}
+                    aria-valuetext={value.toFixed(1)}
                 />
             </div>
-            <span className="studio-knob-label">{label}</span>
+            {label && <span className="studio-knob-label">{label}</span>}
             <span className="studio-knob-value">{value.toFixed(1)}</span>
         </div>
     )
@@ -225,7 +226,7 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
     
     return (
         <div className={`studio-slider-container ${vertical ? 'vertical' : 'horizontal'}`}>
-            <span className="studio-slider-label">{label}</span>
+            {label && <span className="studio-slider-label">{label}</span>}
             <div className={`studio-slider-wrapper studio-slider-${color}`} onDoubleClick={handleDoubleClick}>
                 <input
                     type="range"
@@ -236,7 +237,8 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
                     onChange={handleChange}
                     className="studio-slider-input"
                     style={vertical ? { height: '120px' } : { width: '150px' }}
-                    aria-label={label}
+                    aria-label={label || 'Slider'}
+                    aria-valuetext={`${value.toFixed(1)}%`}
                 />
                 {vertical && (
                     <div 
