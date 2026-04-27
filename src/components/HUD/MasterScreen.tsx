@@ -53,14 +53,32 @@ export const MasterScreen: React.FC = () => {
                         max="200"
                         step="0.1"
                         value={audioStore.bpm}
-                        onChange={(e) => audioStore.setBpm(parseFloat(e.target.value))}
+                        onChange={(e) => {
+                            audioStore.setBpm(parseFloat(e.target.value));
+                            if (window.Telegram?.WebApp?.HapticFeedback) {
+                                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                            }
+                        }}
                         className="bpm-slider-studio"
+                        aria-label="BPM Control"
+                        aria-valuetext={`${Math.round(audioStore.bpm)} BPM`}
                     />
                     <div className="bpm-presets-studio">
-                        <button onClick={() => audioStore.setBpm(90)} className="bpm-preset-studio">90</button>
-                        <button onClick={() => audioStore.setBpm(120)} className="bpm-preset-studio">120</button>
-                        <button onClick={() => audioStore.setBpm(140)} className="bpm-preset-studio">140</button>
-                        <button onClick={() => audioStore.setBpm(174)} className="bpm-preset-studio">174</button>
+                        {[90, 120, 140, 174].map((bpm) => (
+                            <button
+                                key={bpm}
+                                onClick={() => {
+                                    audioStore.setBpm(bpm);
+                                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                                    }
+                                }}
+                                className="bpm-preset-studio"
+                                aria-label={`Set BPM to ${bpm}`}
+                            >
+                                {bpm}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -70,9 +88,8 @@ export const MasterScreen: React.FC = () => {
                     <div className="mixer-channels-grid">
                         {Object.entries(audioStore.volumes).map(([channel, volume]) => (
                             <div key={channel} className="mixer-channel-studio">
-                                <div className="channel-label-studio">{channel.toUpperCase()}</div>
                                 <StudioSlider
-                                    label=""
+                                    label={channel}
                                     value={volume * 100}
                                     min={0}
                                     max={100}
@@ -83,7 +100,14 @@ export const MasterScreen: React.FC = () => {
                                 <div className="channel-value-studio">{Math.round(volume * 100)}%</div>
                                 <button
                                     className={`channel-mute-studio ${audioStore.mutes[channel as keyof typeof audioStore.mutes] ? 'active' : ''}`}
-                                    onClick={() => audioStore.toggleMute(channel as any)}
+                                    onClick={() => {
+                                        audioStore.toggleMute(channel as any);
+                                        if (window.Telegram?.WebApp?.HapticFeedback) {
+                                            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                                        }
+                                    }}
+                                    aria-label={`Mute ${channel}`}
+                                    aria-pressed={audioStore.mutes[channel as keyof typeof audioStore.mutes]}
                                 >
                                     M
                                 </button>

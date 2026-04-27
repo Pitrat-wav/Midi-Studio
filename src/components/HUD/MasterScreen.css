@@ -39,8 +39,14 @@
     height: 8px;
     border-radius: var(--radius-sm);
     background: var(--gradient-metal-dark);
-    outline: none;
     cursor: pointer;
+    transition: box-shadow 0.2s;
+}
+
+.bpm-slider-studio:focus-visible {
+    outline: 2px solid var(--neon-green);
+    outline-offset: 4px;
+    box-shadow: var(--glow-green);
 }
 
 .bpm-slider-studio::-webkit-slider-thumb {
@@ -81,6 +87,12 @@
     border-color: var(--neon-green);
     box-shadow: var(--glow-green);
     transform: translateY(-1px);
+}
+
+.bpm-preset-studio:focus-visible {
+    outline: 2px solid var(--neon-green);
+    outline-offset: 2px;
+    box-shadow: var(--glow-green);
 }
 
 /* Mixer Section */
@@ -145,6 +157,12 @@
 
 .channel-mute-studio:hover {
     border-color: var(--neon-red);
+    box-shadow: var(--glow-red);
+}
+
+.channel-mute-studio:focus-visible {
+    outline: 2px solid var(--neon-red);
+    outline-offset: 2px;
     box-shadow: var(--glow-red);
 }
 
