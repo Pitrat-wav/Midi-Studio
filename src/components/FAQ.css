@@ -46,6 +46,13 @@
     opacity: 1;
 }
 
+.faq-close:focus-visible {
+    opacity: 1;
+    outline: 2px solid #3390ec;
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
 .faq-content h1 {
     font-size: 1.5rem;
     margin-bottom: 2rem;

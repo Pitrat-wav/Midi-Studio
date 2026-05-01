@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useCallback } from 'react'
 import './FAQ.css'
 
 interface FAQProps {
@@ -6,10 +6,32 @@ interface FAQProps {
 }
 
 export function FAQ({ onClose }: FAQProps) {
+    const handleClose = useCallback(() => {
+        onClose()
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
+    }, [onClose])
+
+    // Close on ESC
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                handleClose()
+            }
+        }
+        window.addEventListener('keydown', handleEsc)
+        return () => window.removeEventListener('keydown', handleEsc)
+    }, [handleClose])
+
     return (
-        <div className="faq-overlay">
-            <div className="faq-content glass">
-                <button className="faq-close" onClick={onClose}>✕</button>
+        <div className="faq-overlay" onClick={handleClose}>
+            <div className="faq-content glass" onClick={(e) => e.stopPropagation()}>
+                <button
+                    className="faq-close"
+                    onClick={handleClose}
+                    aria-label="Close help"
+                >
+                    ✕
+                </button>
                 <h1>🎹 Управление и Горячие Клавиши</h1>
                 <p className="subtitle">Полный список команд клавиатуры для MIDI Studio Pro 3D</p>
 
