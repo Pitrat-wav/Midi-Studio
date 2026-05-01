@@ -9,3 +9,7 @@
 ## 2025-05-15 - [Consistent Navigation Interactivity]
 **Learning:** Navigation buttons benefit from a combination of tactile (Haptic Feedback), semantic (ARIA labels/pressed), and visual (neon glow focus states) cues to provide a "premium" feel while remaining fully accessible to keyboard and screen reader users.
 **Action:** When implementing or updating navigation menus, always include `aria-label` with shortcut hints, `aria-pressed` for active states, Telegram haptics for clicks, and `:focus-visible` glow effects.
+
+## 2025-05-15 - [Comprehensive Overlay Interaction]
+**Learning:** Modal overlays (like the FAQ) are most intuitive when they support three complementary closing patterns: an explicit close button, the `Escape` key, and clicking the backdrop. Pairing these with haptic feedback (`impactOccurred('light')`) provides clear tactile confirmation of the action.
+**Action:** Always implement the "Triple-Close" pattern (Button + ESC + Backdrop) for HUD overlays to ensure maximum accessibility and user-friendly behavior.

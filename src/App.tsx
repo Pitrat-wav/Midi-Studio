@@ -217,21 +217,30 @@ function App() {
                     <div className="control-overlay">
                         <div className="transport-controls">
                             <button
-                                onClick={togglePlay}
+                                onClick={() => {
+                                    togglePlay()
+                                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
+                                }}
                                 className={`play-button ${isPlaying ? 'playing' : ''}`}
                                 title="Play/Stop (Space)"
+                                aria-label="Toggle playback"
                             >
                                 {isPlaying ? '⏸' : '▶'}
                             </button>
 
                             <div className="bpm-control">
-                                <label>BPM</label>
+                                <label htmlFor="bpm-slider">BPM</label>
                                 <input
+                                    id="bpm-slider"
                                     type="range"
                                     min="60"
                                     max="200"
                                     value={bpm}
-                                    onChange={(e) => setBPM(parseInt(e.target.value))}
+                                    onChange={(e) => {
+                                        setBPM(parseInt(e.target.value))
+                                        window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+                                    }}
+                                    aria-label="BPM Control"
                                 />
                                 <span>{bpm}</span>
                             </div>
@@ -245,8 +254,12 @@ function App() {
 
                             <button
                                 className="help-button-circle"
-                                onClick={() => setShowFAQ(true)}
+                                onClick={() => {
+                                    setShowFAQ(true)
+                                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
+                                }}
                                 title="FAQ & Help (?)"
+                                aria-label="FAQ & Help"
                             >
                                 ?
                             </button>
@@ -254,8 +267,12 @@ function App() {
 
                         <button
                             className="overlay-toggle"
-                            onClick={() => setShowOverlay(false)}
+                            onClick={() => {
+                                setShowOverlay(false)
+                                window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
+                            }}
                             title="Hide HUD (H)"
+                            aria-label="Hide HUD"
                         >
                             ✕
                         </button>
