@@ -20,6 +20,7 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
     const [isDragging, setIsDragging] = useState(false)
     const startY = useRef(0)
     const startValue = useRef(0)
+    const inputRef = useRef<HTMLInputElement>(null)
 
     const handlePointerDown = (e: React.PointerEvent) => {
         try {
@@ -27,6 +28,7 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
             startY.current = e.clientY
             startValue.current = value
             e.currentTarget.setPointerCapture(e.pointerId)
+            inputRef.current?.focus()
 
             if (window.Telegram?.WebApp?.HapticFeedback) {
                 window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
@@ -82,6 +84,17 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
     const angle = normalizedValue * 270 - 135
     const offset = circumference - normalizedValue * (circumference * 0.75)
 
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = parseFloat(e.target.value)
+        if (newValue !== value) {
+            onChange(newValue)
+            setInteraction(label || 'knob', 1.0)
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.selectionChanged()
+            }
+        }
+    }
+
     return (
         <div
             className="knob-container"
@@ -91,7 +104,8 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
                 alignItems: 'center',
                 gap: '8px',
                 width: size + 24,
-                userSelect: 'none'
+                userSelect: 'none',
+                position: 'relative'
             }}
         >
             <div
@@ -116,10 +130,32 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-                    transform: isDragging ? 'scale(1.05)' : 'scale(1)'
+                    transform: isDragging ? 'scale(1.05)' : 'scale(1)',
+                    outline: 'none'
                 }}
             >
-                <svg width={size} height={size} viewBox="0 0 64 64">
+                {/* Hidden input for accessibility and keyboard support */}
+                <input
+                    ref={inputRef}
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={value}
+                    onChange={handleInputChange}
+                    aria-label={label}
+                    aria-valuetext={step >= 1 ? Math.round(value).toString() : value.toFixed(2)}
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        opacity: 0,
+                        cursor: 'pointer',
+                        zIndex: 1,
+                        pointerEvents: 'none'
+                    }}
+                />
+
+                <svg width={size} height={size} viewBox="0 0 64 64" style={{ pointerEvents: 'none' }}>
                     <circle
                         cx="32"
                         cy="32"
@@ -176,6 +212,13 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
                         transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                     }} />
                 </div>
+
+                {/* Focus indicator */}
+                <style dangerouslySetInnerHTML={{ __html: `
+                    .knob-container:focus-within .knob-outer {
+                        box-shadow: 0 0 0 2px var(--tg-theme-bg-color), 0 0 0 4px ${activeColor} !important;
+                    }
+                `}} />
             </div>
 
             <div style={{ textAlign: 'center' }}>
