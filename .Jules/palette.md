@@ -9,3 +9,7 @@
 ## 2025-05-15 - [Consistent Navigation Interactivity]
 **Learning:** Navigation buttons benefit from a combination of tactile (Haptic Feedback), semantic (ARIA labels/pressed), and visual (neon glow focus states) cues to provide a "premium" feel while remaining fully accessible to keyboard and screen reader users.
 **Action:** When implementing or updating navigation menus, always include `aria-label` with shortcut hints, `aria-pressed` for active states, Telegram haptics for clicks, and `:focus-visible` glow effects.
+
+## 2026-05-25 - [Contextual Value Feedback for Screen Readers]
+**Learning:** For custom-styled controls using hidden range inputs (like `StudioKnob` and `StudioSlider`), raw numeric values announced by screen readers can be confusing without units. Using `aria-valuetext` allows providing a formatted, context-aware string (e.g., "75.0%") that improves clarity.
+**Action:** Always implement `aria-valuetext` on range inputs in core UI components, dynamically appending units (like "%" or "dB") based on the control's purpose.
