@@ -9,7 +9,7 @@ export function FAQ({ onClose }: FAQProps) {
     return (
         <div className="faq-overlay">
             <div className="faq-content glass">
-                <button className="faq-close" onClick={onClose}>✕</button>
+                <button className="faq-close" onClick={onClose} aria-label="Закрыть">✕</button>
                 <h1>🎹 Управление и Горячие Клавиши</h1>
                 <p className="subtitle">Полный список команд клавиатуры для MIDI Studio Pro 3D</p>
 
@@ -52,16 +52,20 @@ export function FAQ({ onClose }: FAQProps) {
                                 </tr>
                                 <tr>
                                     <td><kbd>0</kbd></td>
-                                    <td>Общий обзор (Overview)</td>
+                                    <td>Общий обзор / Студия (Overview)</td>
                                 </tr>
                                 <tr>
                                     <td><kbd>1</kbd> - <kbd>9</kbd></td>
                                     <td>Переход к инструментам</td>
                                 </tr>
+                                <tr>
+                                    <td><kbd>V</kbd></td>
+                                    <td>Галерея визуализаторов (Visualizers)</td>
+                                </tr>
                             </tbody>
                         </table>
                         <div className="mini-legend">
-                            1:Drums 2:Bass 3:Harm 4:Pads 5:Seq 6:ML185 7:Snake 8:Drone 9:Master
+                            1:Drums 2:Bass 3:Synth 4:Pads 5:Seq 6:Drone 7:Master 8:Sampler 9:Buchla
                         </div>
                     </section>
 
