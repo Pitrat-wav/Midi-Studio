@@ -81,9 +81,12 @@ export function KeyboardController({
                 // --- NAVIGATION / VISUALIZER SWITCH ---
                 case 'Digit0':
                     e.preventDefault()
-                    visual.toggleVisualizerShop()
-                    if (visual.showVisualizerShop) {
-                        visual.setStatus('VISUALIZER GALLERY OPENED')
+                    if (visual.appView === 'VISUALIZER') {
+                        visual.setAppView('3D')
+                        visual.setStatus('STUDIO VIEW')
+                    } else {
+                        visual.setFocusInstrument(null)
+                        visual.setStatus('OVERVIEW')
                     }
                     break
                 case 'Digit1':
@@ -131,6 +134,14 @@ export function KeyboardController({
                 case 'Digit9':
                     e.preventDefault()
                     if (visual.appView !== 'VISUALIZER') visual.setFocusInstrument('buchla')
+                    break
+
+                case 'KeyV':
+                    e.preventDefault()
+                    visual.toggleVisualizerShop()
+                    if (visual.showVisualizerShop) {
+                        visual.setStatus('VISUALIZER GALLERY OPENED')
+                    }
                     break
 
                 // --- MUTE ---
