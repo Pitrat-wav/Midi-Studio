@@ -9,7 +9,7 @@ export function FAQ({ onClose }: FAQProps) {
     return (
         <div className="faq-overlay">
             <div className="faq-content glass">
-                <button className="faq-close" onClick={onClose}>✕</button>
+                <button className="faq-close" onClick={onClose} aria-label="Закрыть">✕</button>
                 <h1>🎹 Управление и Горячие Клавиши</h1>
                 <p className="subtitle">Полный список команд клавиатуры для MIDI Studio Pro 3D</p>
 
