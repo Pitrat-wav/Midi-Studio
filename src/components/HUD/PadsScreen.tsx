@@ -38,20 +38,28 @@ export const PadsScreen: React.FC = () => {
                 {/* Harmony Section */}
                 <div className="pads-harmony-section">
                     <div className="harmony-controls">
-                        <label>Root Note</label>
+                        <label htmlFor="pads-root">Root Note</label>
                         <select
+                            id="pads-root"
                             value={harmony.root}
-                            onChange={(e) => harmony.setRoot(e.target.value)}
+                            onChange={(e) => {
+                                harmony.setRoot(e.target.value);
+                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged();
+                            }}
                             className="studio-select"
                         >
                             {ROOTS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
                     <div className="harmony-controls">
-                        <label>Scale</label>
+                        <label htmlFor="pads-scale">Scale</label>
                         <select
+                            id="pads-scale"
                             value={harmony.scale}
-                            onChange={(e) => harmony.setScale(e.target.value as any)}
+                            onChange={(e) => {
+                                harmony.setScale(e.target.value as any);
+                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged();
+                            }}
                             className="studio-select"
                         >
                             {SCALES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
@@ -62,27 +70,35 @@ export const PadsScreen: React.FC = () => {
                 {/* Main Controls */}
                 <div className="pads-controls-grid">
                     <div className="pad-control-item">
-                        <label>Brightness</label>
+                        <label htmlFor="pads-brightness">Brightness</label>
                         <input
+                            id="pads-brightness"
                             type="range"
                             min="0"
                             max="1"
                             step="0.01"
                             value={store.brightness}
-                            onChange={(e) => store.setParams({ brightness: parseFloat(e.target.value) })}
+                            onChange={(e) => {
+                                store.setParams({ brightness: parseFloat(e.target.value) });
+                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged();
+                            }}
                             className="studio-slider-horizontal"
                         />
                         <span className="control-value">{Math.round(store.brightness * 100)}%</span>
                     </div>
                     <div className="pad-control-item">
-                        <label>Complexity</label>
+                        <label htmlFor="pads-complexity">Complexity</label>
                         <input
+                            id="pads-complexity"
                             type="range"
                             min="0"
                             max="1"
                             step="0.01"
                             value={store.complexity}
-                            onChange={(e) => store.setParams({ complexity: parseFloat(e.target.value) })}
+                            onChange={(e) => {
+                                store.setParams({ complexity: parseFloat(e.target.value) });
+                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged();
+                            }}
                             className="studio-slider-horizontal"
                         />
                         <span className="control-value">{Math.round(store.complexity * 100)}%</span>
