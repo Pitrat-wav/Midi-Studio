@@ -11,21 +11,33 @@ export function AIPanel() {
     const [tempKey, setTempKey] = useState('')
     const [showKeyField, setShowKeyField] = useState(!hfKey)
 
+    const handleToggle = () => {
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
+        setIsOpen(!isOpen)
+    }
+
     const handleGenerate = async () => {
         if (!prompt) return
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('medium')
         await generateTexture(prompt)
     }
 
     const handleSaveKey = () => {
+        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success')
         setKeys(undefined, tempKey)
         setShowKeyField(false)
+    }
+
+    const handleShowKeyField = () => {
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
+        setShowKeyField(true)
     }
 
     return (
         <div className="ai-panel-container">
             <button
                 className={`ai-toggle-btn ${isOpen ? 'active' : ''}`}
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={handleToggle}
                 aria-label="AI Texture Lab"
                 title="AI Texture Lab"
             >
@@ -42,7 +54,7 @@ export function AIPanel() {
                     >
                         <header>
                             <h3><Sparkles size={16} /> AI TEXTURE LAB</h3>
-                            <button onClick={() => setIsOpen(false)} aria-label="Close"><X size={16} /></button>
+                            <button onClick={handleToggle} aria-label="Close"><X size={16} /></button>
                         </header>
 
                         <div className="ai-content">
@@ -53,6 +65,7 @@ export function AIPanel() {
                                         <input
                                             type="password"
                                             placeholder="hf_..."
+                                            aria-label="Hugging Face API Key"
                                             value={tempKey}
                                             onChange={e => setTempKey(e.target.value)}
                                         />
@@ -64,6 +77,7 @@ export function AIPanel() {
                                 <>
                                     <textarea
                                         placeholder="Describe the texture (e.g., 'liquid chrome nebula', 'alien organic biological skin'...)"
+                                        aria-label="Texture description prompt"
                                         value={prompt}
                                         onChange={e => setPrompt(e.target.value)}
                                         disabled={isGenerating}
@@ -91,7 +105,7 @@ export function AIPanel() {
                                         </div>
                                     )}
 
-                                    <button className="settings-btn" onClick={() => setShowKeyField(true)}>
+                                    <button className="settings-btn" onClick={handleShowKeyField}>
                                         <Key size={12} /> CHANGE API KEY
                                     </button>
                                 </>
