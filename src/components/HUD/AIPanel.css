@@ -30,6 +30,12 @@
     transform: scale(1.1);
 }
 
+.ai-toggle-btn:focus-visible {
+    outline: none;
+    border-color: #3390ec;
+    box-shadow: 0 0 20px rgba(51, 144, 236, 0.6);
+}
+
 .ai-toggle-btn.active {
     background: #3390ec;
     color: white;
@@ -98,6 +104,11 @@
     border-color: #3390ec;
 }
 
+.ai-content textarea:focus-visible {
+    border-color: #3390ec;
+    box-shadow: 0 0 10px rgba(51, 144, 236, 0.5);
+}
+
 .generate-btn {
     background: #3390ec;
     color: white;
@@ -113,6 +124,11 @@
 .generate-btn:disabled {
     background: #444;
     cursor: not-allowed;
+}
+
+.generate-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2), 0 0 15px rgba(51, 144, 236, 0.8);
 }
 
 .ai-error {
@@ -172,6 +188,12 @@
     color: white;
     padding: 8px;
     font-size: 12px;
+    outline: none;
+}
+
+.key-setup input:focus-visible {
+    border-color: #3390ec;
+    box-shadow: 0 0 10px rgba(51, 144, 236, 0.5);
 }
 
 .key-setup button {
@@ -185,6 +207,11 @@
     display: flex;
     align-items: center;
     gap: 4px;
+}
+
+.key-setup button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 10px rgba(51, 144, 236, 0.8);
 }
 
 .key-setup small {
@@ -215,4 +242,11 @@
 .settings-btn:hover {
     color: white;
     border-color: white;
+}
+
+.settings-btn:focus-visible {
+    outline: none;
+    color: white;
+    border-color: #3390ec;
+    box-shadow: 0 0 10px rgba(51, 144, 236, 0.5);
 }
