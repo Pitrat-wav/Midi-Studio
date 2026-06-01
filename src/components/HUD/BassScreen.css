@@ -117,6 +117,13 @@
     transform: translateY(1px);
 }
 
+.pattern-step:focus-visible {
+    outline: none;
+    border-color: var(--neon-blue);
+    box-shadow: var(--glow-blue);
+    transform: translateY(-1px);
+}
+
 .pattern-step.active {
     background: var(--neon-blue);
     border-color: var(--neon-blue);
