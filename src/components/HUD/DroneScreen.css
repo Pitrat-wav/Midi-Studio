@@ -21,6 +21,17 @@
     cursor: pointer;
     position: relative;
     z-index: 10;
+    background: none;
+    border: none;
+    font: inherit;
+    color: inherit;
+    width: 100%;
+    outline: none;
+}
+
+.drone-power-section:focus-visible {
+    border-radius: 20px;
+    box-shadow: 0 0 20px rgba(136, 0, 255, 0.4);
 }
 
 .drone-orb {
