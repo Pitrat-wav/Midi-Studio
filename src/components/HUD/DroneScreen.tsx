@@ -12,15 +12,29 @@ export const DroneScreen: React.FC = () => {
             <div className="hud-header">
                 <h2>☄️ INFINITE DRONE ENGINE</h2>
                 <div className="hud-header-actions">
-                    <button className="hud-close" onClick={() => setFocusedInstrument(null)}>✕</button>
+                    <button
+                        className="hud-close"
+                        aria-label="Close"
+                        onClick={() => {
+                            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                            setFocusedInstrument(null);
+                        }}
+                    >
+                        ✕
+                    </button>
                 </div>
             </div>
 
             <div className="drone-container">
                 {/* Power Toggle */}
-                <div
+                <button
                     className="drone-power-section"
-                    onClick={() => store.setParam({ isDroneEnabled: !store.isDroneEnabled })}
+                    aria-label="Toggle Drone Engine"
+                    aria-pressed={store.isDroneEnabled}
+                    onClick={() => {
+                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                        store.setParam({ isDroneEnabled: !store.isDroneEnabled });
+                    }}
                 >
                     <div className={`drone-orb ${store.isDroneEnabled ? 'active' : ''}`}>
                         <div className="orb-inner"></div>
@@ -29,7 +43,7 @@ export const DroneScreen: React.FC = () => {
                     <div className="drone-power-label">
                         {store.isDroneEnabled ? 'DRONE ACTIVE' : 'DRONE STANDBY'}
                     </div>
-                </div>
+                </button>
 
                 {/* Visualization */}
                 <div className="drone-visualization">
