@@ -25,7 +25,16 @@ export function HarmonyScreen() {
                         {/* Header */}
                         <div className="rack-header">
                             <span className="rack-title">INDUSTRIAL_HARMONY_STATION_V2.5</span>
-                            <span className="rack-close" onClick={() => setFocus(null)}>[ SHUTDOWN ]</span>
+                            <button
+                                className="rack-close"
+                                onClick={() => {
+                                    setFocus(null);
+                                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                }}
+                                aria-label="Shut down harmony station"
+                            >
+                                [ SHUTDOWN ]
+                            </button>
                         </div>
 
                         <div className="rack-grid">
@@ -35,9 +44,16 @@ export function HarmonyScreen() {
 
                                 <div className="osc-row">
                                     <div className={`osc-unit ${osc1Enabled ? 'on' : ''}`}>
-                                        <div className="unit-header" onClick={() => setParam({ osc1Enabled: !osc1Enabled })}>
+                                        <button
+                                            className="unit-header"
+                                            onClick={() => {
+                                                setParam({ osc1Enabled: !osc1Enabled });
+                                                window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                            }}
+                                            aria-pressed={osc1Enabled}
+                                        >
                                             OSC1 [{osc1Enabled ? 'ACTIVE' : 'OFF'}]
-                                        </div>
+                                        </button>
                                         <select value={osc1Type} onChange={(e) => setParam({ osc1Type: e.target.value as any })}>
                                             {oscTypes.map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
                                         </select>
@@ -48,9 +64,16 @@ export function HarmonyScreen() {
                                     </div>
 
                                     <div className={`osc-unit ${osc2Enabled ? 'on' : ''}`}>
-                                        <div className="unit-header" onClick={() => setParam({ osc2Enabled: !osc2Enabled })}>
+                                        <button
+                                            className="unit-header"
+                                            onClick={() => {
+                                                setParam({ osc2Enabled: !osc2Enabled });
+                                                window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                            }}
+                                            aria-pressed={osc2Enabled}
+                                        >
                                             OSC2 [{osc2Enabled ? 'ACTIVE' : 'OFF'}]
-                                        </div>
+                                        </button>
                                         <select value={osc2Type} onChange={(e) => setParam({ osc2Type: e.target.value as any })}>
                                             {oscTypes.map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
                                         </select>
@@ -61,9 +84,16 @@ export function HarmonyScreen() {
                                     </div>
 
                                     <div className={`osc-unit ${osc3Enabled ? 'on' : ''}`}>
-                                        <div className="unit-header" onClick={() => setParam({ osc3Enabled: !osc3Enabled })}>
+                                        <button
+                                            className="unit-header"
+                                            onClick={() => {
+                                                setParam({ osc3Enabled: !osc3Enabled });
+                                                window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                            }}
+                                            aria-pressed={osc3Enabled}
+                                        >
                                             OSC3 [{osc3Enabled ? 'ACTIVE' : 'OFF'}]
-                                        </div>
+                                        </button>
                                         <select value={osc3Type} onChange={(e) => setParam({ osc3Type: e.target.value as any })}>
                                             {oscTypes.map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
                                         </select>
@@ -78,9 +108,16 @@ export function HarmonyScreen() {
                             {/* BUCHLA / COMPLEX SECTION */}
                             <div className={`rack-panel complex-section ${complexMode ? 'on' : ''}`}>
                                 <div className="panel-label">BUCHLA_259_CORE</div>
-                                <div className="unit-header" onClick={() => setParam({ complexMode: !complexMode })}>
+                                <button
+                                    className="unit-header"
+                                    onClick={() => {
+                                        setParam({ complexMode: !complexMode });
+                                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                    }}
+                                    aria-pressed={complexMode}
+                                >
                                     FOLDING [{complexMode ? 'ENGAGED' : 'BYPASS'}]
-                                </div>
+                                </button>
                                 <div className="control-column">
                                     <div className="range-wrap">
                                         <label>TIMBRE {complexTimbre.toFixed(2)}</label>
@@ -100,9 +137,16 @@ export function HarmonyScreen() {
                             {/* FILTER SECTION */}
                             <div className={`rack-panel filter-section ${f1Enabled ? 'on' : ''}`}>
                                 <div className="panel-label">ANALOG_FILTER_STRIP</div>
-                                <div className="unit-header" onClick={() => setParam({ f1Enabled: !f1Enabled })}>
+                                <button
+                                    className="unit-header"
+                                    onClick={() => {
+                                        setParam({ f1Enabled: !f1Enabled });
+                                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                    }}
+                                    aria-pressed={f1Enabled}
+                                >
                                     MAIN_VCF [{f1Enabled ? 'ACTIVE' : 'OFF'}]
-                                </div>
+                                </button>
                                 <div className="control-column">
                                     <div className="range-wrap">
                                         <label>CUTOFF {f1Freq.toFixed(0)} Hz</label>

@@ -640,11 +640,16 @@
     background: #ffb000;
     color: #000;
     padding: 0 var(--space-m);
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
 }
 
-.rack-close:hover {
+.rack-close:hover,
+.rack-close:focus-visible {
     background: #ffffff;
     box-shadow: 0 0 15px #ffffff;
+    outline: none;
 }
 
 .rack-grid {
@@ -700,6 +705,18 @@
     margin-bottom: var(--space-s);
     cursor: pointer;
     font-size: var(--text-sm);
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    padding: 0;
+    width: 100%;
+}
+
+.unit-header:focus-visible {
+    outline: 1px solid #ffb000;
+    outline-offset: 2px;
 }
 
 .osc-unit select {
@@ -751,6 +768,13 @@
 .type-toggles button.active {
     background: #ffb000;
     color: #000;
+}
+
+.type-toggles button:hover,
+.type-toggles button:focus-visible {
+    border-color: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    outline: none;
 }
 
 .fx-matrix {
