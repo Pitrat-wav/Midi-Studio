@@ -15,6 +15,19 @@ export const BassScreen: React.FC = () => {
         if (!newPattern[index]) return
         newPattern[index] = { ...newPattern[index], [field]: !newPattern[index][field] }
         store.setPattern(newPattern)
+
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+        }
+    }
+
+    const handleHarmonyChange = (type: 'root' | 'scale', value: string) => {
+        if (type === 'root') harmony.setRoot(value)
+        else harmony.setScale(value as any)
+
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.selectionChanged()
+        }
     }
 
     return (
@@ -126,20 +139,22 @@ export const BassScreen: React.FC = () => {
                 {/* Harmony Section */}
                 <div className="bass-harmony-section">
                     <div className="harmony-controls">
-                        <label>Root</label>
+                        <label htmlFor="bass-root-select">Root</label>
                         <select
+                            id="bass-root-select"
                             value={harmony.root}
-                            onChange={(e) => harmony.setRoot(e.target.value)}
+                            onChange={(e) => handleHarmonyChange('root', e.target.value)}
                             className="studio-select"
                         >
                             {ROOTS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
                     <div className="harmony-controls">
-                        <label>Scale</label>
+                        <label htmlFor="bass-scale-select">Scale</label>
                         <select
+                            id="bass-scale-select"
                             value={harmony.scale}
-                            onChange={(e) => harmony.setScale(e.target.value as any)}
+                            onChange={(e) => handleHarmonyChange('scale', e.target.value)}
                             className="studio-select"
                         >
                             {SCALES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
@@ -155,6 +170,8 @@ export const BassScreen: React.FC = () => {
                                 key={i}
                                 className={`pattern-step ${step?.active ? 'active' : ''}`}
                                 onClick={() => toggleStepParam(i, 'active')}
+                                aria-label={`Step ${i + 1}`}
+                                aria-pressed={!!step?.active}
                             />
                         ))}
                     </div>
