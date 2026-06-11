@@ -76,6 +76,9 @@
     padding: 5px 10px;
     border-radius: 3px;
     transition: background 0.2s;
+    border: none;
+    font-family: inherit;
+    color: inherit;
 }
 
 .cmi-close:hover {
@@ -154,6 +157,7 @@
     color: #00ff66;
     border: 1px solid #00ff66;
     cursor: pointer;
+    font-family: inherit;
 }
 
 .cmi-nav-btns button:hover {

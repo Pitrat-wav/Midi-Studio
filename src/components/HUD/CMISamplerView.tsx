@@ -80,7 +80,16 @@ export function CMISamplerView() {
                 <div className="cmi-screen">
                     <div className="cmi-header">
                         <span>СТРАНИЦА-Р — РЕАЛЬНОЕ ВРЕМЯ</span>
-                        <div className="cmi-close" onClick={() => setFocus(null)}>ВЫХОД [X]</div>
+                        <button
+                            className="cmi-close"
+                            onClick={() => {
+                                setFocus(null);
+                                window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                            }}
+                            aria-label="Выйти из режима семплера"
+                        >
+                            ВЫХОД [X]
+                        </button>
                     </div>
 
                     <div className="cmi-main-layout">
@@ -138,8 +147,14 @@ export function CMISamplerView() {
                                     ))}
                                 </div>
                                 <div className="cmi-nav-btns">
-                                    <button onClick={prevSample}>НАЗАД</button>
-                                    <button onClick={nextSample}>ВПЕРЕД</button>
+                                    <button onClick={() => {
+                                        prevSample();
+                                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                    }}>НАЗАД</button>
+                                    <button onClick={() => {
+                                        nextSample();
+                                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                    }}>ВПЕРЕД</button>
                                 </div>
                             </div>
 
