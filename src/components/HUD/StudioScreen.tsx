@@ -123,6 +123,7 @@ interface StudioKnobProps {
     onChange: (value: number) => void
     color?: 'blue' | 'amber' | 'green'
     size?: 'small' | 'medium' | 'large'
+    ariaLabel?: string
 }
 
 export const StudioKnob: React.FC<StudioKnobProps> = ({
@@ -133,7 +134,8 @@ export const StudioKnob: React.FC<StudioKnobProps> = ({
     defaultValue,
     onChange,
     color = 'blue',
-    size = 'medium'
+    size = 'medium',
+    ariaLabel
 }) => {
     const percentage = ((value - min) / (max - min)) * 100
     const rotation = -135 + (percentage * 2.7) // 270 degree range
@@ -172,10 +174,11 @@ export const StudioKnob: React.FC<StudioKnobProps> = ({
                     value={value}
                     onChange={handleChange}
                     className="studio-knob-input"
-                    aria-label={label}
+                    aria-label={ariaLabel || label}
+                    aria-valuetext={`${value.toFixed(1)}`}
                 />
             </div>
-            <span className="studio-knob-label">{label}</span>
+            {label && <span className="studio-knob-label">{label}</span>}
             <span className="studio-knob-value">{value.toFixed(1)}</span>
         </div>
     )
@@ -193,6 +196,7 @@ interface StudioSliderProps {
     onChange: (value: number) => void
     vertical?: boolean
     color?: 'blue' | 'amber' | 'green'
+    ariaLabel?: string
 }
 
 export const StudioSlider: React.FC<StudioSliderProps> = ({
@@ -203,7 +207,8 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
     defaultValue,
     onChange,
     vertical = false,
-    color = 'blue'
+    color = 'blue',
+    ariaLabel
 }) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newVal = parseFloat(e.target.value)
@@ -225,7 +230,7 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
     
     return (
         <div className={`studio-slider-container ${vertical ? 'vertical' : 'horizontal'}`}>
-            <span className="studio-slider-label">{label}</span>
+            {label && <span className="studio-slider-label">{label}</span>}
             <div className={`studio-slider-wrapper studio-slider-${color}`} onDoubleClick={handleDoubleClick}>
                 <input
                     type="range"
@@ -236,7 +241,8 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
                     onChange={handleChange}
                     className="studio-slider-input"
                     style={vertical ? { height: '120px' } : { width: '150px' }}
-                    aria-label={label}
+                    aria-label={ariaLabel || label}
+                    aria-valuetext={`${value.toFixed(1)}${label.toLowerCase().includes('volume') || label === '' ? '%' : ''}`}
                 />
                 {vertical && (
                     <div 

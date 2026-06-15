@@ -9,3 +9,7 @@
 ## 2025-05-15 - [Consistent Navigation Interactivity]
 **Learning:** Navigation buttons benefit from a combination of tactile (Haptic Feedback), semantic (ARIA labels/pressed), and visual (neon glow focus states) cues to provide a "premium" feel while remaining fully accessible to keyboard and screen reader users.
 **Action:** When implementing or updating navigation menus, always include `aria-label` with shortcut hints, `aria-pressed` for active states, Telegram haptics for clicks, and `:focus-visible` glow effects.
+
+## 2025-05-15 - [Contextual Range Value Feedback]
+**Learning:** When implementing range inputs for musical parameters like BPM or volume, use `aria-valuetext` to convey the formatted value with units (e.g., '120.5 BPM' or '80%') to assistive technologies, ensuring context that a raw number might lack.
+**Action:** Always provide `aria-valuetext` for `input[type="range"]` when the numerical value represents a specific unit of measurement.
