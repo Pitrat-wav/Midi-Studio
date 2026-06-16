@@ -10,6 +10,27 @@ export const MasterScreen: React.FC = () => {
     const setFocusedInstrument = useVisualStore(s => s.setFocusInstrument)
     const handleClose = () => setFocusedInstrument(null)
 
+    const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        audioStore.setBpm(parseFloat(e.target.value))
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.selectionChanged()
+        }
+    }
+
+    const setBpmPreset = (bpm: number) => {
+        audioStore.setBpm(bpm)
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+        }
+    }
+
+    const toggleMute = (channel: any) => {
+        audioStore.toggleMute(channel)
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+        }
+    }
+
     const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         audioStore.loadFxPreset(e.target.value)
     }
@@ -53,14 +74,16 @@ export const MasterScreen: React.FC = () => {
                         max="200"
                         step="0.1"
                         value={audioStore.bpm}
-                        onChange={(e) => audioStore.setBpm(parseFloat(e.target.value))}
+                        onChange={handleBpmChange}
                         className="bpm-slider-studio"
+                        aria-label="BPM"
+                        aria-valuetext={`${audioStore.bpm.toFixed(1)} BPM`}
                     />
                     <div className="bpm-presets-studio">
-                        <button onClick={() => audioStore.setBpm(90)} className="bpm-preset-studio">90</button>
-                        <button onClick={() => audioStore.setBpm(120)} className="bpm-preset-studio">120</button>
-                        <button onClick={() => audioStore.setBpm(140)} className="bpm-preset-studio">140</button>
-                        <button onClick={() => audioStore.setBpm(174)} className="bpm-preset-studio">174</button>
+                        <button onClick={() => setBpmPreset(90)} className="bpm-preset-studio" aria-label="Set BPM to 90">90</button>
+                        <button onClick={() => setBpmPreset(120)} className="bpm-preset-studio" aria-label="Set BPM to 120">120</button>
+                        <button onClick={() => setBpmPreset(140)} className="bpm-preset-studio" aria-label="Set BPM to 140">140</button>
+                        <button onClick={() => setBpmPreset(174)} className="bpm-preset-studio" aria-label="Set BPM to 174">174</button>
                     </div>
                 </div>
 
@@ -68,27 +91,34 @@ export const MasterScreen: React.FC = () => {
                 <div className="master-mixer-studio">
                     <h3 className="mixer-title">CHANNEL MIXER</h3>
                     <div className="mixer-channels-grid">
-                        {Object.entries(audioStore.volumes).map(([channel, volume]) => (
-                            <div key={channel} className="mixer-channel-studio">
-                                <div className="channel-label-studio">{channel.toUpperCase()}</div>
-                                <StudioSlider
-                                    label=""
-                                    value={volume * 100}
-                                    min={0}
-                                    max={100}
-                                    onChange={(v) => audioStore.setVolume(channel as any, v / 100)}
-                                    vertical
-                                    color="green"
-                                />
-                                <div className="channel-value-studio">{Math.round(volume * 100)}%</div>
-                                <button
-                                    className={`channel-mute-studio ${audioStore.mutes[channel as keyof typeof audioStore.mutes] ? 'active' : ''}`}
-                                    onClick={() => audioStore.toggleMute(channel as any)}
-                                >
-                                    M
-                                </button>
-                            </div>
-                        ))}
+                        {Object.entries(audioStore.volumes).map(([channel, volume]) => {
+                            const isMuted = audioStore.mutes[channel as keyof typeof audioStore.mutes]
+                            return (
+                                <div key={channel} className="mixer-channel-studio">
+                                    <div className="channel-label-studio">{channel.toUpperCase()}</div>
+                                    <StudioSlider
+                                        label=""
+                                        value={volume * 100}
+                                        min={0}
+                                        max={100}
+                                        onChange={(v) => audioStore.setVolume(channel as any, v / 100)}
+                                        vertical
+                                        color="green"
+                                        ariaLabel={`${channel.toUpperCase()} Volume`}
+                                        ariaValueText={`${Math.round(volume * 100)}%`}
+                                    />
+                                    <div className="channel-value-studio">{Math.round(volume * 100)}%</div>
+                                    <button
+                                        className={`channel-mute-studio ${isMuted ? 'active' : ''}`}
+                                        onClick={() => toggleMute(channel as any)}
+                                        aria-label={`Mute ${channel}`}
+                                        aria-pressed={isMuted}
+                                    >
+                                        M
+                                    </button>
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
             </div>
