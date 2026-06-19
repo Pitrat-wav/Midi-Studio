@@ -13,7 +13,7 @@ export const PortalSend = memo(({ id, data, selected }: NodeProps<NodeData>) => 
             <div className="node-header">
                 <div className="node-icon"><Wifi size={12} /></div>
                 <span className="node-title" style={{ fontSize: '10px' }}>WIRELESS TX</span>
-                <button className="node-close" onClick={() => removeNode(id)}>
+                <button className="node-close" aria-label="Close node" onClick={() => removeNode(id)}>
                     <X size={12} />
                 </button>
             </div>
@@ -58,7 +58,7 @@ export const PortalReceive = memo(({ id, data, selected }: NodeProps<NodeData>) 
             <div className="node-header">
                 <div className="node-icon"><WifiOff size={12} /></div>
                 <span className="node-title" style={{ fontSize: '10px' }}>WIRELESS RX</span>
-                <button className="node-close" onClick={() => removeNode(id)}>
+                <button className="node-close" aria-label="Close node" onClick={() => removeNode(id)}>
                     <X size={12} />
                 </button>
             </div>

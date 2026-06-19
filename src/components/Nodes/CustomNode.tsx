@@ -220,7 +220,7 @@ export const CustomNode = memo(({ id, data, selected }: NodeProps<NodeData>) => 
                     <div className="script-editor-overlay">
                         <div className="script-header">
                             <span>JSFX SCRIPT EDITOR</span>
-                            <button onClick={() => setIsExpanded(false)}><X size={12} /></button>
+                            <button aria-label="Close script editor" onClick={() => setIsExpanded(false)}><X size={12} /></button>
                         </div>
                         <textarea
                             className="code-input"
@@ -256,7 +256,7 @@ export const CustomNode = memo(({ id, data, selected }: NodeProps<NodeData>) => 
                     {data.category === 'note' && <Maximize2 size={10} />}
                 </div>
                 <span className="node-title">{data.label}</span>
-                <button className="node-close" onClick={() => removeNode(id)}>
+                <button className="node-close" aria-label="Close node" onClick={() => removeNode(id)}>
                     <X size={12} />
                 </button>
             </div>
