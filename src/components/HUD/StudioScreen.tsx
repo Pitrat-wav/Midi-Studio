@@ -93,7 +93,14 @@ export const StudioScreen: React.FC<StudioScreenProps> = ({
                         <div ref={ledRef} className="studio-screen-led" />
                     </div>
                     
-                    <button className="studio-screen-close" onClick={onClose} aria-label="Close">
+                    <button
+                        className="studio-screen-close"
+                        onClick={() => {
+                            if (onClose) onClose();
+                            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                        }}
+                        aria-label="Close"
+                    >
                         <span>✕</span>
                         <span className="close-hint">ESC</span>
                     </button>
