@@ -80,7 +80,16 @@ export function CMISamplerView() {
                 <div className="cmi-screen">
                     <div className="cmi-header">
                         <span>СТРАНИЦА-Р — РЕАЛЬНОЕ ВРЕМЯ</span>
-                        <div className="cmi-close" onClick={() => setFocus(null)}>ВЫХОД [X]</div>
+                        <button
+                            className="cmi-close"
+                            onClick={() => {
+                                setFocus(null);
+                                window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                            }}
+                            aria-label="Выход из семплера"
+                        >
+                            ВЫХОД [X]
+                        </button>
                     </div>
 
                     <div className="cmi-main-layout">
@@ -89,14 +98,30 @@ export function CMISamplerView() {
                             <div className="pager-grid">
                                 {Array.from({ length: 8 }).map((_, slice) => (
                                     Array.from({ length: 16 }).map((_, step) => {
-                                        const isOn = grid[step] && slice === 0
+                                        const isInteractive = slice === 0
+                                        const isOn = grid[step] && isInteractive
                                         const isActive = step === activeStep
+                                        const cellClass = `pager-cell ${isOn ? 'on' : ''} ${isActive ? 'active-step' : ''}`
+
+                                        if (isInteractive) {
+                                            return (
+                                                <button
+                                                    key={`${slice}-${step}`}
+                                                    className={cellClass}
+                                                    onClick={() => {
+                                                        toggleStep(step);
+                                                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                                    }}
+                                                    aria-label={`Слайс ${slice + 1} Шаг ${step + 1}`}
+                                                    aria-pressed={isOn}
+                                                />
+                                            )
+                                        }
 
                                         return (
                                             <div
                                                 key={`${slice}-${step}`}
-                                                className={`pager-cell ${isOn ? 'on' : ''} ${isActive ? 'active-step' : ''}`}
-                                                onClick={() => slice === 0 && toggleStep(step)}
+                                                className={cellClass}
                                             />
                                         )
                                     })
@@ -138,8 +163,14 @@ export function CMISamplerView() {
                                     ))}
                                 </div>
                                 <div className="cmi-nav-btns">
-                                    <button onClick={prevSample}>НАЗАД</button>
-                                    <button onClick={nextSample}>ВПЕРЕД</button>
+                                    <button onClick={() => {
+                                        prevSample();
+                                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                    }}>НАЗАД</button>
+                                    <button onClick={() => {
+                                        nextSample();
+                                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                    }}>ВПЕРЕД</button>
                                 </div>
                             </div>
 

@@ -76,11 +76,20 @@
     padding: 5px 10px;
     border-radius: 3px;
     transition: background 0.2s;
+    border: none;
+    font: inherit;
+    color: inherit;
 }
 
 .cmi-close:hover {
     background: #00ff66;
     color: #000;
+}
+
+.cmi-close:focus-visible {
+    outline: 2px solid #00ff66;
+    outline-offset: 2px;
+    box-shadow: 0 0 10px #00ff66;
 }
 
 .cmi-main-layout {
@@ -108,6 +117,34 @@
     padding: 10px;
     border: 2px solid #004422;
     height: 280px;
+}
+
+.pager-cell {
+    background: #004422;
+    border: 1px solid #001a11;
+    width: 100%;
+    height: 100%;
+    transition: all 0.1s;
+    padding: 0;
+}
+
+button.pager-cell {
+    cursor: pointer;
+}
+
+.pager-cell.on {
+    background: #00ff66;
+    box-shadow: 0 0 8px #00ff66;
+}
+
+.pager-cell.active-step {
+    border: 1px solid #ffffff;
+    box-shadow: inset 0 0 4px #ffffff;
+}
+
+.pager-cell:focus-visible {
+    outline: 2px solid #ffffff;
+    z-index: 10;
 }
 
 .cmi-vector-canvas {
