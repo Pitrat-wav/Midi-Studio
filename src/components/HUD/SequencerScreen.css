@@ -41,6 +41,13 @@
     border-radius: 4px;
     font-family: 'Courier New', monospace;
     font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.ml185-select:focus-visible {
+    outline: none;
+    box-shadow: 0 0 10px rgba(170, 68, 255, 0.8);
+    border-color: #cc88ff;
 }
 
 .ml185-stages-panel {
@@ -74,6 +81,8 @@
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
+    width: 100%;
+    text-align: left;
 }
 
 .ml185-stage-card:hover {
@@ -86,6 +95,13 @@
     background: linear-gradient(135deg, rgba(170, 68, 255, 0.2), rgba(170, 68, 255, 0.1));
     border-color: #aa44ff;
     box-shadow: 0 0 15px rgba(170, 68, 255, 0.3);
+}
+
+.ml185-stage-card:focus-visible {
+    outline: none;
+    box-shadow: 0 0 15px rgba(170, 68, 255, 0.8);
+    border-color: #cc88ff;
+    transform: translateY(-2px);
 }
 
 .stage-number {
@@ -124,6 +140,14 @@
     border-radius: 3px;
     font-size: 11px;
     text-align: center;
+    transition: all 0.2s ease;
+}
+
+.stage-input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 8px rgba(170, 68, 255, 0.8);
+    border-color: #aa44ff;
+    transform: scale(1.05);
 }
 
 .stage-select {

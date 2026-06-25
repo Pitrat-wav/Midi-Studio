@@ -13,7 +13,16 @@ export const SequencerScreen: React.FC = () => {
             <div className="hud-header">
                 <h2>🎛️ ML-185 MODULAR SEQUENCER</h2>
                 <div className="hud-header-actions">
-                    <button className="hud-close" onClick={() => setFocusedInstrument(null)}>✕</button>
+                    <button
+                        className="hud-close"
+                        aria-label="Close Sequencer"
+                        onClick={() => {
+                            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
+                            setFocusedInstrument(null)
+                        }}
+                    >
+                        ✕
+                    </button>
                 </div>
             </div>
 
@@ -21,20 +30,28 @@ export const SequencerScreen: React.FC = () => {
                 {/* Harmony Context */}
                 <div className="ml185-harmony-bar">
                     <div className="ml185-param-compact">
-                        <label>ROOT</label>
+                        <label htmlFor="seq-root-select">ROOT</label>
                         <select
+                            id="seq-root-select"
                             value={harmony.root}
-                            onChange={(e) => harmony.setRoot(e.target.value)}
+                            onChange={(e) => {
+                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+                                harmony.setRoot(e.target.value)
+                            }}
                             className="ml185-select"
                         >
                             {ROOTS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
                     <div className="ml185-param-compact">
-                        <label>SCALE</label>
+                        <label htmlFor="seq-scale-select">SCALE</label>
                         <select
+                            id="seq-scale-select"
                             value={harmony.scale}
-                            onChange={(e) => harmony.setScale(e.target.value as any)}
+                            onChange={(e) => {
+                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+                                harmony.setScale(e.target.value as any)
+                            }}
                             className="ml185-select"
                         >
                             {SCALES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
@@ -49,7 +66,11 @@ export const SequencerScreen: React.FC = () => {
                         {store.stages.map((stage, i) => (
                             <div
                                 key={i}
-                                className="ml185-stage-card"
+                                className={`ml185-stage-card ${store.currentStageIndex === i ? 'active' : ''}`}
+                                onClick={() => {
+                                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
+                                    store.setCurrentStageIndex(i)
+                                }}
                             >
                                 <div className="stage-number">{i + 1}</div>
                                 <div className="stage-params">
@@ -60,7 +81,16 @@ export const SequencerScreen: React.FC = () => {
                                             min="1"
                                             max="8"
                                             value={stage.length}
-                                            onChange={(e) => store.setStage(i, { length: parseInt(e.target.value) })}
+                                            aria-label={`Stage ${i + 1} Length`}
+                                            onFocus={() => {
+                                                if (store.currentStageIndex !== i) {
+                                                    store.setCurrentStageIndex(i)
+                                                }
+                                            }}
+                                            onChange={(e) => {
+                                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+                                                store.setStage(i, { length: parseInt(e.target.value) })
+                                            }}
                                             className="stage-input"
                                         />
                                     </div>
@@ -71,7 +101,16 @@ export const SequencerScreen: React.FC = () => {
                                             min="1"
                                             max="8"
                                             value={stage.pulseCount}
-                                            onChange={(e) => store.setStage(i, { pulseCount: parseInt(e.target.value) })}
+                                            aria-label={`Stage ${i + 1} Pulses`}
+                                            onFocus={() => {
+                                                if (store.currentStageIndex !== i) {
+                                                    store.setCurrentStageIndex(i)
+                                                }
+                                            }}
+                                            onChange={(e) => {
+                                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+                                                store.setStage(i, { pulseCount: parseInt(e.target.value) })
+                                            }}
                                             className="stage-input"
                                         />
                                     </div>
@@ -82,7 +121,16 @@ export const SequencerScreen: React.FC = () => {
                                             min="0"
                                             max="127"
                                             value={stage.pitch}
-                                            onChange={(e) => store.setStage(i, { pitch: parseInt(e.target.value) })}
+                                            aria-label={`Stage ${i + 1} Pitch`}
+                                            onFocus={() => {
+                                                if (store.currentStageIndex !== i) {
+                                                    store.setCurrentStageIndex(i)
+                                                }
+                                            }}
+                                            onChange={(e) => {
+                                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+                                                store.setStage(i, { pitch: parseInt(e.target.value) })
+                                            }}
                                             className="stage-input"
                                         />
                                     </div>
