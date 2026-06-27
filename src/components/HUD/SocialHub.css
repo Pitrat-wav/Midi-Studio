@@ -48,11 +48,17 @@
     color: #fff;
     font-size: 1.5rem;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: all 0.2s;
+    border-radius: 4px;
 }
 
 .close-btn:hover {
     color: #ff3300;
+}
+
+.close-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--glow-red, 0 0 10px rgba(255, 42, 42, 0.5));
 }
 
 .social-tabs {
@@ -72,6 +78,12 @@
     font-family: inherit;
     text-transform: uppercase;
     font-weight: bold;
+    outline: none;
+}
+
+.social-tabs button:focus-visible {
+    border-color: #00ffaa;
+    box-shadow: var(--glow-green, 0 0 10px rgba(0, 255, 136, 0.5));
 }
 
 .social-tabs button.active {
@@ -151,16 +163,25 @@
     gap: 5px;
     font-size: 0.8rem;
     transition: all 0.2s;
+    outline: none;
 }
 
-.like-btn:hover {
+.like-btn:hover, .like-btn:focus-visible {
     color: #ff3366;
     border-color: #ff3366;
 }
 
-.load-btn:hover {
+.like-btn:focus-visible {
+    box-shadow: var(--glow-red, 0 0 10px rgba(255, 42, 42, 0.5));
+}
+
+.load-btn:hover, .load-btn:focus-visible {
     color: #00ffaa;
     border-color: #00ffaa;
+}
+
+.load-btn:focus-visible {
+    box-shadow: var(--glow-green, 0 0 10px rgba(0, 255, 136, 0.5));
 }
 
 .share-form {
@@ -181,11 +202,13 @@
     color: #fff;
     font-family: inherit;
     border-radius: 4px;
+    outline: none;
+    transition: all 0.2s;
 }
 
 .share-form input:focus {
     border-color: #00ffaa;
-    outline: none;
+    box-shadow: var(--glow-green, 0 0 10px rgba(0, 255, 136, 0.5));
 }
 
 .save-submit-btn {
@@ -201,11 +224,16 @@
     align-items: center;
     gap: 10px;
     transition: all 0.2s;
+    outline: none;
 }
 
-.save-submit-btn:hover {
+.save-submit-btn:hover, .save-submit-btn:focus-visible {
     background: #00cc88;
     transform: scale(1.02);
+}
+
+.save-submit-btn:focus-visible {
+    box-shadow: var(--glow-green, 0 0 10px rgba(0, 255, 136, 0.5));
 }
 
 .save-submit-btn:disabled {
