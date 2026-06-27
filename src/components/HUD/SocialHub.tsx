@@ -51,6 +51,7 @@ export function SocialHub() {
             return
         }
         
+        (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
         setLoading(true)
         try {
             const state = ProjectManager.getProjectState()
@@ -69,6 +70,7 @@ export function SocialHub() {
             
             if (!res.ok) throw new Error('Failed to save')
             
+            (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success')
             setStatus('Project shared successfully!')
             setProjectName('')
             setActiveTab('feed')
@@ -80,6 +82,7 @@ export function SocialHub() {
     }
 
     const handleLoad = async (id: number) => {
+        (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
         setLoading(true)
         try {
             const res = await fetch(`${API_URL}/api/projects/${id}`)
@@ -100,6 +103,7 @@ export function SocialHub() {
     }
 
     const handleLike = async (id: number) => {
+        (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
         try {
             await fetch(`${API_URL}/api/projects/${id}/like`, { method: 'POST' })
             fetchProjects() // refresh
@@ -108,24 +112,42 @@ export function SocialHub() {
         }
     }
 
+    const handleClose = () => {
+        (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
+        cycleView()
+    }
+
+    const switchTab = (tab: 'feed' | 'share') => {
+        (window as any).Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+        setActiveTab(tab)
+    }
+
     return (
         <div className="social-hub-overlay">
             <div className="social-window">
                 <div className="social-header">
                     <h2>COMMUNITY HUB</h2>
-                    <button onClick={cycleView} className="close-btn"><X /></button>
+                    <button
+                        onClick={handleClose}
+                        className="close-btn"
+                        aria-label="Close Community Hub"
+                    >
+                        <X />
+                    </button>
                 </div>
                 
                 <div className="social-tabs">
                     <button 
                         className={activeTab === 'feed' ? 'active' : ''} 
-                        onClick={() => setActiveTab('feed')}
+                        onClick={() => switchTab('feed')}
+                        aria-pressed={activeTab === 'feed'}
                     >
                         DISCOVER
                     </button>
                     <button 
                         className={activeTab === 'share' ? 'active' : ''} 
-                        onClick={() => setActiveTab('share')}
+                        onClick={() => switchTab('share')}
+                        aria-pressed={activeTab === 'share'}
                     >
                         SHARE
                     </button>
@@ -145,10 +167,18 @@ export function SocialHub() {
                                         {p.parent_id && <span className="p-remix">Remix</span>}
                                     </div>
                                     <div className="p-actions">
-                                        <button className="like-btn" onClick={() => handleLike(p.id)}>
+                                        <button
+                                            className="like-btn"
+                                            onClick={() => handleLike(p.id)}
+                                            aria-label={`Like project ${p.name}`}
+                                        >
                                             <Heart size={14} fill={p.likes > 0 ? "currentColor" : "none"} /> {p.likes}
                                         </button>
-                                        <button className="load-btn" onClick={() => handleLoad(p.id)}>
+                                        <button
+                                            className="load-btn"
+                                            onClick={() => handleLoad(p.id)}
+                                            aria-label={`Load project ${p.name}`}
+                                        >
                                             <Download size={14} /> LOAD
                                         </button>
                                     </div>
@@ -159,16 +189,18 @@ export function SocialHub() {
 
                     {activeTab === 'share' && (
                         <div className="share-form">
-                            <label>Project Name</label>
+                            <label htmlFor="project-name">Project Name</label>
                             <input 
+                                id="project-name"
                                 type="text" 
                                 value={projectName} 
                                 onChange={e => setProjectName(e.target.value)}
                                 placeholder="My Awesome Jam"
                             />
                             
-                            <label>Author</label>
+                            <label htmlFor="project-author">Author</label>
                             <input 
+                                id="project-author"
                                 type="text" 
                                 value={projectAuthor} 
                                 onChange={e => setProjectAuthor(e.target.value)}
