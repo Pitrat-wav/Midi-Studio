@@ -21,6 +21,13 @@
     cursor: pointer;
     position: relative;
     z-index: 10;
+    width: 100%;
+}
+
+.drone-power-section:focus-visible {
+    box-shadow: var(--glow-purple);
+    outline: none;
+    border-radius: 12px;
 }
 
 .drone-orb {
