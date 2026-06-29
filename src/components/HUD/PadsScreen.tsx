@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useId } from 'react'
 import { usePadStore, useHarmonyStore, ROOTS, SCALES } from '../../store/instrumentStore'
 import { useVisualStore } from '../../store/visualStore'
 import { StudioScreen, StudioButton, StudioDisplay } from './StudioScreen'
@@ -9,6 +9,15 @@ export const PadsScreen: React.FC = () => {
     const harmony = useHarmonyStore()
     const setFocusedInstrument = useVisualStore(s => s.setFocusInstrument)
     const handleClose = () => setFocusedInstrument(null)
+
+    const rootId = useId()
+    const scaleId = useId()
+    const brightnessId = useId()
+    const complexityId = useId()
+
+    const handleHaptic = () => {
+        window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+    }
 
     return (
         <StudioScreen
@@ -38,20 +47,28 @@ export const PadsScreen: React.FC = () => {
                 {/* Harmony Section */}
                 <div className="pads-harmony-section">
                     <div className="harmony-controls">
-                        <label>Root Note</label>
+                        <label htmlFor={rootId}>Root Note</label>
                         <select
+                            id={rootId}
                             value={harmony.root}
-                            onChange={(e) => harmony.setRoot(e.target.value)}
+                            onChange={(e) => {
+                                harmony.setRoot(e.target.value);
+                                handleHaptic();
+                            }}
                             className="studio-select"
                         >
                             {ROOTS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
                     <div className="harmony-controls">
-                        <label>Scale</label>
+                        <label htmlFor={scaleId}>Scale</label>
                         <select
+                            id={scaleId}
                             value={harmony.scale}
-                            onChange={(e) => harmony.setScale(e.target.value as any)}
+                            onChange={(e) => {
+                                harmony.setScale(e.target.value as any);
+                                handleHaptic();
+                            }}
                             className="studio-select"
                         >
                             {SCALES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
@@ -62,30 +79,42 @@ export const PadsScreen: React.FC = () => {
                 {/* Main Controls */}
                 <div className="pads-controls-grid">
                     <div className="pad-control-item">
-                        <label>Brightness</label>
+                        <label htmlFor={brightnessId}>Brightness</label>
                         <input
+                            id={brightnessId}
                             type="range"
                             min="0"
                             max="1"
                             step="0.01"
                             value={store.brightness}
-                            onChange={(e) => store.setParams({ brightness: parseFloat(e.target.value) })}
+                            onChange={(e) => {
+                                store.setParams({ brightness: parseFloat(e.target.value) });
+                                handleHaptic();
+                            }}
                             className="studio-slider-horizontal"
+                            aria-label="Pad Brightness"
+                            aria-valuetext={`${Math.round(store.brightness * 100)}%`}
                         />
-                        <span className="control-value">{Math.round(store.brightness * 100)}%</span>
+                        <span className="control-value" aria-hidden="true">{Math.round(store.brightness * 100)}%</span>
                     </div>
                     <div className="pad-control-item">
-                        <label>Complexity</label>
+                        <label htmlFor={complexityId}>Complexity</label>
                         <input
+                            id={complexityId}
                             type="range"
                             min="0"
                             max="1"
                             step="0.01"
                             value={store.complexity}
-                            onChange={(e) => store.setParams({ complexity: parseFloat(e.target.value) })}
+                            onChange={(e) => {
+                                store.setParams({ complexity: parseFloat(e.target.value) });
+                                handleHaptic();
+                            }}
                             className="studio-slider-horizontal"
+                            aria-label="Pad Complexity"
+                            aria-valuetext={`${Math.round(store.complexity * 100)}%`}
                         />
-                        <span className="control-value">{Math.round(store.complexity * 100)}%</span>
+                        <span className="control-value" aria-hidden="true">{Math.round(store.complexity * 100)}%</span>
                     </div>
                 </div>
             </div>
