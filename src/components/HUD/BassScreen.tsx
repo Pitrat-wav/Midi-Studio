@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useId } from 'react'
 import { useBassStore, useHarmonyStore, ROOTS, SCALES } from '../../store/instrumentStore'
 import { useVisualStore } from '../../store/visualStore'
 import { StudioScreen, StudioKnob, StudioButton, StudioDisplay } from './StudioScreen'
@@ -10,11 +10,15 @@ export const BassScreen: React.FC = () => {
     const setFocusedInstrument = useVisualStore(s => s.setFocusInstrument)
     const handleClose = () => setFocusedInstrument(null)
 
+    const rootId = useId()
+    const scaleId = useId()
+
     const toggleStepParam = (index: number, field: 'active' | 'accent' | 'slide') => {
         const newPattern = [...store.pattern]
         if (!newPattern[index]) return
         newPattern[index] = { ...newPattern[index], [field]: !newPattern[index][field] }
         store.setPattern(newPattern)
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
     }
 
     return (
@@ -126,20 +130,28 @@ export const BassScreen: React.FC = () => {
                 {/* Harmony Section */}
                 <div className="bass-harmony-section">
                     <div className="harmony-controls">
-                        <label>Root</label>
+                        <label htmlFor={rootId}>Root</label>
                         <select
+                            id={rootId}
                             value={harmony.root}
-                            onChange={(e) => harmony.setRoot(e.target.value)}
+                            onChange={(e) => {
+                                harmony.setRoot(e.target.value)
+                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+                            }}
                             className="studio-select"
                         >
                             {ROOTS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
                     <div className="harmony-controls">
-                        <label>Scale</label>
+                        <label htmlFor={scaleId}>Scale</label>
                         <select
+                            id={scaleId}
                             value={harmony.scale}
-                            onChange={(e) => harmony.setScale(e.target.value as any)}
+                            onChange={(e) => {
+                                harmony.setScale(e.target.value as any)
+                                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+                            }}
                             className="studio-select"
                         >
                             {SCALES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
@@ -155,6 +167,8 @@ export const BassScreen: React.FC = () => {
                                 key={i}
                                 className={`pattern-step ${step?.active ? 'active' : ''}`}
                                 onClick={() => toggleStepParam(i, 'active')}
+                                aria-label={`Step ${i + 1}`}
+                                aria-pressed={!!step?.active}
                             />
                         ))}
                     </div>
