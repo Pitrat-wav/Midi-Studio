@@ -640,11 +640,20 @@
     background: #ffb000;
     color: #000;
     padding: 0 var(--space-m);
+    border: none;
+    font: inherit;
+    display: inline-block;
+    transition: all 0.2s;
 }
 
 .rack-close:hover {
     background: #ffffff;
     box-shadow: 0 0 15px #ffffff;
+}
+
+.rack-close:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
 }
 
 .rack-grid {
@@ -700,6 +709,20 @@
     margin-bottom: var(--space-s);
     cursor: pointer;
     font-size: var(--text-sm);
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    padding: 0;
+    display: block;
+    width: 100%;
+}
+
+.unit-header:focus-visible {
+    color: #fff;
+    text-shadow: 0 0 8px #ffb000;
+    outline: none;
 }
 
 .osc-unit select {
