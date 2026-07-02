@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useId, useCallback } from 'react'
 import { useSamplerStore } from '../../store/instrumentStore'
 import { useVisualStore } from '../../store/visualStore'
 import { useAudioStore } from '../../store/audioStore'
@@ -13,6 +13,13 @@ export function CMISamplerView() {
         nextSample, prevSample
     } = useSamplerStore()
 
+    const volId = useId()
+    const rateId = useId()
+    const sliceId = useId()
+    const grainId = useId()
+    const overlapId = useId()
+    const detuneId = useId()
+
     const setFocus = useVisualStore(s => s.setFocusInstrument)
     const isPlaying = useAudioStore(s => s.isPlaying)
     const bpm = useAudioStore(s => s.bpm)
@@ -20,6 +27,40 @@ export function CMISamplerView() {
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [activeStep, setActiveStep] = useState(0)
+
+    const handleHaptic = useCallback((type: 'light' | 'selection' = 'light') => {
+        if (type === 'selection') {
+            window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+        } else {
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(type)
+        }
+    }, [])
+
+    const handleClose = () => {
+        handleHaptic('light')
+        setFocus(null)
+    }
+
+    const handleStepToggle = (step: number) => {
+        handleHaptic('light')
+        toggleStep(step)
+    }
+
+    const handleParamChange = (param: any, isContinuous = true) => {
+        if (isContinuous) handleHaptic('selection')
+        else handleHaptic('light')
+        setParam(param)
+    }
+
+    const handlePrev = () => {
+        handleHaptic('light')
+        prevSample()
+    }
+
+    const handleNext = () => {
+        handleHaptic('light')
+        nextSample()
+    }
 
     // Синхронизация с глобальным временем для визуализации шагов
     useEffect(() => {
@@ -80,7 +121,13 @@ export function CMISamplerView() {
                 <div className="cmi-screen">
                     <div className="cmi-header">
                         <span>СТРАНИЦА-Р — РЕАЛЬНОЕ ВРЕМЯ</span>
-                        <div className="cmi-close" onClick={() => setFocus(null)}>ВЫХОД [X]</div>
+                        <button
+                            className="cmi-close"
+                            onClick={handleClose}
+                            aria-label="Выйти из семплера"
+                        >
+                            ВЫХОД [X]
+                        </button>
                     </div>
 
                     <div className="cmi-main-layout">
@@ -92,11 +139,22 @@ export function CMISamplerView() {
                                         const isOn = grid[step] && slice === 0
                                         const isActive = step === activeStep
 
+                                        if (slice === 0) {
+                                            return (
+                                                <button
+                                                    key={`${slice}-${step}`}
+                                                    className={`pager-cell ${isOn ? 'on' : ''} ${isActive ? 'active-step' : ''}`}
+                                                    onClick={() => handleStepToggle(step)}
+                                                    aria-label={`Шаг ${step + 1}`}
+                                                    aria-pressed={isOn}
+                                                />
+                                            )
+                                        }
+
                                         return (
                                             <div
                                                 key={`${slice}-${step}`}
-                                                className={`pager-cell ${isOn ? 'on' : ''} ${isActive ? 'active-step' : ''}`}
-                                                onClick={() => slice === 0 && toggleStep(step)}
+                                                className={`pager-cell ${isActive ? 'active-step' : ''}`}
                                             />
                                         )
                                     })
@@ -138,40 +196,70 @@ export function CMISamplerView() {
                                     ))}
                                 </div>
                                 <div className="cmi-nav-btns">
-                                    <button onClick={prevSample}>НАЗАД</button>
-                                    <button onClick={nextSample}>ВПЕРЕД</button>
+                                    <button onClick={handlePrev}>НАЗАД</button>
+                                    <button onClick={handleNext}>ВПЕРЕД</button>
                                 </div>
                             </div>
 
                             <div className="cmi-panel">
                                 <div className="cmi-panel-title">ПАРАМЕТРЫ СЕМПЛА</div>
                                 <div className="cmi-control-row">
-                                    <label>ГРОМКОСТЬ: {volume} dB</label>
-                                    <input type="range" min="-60" max="6" step="1" value={volume} onChange={(e) => setParam({ volume: parseFloat(e.target.value) })} />
+                                    <label htmlFor={volId}>ГРОМКОСТЬ: {volume} dB</label>
+                                    <input
+                                        id={volId}
+                                        type="range" min="-60" max="6" step="1" value={volume}
+                                        onChange={(e) => handleParamChange({ volume: parseFloat(e.target.value) })}
+                                        aria-valuetext={`${volume} dB`}
+                                    />
                                 </div>
                                 <div className="cmi-control-row">
-                                    <label>СКОРОСТЬ: {playbackRate.toFixed(2)}x</label>
-                                    <input type="range" min="0.1" max="4.0" step="0.1" value={playbackRate} onChange={(e) => setParam({ playbackRate: parseFloat(e.target.value) })} />
+                                    <label htmlFor={rateId}>СКОРОСТЬ: {playbackRate.toFixed(2)}x</label>
+                                    <input
+                                        id={rateId}
+                                        type="range" min="0.1" max="4.0" step="0.1" value={playbackRate}
+                                        onChange={(e) => handleParamChange({ playbackRate: parseFloat(e.target.value) })}
+                                        aria-valuetext={`${playbackRate.toFixed(2)}x`}
+                                    />
                                 </div>
                                 <div className="cmi-control-row">
-                                    <label>СЛАЙСЫ: {slices}</label>
-                                    <input type="range" min="4" max="32" step="1" value={slices} onChange={(e) => setParam({ slices: parseInt(e.target.value) })} />
+                                    <label htmlFor={sliceId}>СЛАЙСЫ: {slices}</label>
+                                    <input
+                                        id={sliceId}
+                                        type="range" min="4" max="32" step="1" value={slices}
+                                        onChange={(e) => handleParamChange({ slices: parseInt(e.target.value) }, false)}
+                                        aria-valuetext={`${slices} слайсов`}
+                                    />
                                 </div>
                             </div>
 
                             <div className="cmi-panel">
                                 <div className="cmi-panel-title">ГРАНУЛЯРНЫЙ ДВИЖОК</div>
                                 <div className="cmi-control-row">
-                                    <label>ЗЕРНО: {(grainSize * 1000).toFixed(0)} ms</label>
-                                    <input type="range" min="0.01" max="0.5" step="0.01" value={grainSize} onChange={(e) => setParam({ grainSize: parseFloat(e.target.value) })} />
+                                    <label htmlFor={grainId}>ЗЕРНО: {(grainSize * 1000).toFixed(0)} ms</label>
+                                    <input
+                                        id={grainId}
+                                        type="range" min="0.01" max="0.5" step="0.01" value={grainSize}
+                                        onChange={(e) => handleParamChange({ grainSize: parseFloat(e.target.value) })}
+                                        aria-valuetext={`${(grainSize * 1000).toFixed(0)} миллисекунд`}
+                                    />
                                 </div>
                                 <div className="cmi-control-row">
-                                    <label>НАХЛЁСТ: {(overlap * 100).toFixed(0)}%</label>
-                                    <input type="range" min="0.01" max="1.0" step="0.01" value={overlap} onChange={(e) => setParam({ overlap: parseFloat(e.target.value) })} />
+                                    <label htmlFor={overlapId}>НАХЛЁСТ: {(overlap * 100).toFixed(0)}%</label>
+                                    <input
+                                        id={overlapId}
+                                        type="range" min="0.01" max="1.0" step="0.01" value={overlap}
+                                        onChange={(e) => handleParamChange({ overlap: parseFloat(e.target.value) })}
+                                        aria-valuetext={`${(overlap * 100).toFixed(0)}%`}
+                                    />
                                 </div>
                                 <div className="cmi-control-row">
-                                    <label>ДЕТЮН: {detune.toFixed(0)}</label>
-                                    <input type="range" min="-1200" max="1200" step="10" value={detune} onChange={(e) => setParam({ detune: parseFloat(e.target.value) })} />
+                                    <label htmlFor={detuneId}>ДЕТЮН: {detune.toFixed(0)}</label>
+                                    <input
+                                        id={detuneId}
+                                        type="range" min="-1200" max="1200" step="10" value={detune}
+                                        onChange={(e) => handleParamChange({ detune: parseFloat(e.target.value) })}
+                                        aria-valuetext={`${detune.toFixed(0)}`}
+                                    />
                                 </div>
                             </div>
                         </div>

@@ -9,3 +9,7 @@
 ## 2025-05-15 - [Consistent Navigation Interactivity]
 **Learning:** Navigation buttons benefit from a combination of tactile (Haptic Feedback), semantic (ARIA labels/pressed), and visual (neon glow focus states) cues to provide a "premium" feel while remaining fully accessible to keyboard and screen reader users.
 **Action:** When implementing or updating navigation menus, always include `aria-label` with shortcut hints, `aria-pressed` for active states, Telegram haptics for clicks, and `:focus-visible` glow effects.
+
+## 2025-05-15 - [Industrial Design & Button Resets]
+**Learning:** When refactoring non-semantic clickable elements (divs/spans) to semantic `<button>` elements in themed "industrial" or "retro" interfaces, explicit CSS resets for `border: none`, `font: inherit`, and `color: inherit` are critical to prevent browser defaults from breaking the high-fidelity visual design.
+**Action:** Always include a targeted CSS reset when converting divs to buttons in custom-themed components to ensure visual continuity.
