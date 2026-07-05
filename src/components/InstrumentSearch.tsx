@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import { SPATIAL_LAYOUT, InstrumentType } from '../lib/SpatialLayout'
 import { useVisualStore } from '../store/visualStore'
 
@@ -28,6 +28,8 @@ export function InstrumentSearch({ onSelect }: InstrumentSearchProps) {
     const [query, setQuery] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)
     const inputRef = useRef<HTMLInputElement>(null)
+    const id = useId()
+    const listboxId = `listbox-${id}`
 
     // Filter instruments
     const results = (Object.keys(SPATIAL_LAYOUT) as InstrumentType[])
@@ -62,12 +64,15 @@ export function InstrumentSearch({ onSelect }: InstrumentSearchProps) {
             if (e.key === 'ArrowDown') {
                 e.preventDefault()
                 setSelectedIndex(i => (i + 1) % results.length)
+                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault()
                 setSelectedIndex(i => (i - 1 + results.length) % results.length)
+                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
             } else if (e.key === 'Enter') {
                 e.preventDefault()
                 if (results[selectedIndex]) {
+                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
                     onSelect(results[selectedIndex])
                     setIsOpen(false)
                 }
@@ -89,7 +94,14 @@ export function InstrumentSearch({ onSelect }: InstrumentSearchProps) {
 
     return (
         <div className="search-overlay" onClick={() => setIsOpen(false)}>
-            <div className="search-modal" onClick={e => e.stopPropagation()}>
+            <div
+                className="search-modal"
+                onClick={e => e.stopPropagation()}
+                role="combobox"
+                aria-expanded={isOpen}
+                aria-haspopup="listbox"
+                aria-controls={listboxId}
+            >
                 <div className="search-header">
                     <span className="search-icon">🔍</span>
                     <input
@@ -102,19 +114,25 @@ export function InstrumentSearch({ onSelect }: InstrumentSearchProps) {
                         }}
                         placeholder="Search instrument..."
                         className="search-input"
+                        aria-autocomplete="list"
+                        aria-activedescendant={results.length > 0 ? `option-${id}-${selectedIndex}` : undefined}
                     />
                     <kbd className="esc-hint">ESC</kbd>
                 </div>
 
-                <div className="search-results">
+                <div className="search-results" id={listboxId} role="listbox">
                     {results.length === 0 ? (
                         <div className="search-empty">No instruments found</div>
                     ) : (
                         results.map((key, index) => (
                             <div
                                 key={key}
+                                id={`option-${id}-${index}`}
+                                role="option"
+                                aria-selected={index === selectedIndex}
                                 className={`search-item ${index === selectedIndex ? 'active' : ''}`}
                                 onClick={() => {
+                                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
                                     onSelect(key)
                                     setIsOpen(false)
                                 }}
