@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import { useVisualStore, VISUALIZER_REGISTRY } from '../store/visualStore'
 
 export function VisualizerSearch() {
+    const id = useId()
     const [isOpen, setIsOpen] = useState(false)
     const [query, setQuery] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)
@@ -37,13 +38,16 @@ export function VisualizerSearch() {
             if (e.key === 'ArrowDown') {
                 e.preventDefault()
                 setSelectedIndex(i => (i + 1) % results.length)
+                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault()
                 setSelectedIndex(i => (i - 1 + results.length) % results.length)
+                window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
             } else if (e.key === 'Enter') {
                 e.preventDefault()
                 if (results[selectedIndex]) {
                     setVisualizerIndex(results[selectedIndex].id)
+                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
                     setIsOpen(false)
                 }
             }
@@ -91,6 +95,12 @@ export function VisualizerSearch() {
                     <input
                         ref={inputRef}
                         type="text"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-expanded="true"
+                        aria-haspopup="listbox"
+                        aria-controls={`listbox-${id}`}
+                        aria-activedescendant={results[selectedIndex] ? `option-${id}-${results[selectedIndex].id}` : undefined}
                         value={query}
                         onChange={e => {
                             setQuery(e.target.value)
@@ -110,20 +120,29 @@ export function VisualizerSearch() {
                     <kbd style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', color: '#666' }}>ESC</kbd>
                 </div>
 
-                <div className="search-results" style={{
-                    maxHeight: '400px',
-                    overflowY: 'auto',
-                    padding: '10px'
-                }}>
+                <div
+                    id={`listbox-${id}`}
+                    role="listbox"
+                    className="search-results"
+                    style={{
+                        maxHeight: '400px',
+                        overflowY: 'auto',
+                        padding: '10px'
+                    }}
+                >
                     {results.length === 0 ? (
                         <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>No visualizers found</div>
                     ) : (
                         results.map((v, index) => (
                             <div
                                 key={v.id}
+                                id={`option-${id}-${v.id}`}
+                                role="option"
+                                aria-selected={index === selectedIndex}
                                 className={`search-item ${index === selectedIndex ? 'active' : ''}`}
                                 onClick={() => {
                                     setVisualizerIndex(v.id)
+                                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light')
                                     setIsOpen(false)
                                 }}
                                 onMouseEnter={() => setSelectedIndex(index)}
