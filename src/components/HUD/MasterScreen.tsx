@@ -73,6 +73,7 @@ export const MasterScreen: React.FC = () => {
                                 <div className="channel-label-studio">{channel.toUpperCase()}</div>
                                 <StudioSlider
                                     label=""
+                                    ariaLabel={`${channel.toUpperCase()} Volume`}
                                     value={volume * 100}
                                     min={0}
                                     max={100}
@@ -83,7 +84,12 @@ export const MasterScreen: React.FC = () => {
                                 <div className="channel-value-studio">{Math.round(volume * 100)}%</div>
                                 <button
                                     className={`channel-mute-studio ${audioStore.mutes[channel as keyof typeof audioStore.mutes] ? 'active' : ''}`}
-                                    onClick={() => audioStore.toggleMute(channel as any)}
+                                    onClick={() => {
+                                        audioStore.toggleMute(channel as any);
+                                        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+                                    }}
+                                    aria-label={`Mute ${channel.toUpperCase()}`}
+                                    aria-pressed={!!audioStore.mutes[channel as keyof typeof audioStore.mutes]}
                                 >
                                     M
                                 </button>

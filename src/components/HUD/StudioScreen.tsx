@@ -186,6 +186,7 @@ export const StudioKnob: React.FC<StudioKnobProps> = ({
  */
 interface StudioSliderProps {
     label: string
+    ariaLabel?: string
     value: number
     min?: number
     max?: number
@@ -197,6 +198,7 @@ interface StudioSliderProps {
 
 export const StudioSlider: React.FC<StudioSliderProps> = ({
     label,
+    ariaLabel,
     value,
     min = 0,
     max = 100,
@@ -236,7 +238,7 @@ export const StudioSlider: React.FC<StudioSliderProps> = ({
                     onChange={handleChange}
                     className="studio-slider-input"
                     style={vertical ? { height: '120px' } : { width: '150px' }}
-                    aria-label={label}
+                    aria-label={ariaLabel || label}
                 />
                 {vertical && (
                     <div 
