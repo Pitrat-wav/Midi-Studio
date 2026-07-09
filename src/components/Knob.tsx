@@ -18,8 +18,10 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
     const setInteraction = useVisualStore(s => s.setInteraction)
     const activeColor = color || 'var(--tg-theme-button-color)'
     const [isDragging, setIsDragging] = useState(false)
+    const [isFocused, setIsFocused] = useState(false)
     const startY = useRef(0)
     const startValue = useRef(0)
+    const inputRef = useRef<HTMLInputElement>(null)
 
     const handlePointerDown = (e: React.PointerEvent) => {
         try {
@@ -27,6 +29,9 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
             startY.current = e.clientY
             startValue.current = value
             e.currentTarget.setPointerCapture(e.pointerId)
+
+            // Focus the hidden input to enable keyboard control immediately
+            inputRef.current?.focus()
 
             if (window.Telegram?.WebApp?.HapticFeedback) {
                 window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
@@ -82,6 +87,15 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
     const angle = normalizedValue * 270 - 135
     const offset = circumference - normalizedValue * (circumference * 0.75)
 
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = parseFloat(e.target.value)
+        onChange(newValue)
+        setInteraction(label || 'knob', 1.0)
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.selectionChanged()
+        }
+    }
+
     return (
         <div
             className="knob-container"
@@ -108,7 +122,9 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
                         ? 'var(--tg-theme-secondary-bg-color)'
                         : 'linear-gradient(145deg, var(--tg-theme-secondary-bg-color), var(--tg-theme-bg-color))',
                     boxShadow: isDragging
-                        ? 'inset 4px 4px 8px rgba(0,0,0,0.1), inset -4px -4px 8px rgba(255,255,255,0.8)'
+                        ? `inset 4px 4px 8px rgba(0,0,0,0.1), inset -4px -4px 8px rgba(255,255,255,0.8), 0 0 15px ${activeColor}`
+                        : isFocused
+                        ? `0 0 20px ${activeColor}, 4px 4px 10px rgba(0,0,0,0.05), -4px -4px 10px rgba(255,255,255,0.8)`
                         : '4px 4px 10px rgba(0,0,0,0.05), -4px -4px 10px rgba(255,255,255,0.8)',
                     position: 'relative',
                     cursor: 'ns-resize',
@@ -116,9 +132,32 @@ export function Knob({ label, value, min = 0, max = 1, step = 0.01, defaultValue
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-                    transform: isDragging ? 'scale(1.05)' : 'scale(1)'
+                    transform: isDragging ? 'scale(1.05)' : 'scale(1)',
+                    outline: 'none'
                 }}
             >
+                {/* Hidden range input for accessibility and keyboard support */}
+                <input
+                    ref={inputRef}
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={value}
+                    onChange={handleInputChange}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    aria-label={label}
+                    style={{
+                        position: 'absolute',
+                        opacity: 0,
+                        width: '100%',
+                        height: '100%',
+                        cursor: 'pointer',
+                        zIndex: 1
+                    }}
+                />
+
                 <svg width={size} height={size} viewBox="0 0 64 64">
                     <circle
                         cx="32"
